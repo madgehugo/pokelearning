@@ -1,0 +1,24 @@
+/**
+ * Server ↔ browser UI protocol: JSON messages over a WebSocket at /ws.
+ * The server sends a snapshot on connect, then one message per event.
+ */
+import type { ProcessedLine } from "./analysis.ts";
+
+export const UI_PORT = 8766;
+
+export interface ServerStatus {
+  /** Game adapters currently connected. */
+  adapters: number;
+  /** Game id from the most recent adapter hello. */
+  game: string | null;
+  /** Translation provider id, or null if translation is off or failed to load. */
+  translator: string | null;
+  /** Dictionary build, or null if none is installed. */
+  dictionary: string | null;
+}
+
+export type ServerMessage =
+  /** Sent on connect: recent lines, newest first. */
+  | { type: "snapshot"; lines: ProcessedLine[]; status: ServerStatus }
+  | { type: "line"; line: ProcessedLine }
+  | { type: "status"; status: ServerStatus };

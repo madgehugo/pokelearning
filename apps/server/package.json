@@ -12,6 +12,10 @@
   },
   "dependencies": {
     "@huggingface/transformers": "^4.3.2",
-    "@pokelearning/shared": "*"
+    "@pokelearning/shared": "*",
+    "ws": "^8.23.0"
+  },
+  "devDependencies": {
+    "@types/ws": "^8.18.2"
   }
 }

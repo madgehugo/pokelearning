@@ -6,7 +6,19 @@
 import fs from "node:fs";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
-import type { LineAnalysis, LineMessage } from "@pokelearning/shared";
+import type { LineAnalysis, LineMessage, ProcessedLine } from "@pokelearning/shared";
+
+interface LineRow {
+  id: number;
+  game: string;
+  source: string | null;
+  lang: string | null;
+  text: string;
+  received_at: number;
+  translation: string | null;
+  translation_provider: string | null;
+  analysis: string | null;
+}
 
 /** Each entry upgrades the schema by one version (PRAGMA user_version). Never edit old entries. */
 const MIGRATIONS = [
@@ -114,6 +126,32 @@ export class AppDb {
          VALUES (?, ?, ?, ?, ?, ?)`,
       )
       .run(provider, from, to, text, translation, Date.now());
+  }
+
+  /** Lines with their analysis and translation, newest first. */
+  recentLines(limit: number, beforeId?: number): ProcessedLine[] {
+    const rows = this.db
+      .prepare(
+        `SELECT l.id, l.game, l.source, l.lang, l.text, l.received_at, l.translation, l.translation_provider,
+                a.analysis
+         FROM lines l LEFT JOIN line_analyses a ON a.line_id = l.id
+         WHERE (? IS NULL OR l.id < ?)
+         ORDER BY l.id DESC LIMIT ?`,
+      )
+      .all(beforeId ?? null, beforeId ?? null, limit) as unknown as LineRow[];
+    return rows.map((r) => ({
+      id: r.id,
+      game: r.game,
+      ...(r.source ? { source: r.source } : {}),
+      ...(r.lang ? { lang: r.lang } : {}),
+      text: r.text,
+      receivedAt: r.received_at,
+      analysis: r.analysis ? (JSON.parse(r.analysis) as LineAnalysis) : null,
+      translation:
+        r.translation && r.translation_provider
+          ? { provider: r.translation_provider, from: r.lang ?? "de", to: "en", text: r.translation, cached: true }
+          : null,
+    }));
   }
 
   close(): void {
