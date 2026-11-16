@@ -66,4 +66,4 @@ entries stay separate.
 | `data/kaikki-german.jsonl.gz` | Downloaded Wiktionary extract | yes (re-downloaded by `dict:import`) |
 | `data/dictionary.db` | Built dictionary | yes (`npm run dict:import`) |
 | `data/models/` | Translation model | yes (re-downloaded on start) |
-| `data/app.db` | **Your history**, later your word bank | no |
+| `data/app.db` | **Your history, word bank and review history** | no: back it up |

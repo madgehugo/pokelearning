@@ -32,10 +32,23 @@
 - Offline support with a service worker. That needs HTTPS on the LAN (e.g. a local certificate); until then, the home-screen version needs the server running.
 - A setting to turn off the print-in effect, and a font size control.
 
-## Phase 4: Word bank + spaced repetition
-- Save words or phrases with the sentence they came from (game, line, timestamp).
-- FSRS scheduling (`ts-fsrs`), with review sessions in the UI covering recognition, article (der/die/das) and production.
-- Stats: words learned, retention, words due.
+## Phase 4: Word bank + spaced repetition ✅
+- Save any reading of a word (best reading, an alternative, or a compound part) from the live view or from history. Saved words get an amber dot in the dialogue box.
+- Each word keeps up to five example sentences from the game and counts its encounters, including lines from before it was saved.
+- FSRS-6 scheduling (`ts-fsrs`, 90% target retention). Cards:
+  - *meaning* (German → English) for every word
+  - *article* (der/die/das) for nouns with one gender
+  - *recall* (English → German), optional
+- New cards per day are capped (default 20), with one new card per word per day, so a noun's article card comes the day after its meaning card. Learning cards due within 20 minutes are shown early when nothing else is due.
+- Review screen with interval previews and keyboard shortcuts. Words screen with search, example sentences, encounters, next review and removal. Review settings.
+- Stats as a sentence: words, cards due now, retention over 30 days.
+- Writes to the API must be same-origin JSON, because the UI may be open on the LAN.
+
+### Follow-ups
+- Undo the last answer.
+- Optimise the FSRS parameters on your own review history once there are a few hundred reviews (FSRS optimizer).
+- Count in-game encounters of saved words as light practice (FSRS doesn't model passive exposure, so this needs a separate rule).
+- Collapse repeated lines (the same battle message several times) in the history.
 
 ## Phase 5: Mini-games
 - Article sprint (der/die/das), cloze from your own game lines, listening (TTS), matching.

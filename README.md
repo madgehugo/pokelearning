@@ -53,6 +53,19 @@ Tap a word for its grammar ("feminine singular, nominative or accusative"),
 all its meanings, and the other readings it could have. ← and → move between
 words.
 
+**Word bank and review:** choose *Save word* in a word's details. The word keeps
+the sentence it came from, and every later line that uses it counts as an
+encounter and can add another example. **Review** asks you one card at a time,
+scheduled with FSRS:
+- *Meaning*: the German word with its sentence → what it means.
+- *Article*: nouns only. Tap der, die or das.
+- *Recall* (optional, under Words → Review settings): English → the German word.
+
+Grade yourself with Again, Hard, Good or Easy; each button shows when the card
+comes back. Keys: Space shows the answer, 1–4 grade, 1–3 pick an article.
+**Words** lists your saved words with their example sentences, encounters and
+next review.
+
 Everything is local and free: no accounts or API keys. Downloaded data and your
 database live in `data/` (git-ignored). Set `TRANSLATOR=none` to turn off
 translation.
@@ -98,14 +111,15 @@ The buffer addresses come from the pokeemerald decompilation, which matches the
 
 ## Roadmap
 
-See [docs/ROADMAP.md](docs/ROADMAP.md). Phases 1–3 (adapter, language pipeline,
-web UI) are implemented; next is the word bank with spaced repetition.
+See [docs/ROADMAP.md](docs/ROADMAP.md). Phases 1–4 (adapter, language pipeline,
+web UI, word bank with FSRS review) are implemented; next are mini-games.
 
 ## Credits and data licences
 
 - Character encoding and RAM symbols: the [pret/pokeemerald](https://github.com/pret/pokeemerald) decompilation.
 - Dictionary: [Wiktionary](https://en.wiktionary.org/) (CC BY-SA 4.0), via the
   [Kaikki.org](https://kaikki.org/) extract (wiktextract).
+- Scheduling: [ts-fsrs](https://github.com/open-spaced-repetition/ts-fsrs) (FSRS-6).
 - Translation: [Opus-MT](https://github.com/Helsinki-NLP/Opus-MT) by Helsinki-NLP (CC BY 4.0),
   ONNX conversion `Xenova/opus-mt-de-en`, run with [transformers.js](https://github.com/huggingface/transformers.js).
 - Inspired by Lexicart.
