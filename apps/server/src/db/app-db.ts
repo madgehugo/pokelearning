@@ -248,6 +248,13 @@ export class AppDb {
     return row ? toProcessedLine(row) : undefined;
   }
 
+  /** A consistent copy of the database, safe while the server runs (VACUUM INTO). */
+  backupTo(file: string): void {
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.rmSync(file, { force: true });
+    this.db.prepare("VACUUM INTO ?").run(file);
+  }
+
   close(): void {
     this.db.close();
   }

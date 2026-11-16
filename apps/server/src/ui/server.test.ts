@@ -7,6 +7,7 @@ import { after, before, describe, it } from "node:test";
 import type { ProcessedLine, ServerMessage, ServerStatus } from "@pokelearning/shared";
 import { AppDb } from "../db/app-db.ts";
 import { Games } from "../games/games.ts";
+import { Setup } from "../setup/setup.ts";
 import { Scheduler } from "../wordbank/scheduler.ts";
 import { WordBank } from "../wordbank/wordbank.ts";
 import { createUiServer, type UiServer } from "./server.ts";
@@ -28,7 +29,15 @@ describe("UI server", () => {
       db.saveLineTranslation(id, "fake", `EN ${text}`);
     }
     const wordbank = new WordBank(db, new Scheduler());
-    ui = createUiServer({ db, wordbank, games: new Games(db, wordbank), status: () => status, staticDir });
+    const setup = new Setup({
+      namesReady: () => true,
+      dictionaryReady: () => true,
+      importNames: async () => {},
+      importDictionary: async () => {},
+      model: null,
+      onImported: () => {},
+    });
+    ui = createUiServer({ db, wordbank, games: new Games(db, wordbank), setup, status: () => status, staticDir });
     await new Promise<void>((r) => ui.http.listen(0, "127.0.0.1", r));
     base = `127.0.0.1:${(ui.http.address() as AddressInfo).port}`;
   });
@@ -50,6 +59,20 @@ describe("UI server", () => {
       assert.match(await res.text(), /<title>app<\/title>/);
     }
     assert.equal((await fetch(`http://${base}/api/nope`)).status, 404);
+  });
+
+  it("reports setup and makes backups only for this Mac", async () => {
+    const s = (await (await fetch(`http://${base}/api/setup`)).json()) as { ready: boolean };
+    assert.equal(s.ready, true);
+    const file = path.join(staticDir, "backup.db");
+    const post = (body: unknown) =>
+      fetch(`http://${base}/api/backup`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+    assert.equal((await post({ path: file })).status, 200);
+    const copy = new AppDb(file);
+    assert.equal(copy.recentLines(10).length, 3, "the copy has the lines");
+    copy.close();
+    assert.equal((await post({ path: "relative.db" })).status, 400);
+    assert.equal((await post({ path: "/tmp/not-a-database.txt" })).status, 400);
   });
 
   it("rejects writes from other origins or without JSON", async () => {

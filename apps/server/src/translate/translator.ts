@@ -3,7 +3,7 @@ import type { Translation } from "@pokelearning/shared";
 import type { AppDb } from "../db/app-db.ts";
 import type { Glossary } from "../language/glossary.ts";
 import { fillSlots, prepareSentences, restoreSlots } from "./prepare.ts";
-import type { TranslationProvider } from "./provider.ts";
+import type { ProviderStatus, TranslationProvider } from "./provider.ts";
 
 export class Translator {
   constructor(
@@ -22,6 +22,10 @@ export class Translator {
 
   supports(from: string, to: string): boolean {
     return this.provider.supports(from, to);
+  }
+
+  status(): ProviderStatus {
+    return this.provider.status?.() ?? { state: "ready", progress: 1, detail: "" };
   }
 
   /** Cached translation of one sentence. */

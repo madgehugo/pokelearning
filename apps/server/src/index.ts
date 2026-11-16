@@ -19,44 +19,93 @@ import { Games } from "./games/games.ts";
 import { createUiServer } from "./ui/server.ts";
 import { Scheduler } from "./wordbank/scheduler.ts";
 import { WordBank } from "./wordbank/wordbank.ts";
+import { Setup } from "./setup/setup.ts";
+import { importDictionary } from "./setup/dictionary.ts";
+import { importNames } from "./setup/names.ts";
+import fs from "node:fs";
 
 const info = (text: string) => console.log(styleText("cyan", `[${time()}] ${text}`));
 const warn = (text: string) => console.warn(styleText("yellow", `[${time()}] ${text}`));
 
 const db = new AppDb(config.appDbPath);
-const glossaries = loadGameGlossaries();
-const glossary = glossaries.forGame("pokemon-emerald-de");
-const names = glossaries.nameCount("pokemon-emerald-de");
-if (names !== null) info(`game names: ${names} Pokémon, moves, abilities, items and places (Emerald; other games get their own)`);
-else warn("no game names found: run `npm run names:import` to translate Pokémon, moves, items and places");
-const dictionary = openDictionary(config.dictionaryDbPath);
-if (dictionary) info(`dictionary ${dictionary.version}`);
-else warn("no dictionary found: run `npm run dict:import` for the word-by-word breakdown");
 
-const status: ServerStatus = { adapters: 0, game: null, translator: null, dictionary: dictionary?.version ?? null };
+/** Dictionary and glossaries, reloaded when setup finishes importing them. */
+const language = {
+  dictionary: openDictionary(config.dictionaryDbPath),
+  glossaries: loadGameGlossaries(),
+};
+const names = language.glossaries.nameCount("pokemon-emerald-de");
+if (names !== null) info(`game names: ${names} Pokémon, moves, abilities, items and places (Emerald; other games get their own)`);
+else warn("no game names found: run `npm run names:import` (the app's first-launch setup does this)");
+if (language.dictionary) info(`dictionary ${language.dictionary.version}`);
+else warn("no dictionary found: run `npm run dict:import` (the app's first-launch setup does this)");
+
+const status: ServerStatus = { adapters: 0, game: null, translator: null, dictionary: language.dictionary?.version ?? null };
 
 let translator: Translator | null = null;
 if (config.translator === "opus-mt") {
-  translator = new Translator(new OpusMtProvider(config.modelsDir, "de", config.targetLang), db, glossary);
-  const started = Date.now();
-  info(`loading translation model ${translator.providerId} (first run downloads ~110 MB)…`);
-  translator.warmUp().then(
-    () => {
-      info(`translation model ready (${((Date.now() - started) / 1000).toFixed(1)} s)`);
-      status.translator = translator!.providerId;
-      ui.broadcastStatus();
-    },
-    (err: Error) => warn(`translation model failed to load: ${err.message}. Lines will be shown untranslated.`),
+  translator = new Translator(
+    new OpusMtProvider(config.modelsDir, "de", config.targetLang),
+    db,
+    language.glossaries.forGame("pokemon-emerald-de"),
   );
+  info(`loading translation model ${translator.providerId} (first run downloads ~110 MB)…`);
+  void warmUpModel();
 } else if (config.translator !== "none") {
   warn(`unknown TRANSLATOR=${config.translator}; translation disabled`);
 }
 
+/**
+ * Load the translation model; called at start and again by setup after a failure.
+ * (It only touches `ui` after awaiting, so after `ui` below exists.)
+ */
+async function warmUpModel(): Promise<void> {
+  if (!translator) return;
+  const started = Date.now();
+  try {
+    await translator.warmUp();
+    info(`translation model ready (${((Date.now() - started) / 1000).toFixed(1)} s)`);
+    status.translator = translator.providerId;
+    ui.broadcastStatus();
+  } catch (err) {
+    warn(`translation model failed to load: ${(err as Error).message}. Lines will be shown untranslated.`);
+    throw err;
+  }
+}
+
+const setup = new Setup({
+  namesReady: () => fs.existsSync(config.namesPath),
+  dictionaryReady: () => language.dictionary !== null,
+  importNames: (p) => importNames(config.namesPath, p),
+  // Setup only builds a missing dictionary (the app's first launch), and nothing there
+  // rebuilds it, so the ~100 MB raw download can go. `npm run dict:import` keeps it.
+  importDictionary: (p) => importDictionary(config, p, { deleteDownload: true }),
+  model: translator && { status: () => translator!.status(), warmUp: warmUpModel },
+  onImported: (step) => {
+    if (step === "dictionary") {
+      language.dictionary?.close();
+      language.dictionary = openDictionary(config.dictionaryDbPath);
+      status.dictionary = language.dictionary?.version ?? null;
+      info(`dictionary ${status.dictionary} loaded`);
+    } else {
+      language.glossaries = loadGameGlossaries();
+      info("game names loaded");
+    }
+    ui.broadcastStatus();
+  },
+  onChange: () => ui.broadcastSetup(),
+});
+
 const wordbank = new WordBank(db, new Scheduler());
 const games = new Games(db, wordbank);
-const ui = createUiServer({ db, wordbank, games, status: () => ({ ...status }), staticDir: config.webDistDir });
+const ui = createUiServer({ db, wordbank, games, setup, status: () => ({ ...status }), staticDir: config.webDistDir });
 
-const pipeline = new LinePipeline(db, (game) => ({ dictionary, glossary: glossaries.forGame(game) }), translator, config.targetLang);
+const pipeline = new LinePipeline(
+  db,
+  (game) => ({ dictionary: language.dictionary, glossary: language.glossaries.forGame(game) }),
+  translator,
+  config.targetLang,
+);
 pipeline.on("line", printLine);
 pipeline.on("line", ui.broadcastLine);
 pipeline.on("line", (line) => {
@@ -123,7 +172,7 @@ ui.http.listen(config.uiPort, config.uiHost, () => {
 const shutdown = () => {
   ingest.close();
   ui.close();
-  dictionary?.close();
+  language.dictionary?.close();
   db.close();
   process.exit(0);
 };

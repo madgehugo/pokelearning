@@ -4,7 +4,7 @@
  * (FireRed: Kanto, Emerald: Hoenn); glossaries are built once per scope.
  */
 import { config } from "../config.ts";
-import { defaultGlossaryFile, loadGlossary, type Glossary } from "./glossary.ts";
+import { loadGlossary, type Glossary } from "./glossary.ts";
 import { loadNames, nameEntries, type GameScope, type NamesFile } from "./names.ts";
 
 /** "pokemon-firered-de" → FireRed's scope; anything else → the default scope. */
@@ -28,7 +28,7 @@ export function loadGameGlossaries(names: NamesFile | null = loadNames(config.na
     let hit = cache.get(key);
     if (!hit) {
       const entries = names ? nameEntries(names, scope) : [];
-      hit = { glossary: loadGlossary(defaultGlossaryFile, entries), count: entries.length };
+      hit = { glossary: loadGlossary(entries), count: entries.length };
       cache.set(key, hit);
     }
     return hit;

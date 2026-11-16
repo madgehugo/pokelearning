@@ -12,7 +12,8 @@ export const config = {
   /** Web UI. Set UI_HOST=0.0.0.0 to open it from your phone on the same Wi-Fi. */
   uiHost: process.env.UI_HOST ?? "127.0.0.1",
   uiPort: Number(process.env.UI_PORT ?? UI_PORT),
-  webDistDir: path.join(repoRoot, "apps/web/dist"),
+  /** The built website. The packaged app sets WEB_DIST_DIR to its copy. */
+  webDistDir: path.resolve(process.env.WEB_DIST_DIR ?? path.join(repoRoot, "apps/web/dist")),
   dataDir,
   /** Your data: received lines, analyses, translation cache (later: word bank). */
   appDbPath: path.join(dataDir, "app.db"),

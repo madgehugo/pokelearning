@@ -14,6 +14,9 @@
  *   GET    /api/games                        { availability: GameAvailability[], records: GameRecord[] }
  *   GET    /api/games/:kind                  GameMaterial (a fresh game)
  *   POST   /api/games/results                GameResultRequest → GameResultResponse
+ *   GET    /api/setup                        SetupStatus
+ *   POST   /api/setup/start                  start downloading what's missing → SetupStatus
+ *   POST   /api/backup                       { path } → copy of your data (only from this Mac)
  *
  * Writes must be JSON from the page's own origin, so other websites open in
  * the same browser can't change your word bank (the UI may be on the LAN).
@@ -21,7 +24,9 @@
 import type http from "node:http";
 import type { AnswerRequest, GameKind, GameResultRequest, SaveWordRequest, ServerStatus, Settings } from "@pokelearning/shared";
 import type { AppDb } from "../db/app-db.ts";
+import path from "node:path";
 import { GAME_KINDS, GameError, type Games } from "../games/games.ts";
+import type { Setup } from "../setup/setup.ts";
 import { WordBankError, type WordBank } from "../wordbank/wordbank.ts";
 
 const MAX_PAGE = 200;
@@ -31,6 +36,7 @@ export interface ApiDeps {
   db: AppDb;
   wordbank: WordBank;
   games: Games;
+  setup: Setup;
   status: () => ServerStatus;
   /** Called after anything that changes the word bank or the review counts. */
   onWordBankChange: () => void;
@@ -144,6 +150,26 @@ export async function handleApi(
         const settings = wordbank.updateSettings(body);
         deps.onWordBankChange();
         sendJson(res, 200, settings);
+        break;
+      }
+      case "GET /api/setup":
+        sendJson(res, 200, deps.setup.status());
+        break;
+      case "POST /api/setup/start":
+        await readJson<unknown>(req);
+        void deps.setup.start();
+        sendJson(res, 202, deps.setup.status());
+        break;
+      case "POST /api/backup": {
+        // The website may be open on the LAN; writing files is only for the app on this Mac.
+        const from = req.socket.remoteAddress ?? "";
+        if (!["127.0.0.1", "::1", "::ffff:127.0.0.1"].includes(from)) throw new HttpError(403, "backups can only be made on this Mac");
+        const body = await readJson<{ path?: string }>(req);
+        if (!body.path || !path.isAbsolute(body.path) || !body.path.endsWith(".db")) {
+          throw new HttpError(400, "path must be an absolute path ending in .db");
+        }
+        db.backupTo(body.path);
+        sendJson(res, 200, { path: body.path });
         break;
       }
       case "GET /api/games":

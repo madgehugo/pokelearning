@@ -3,8 +3,8 @@
  * abbreviations, items). Entries win over dictionary readings, and `mt`
  * replaces the term before machine translation so "BIRK" comes out as "Birch".
  */
-import fs from "node:fs";
 import type { Article, WordSense } from "@pokelearning/shared";
+import curated from "./glossary/pokemon-de.json" with { type: "json" };
 import { isAllCaps, type Token } from "./tokenize.ts";
 
 export interface GlossaryEntry {
@@ -83,15 +83,13 @@ export function createGlossary(entries: GlossaryEntry[]): Glossary {
   };
 }
 
-export function readGlossaryFile(file: URL | string): GlossaryEntry[] {
-  return JSON.parse(fs.readFileSync(file, "utf8")) as GlossaryEntry[];
-}
+/** The hand-written game terms. Imported as a module so the packaged app's bundle includes it. */
+export const curatedEntries = curated as GlossaryEntry[];
 
-export function loadGlossary(file: URL | string, extra: GlossaryEntry[] = []): Glossary {
-  return createGlossary([...extra, ...readGlossaryFile(file)]);
+/** Imported names (`extra`) plus the hand-written terms, which win. */
+export function loadGlossary(extra: GlossaryEntry[] = []): Glossary {
+  return createGlossary([...extra, ...curatedEntries]);
 }
-
-export const defaultGlossaryFile = new URL("./glossary/pokemon-de.json", import.meta.url);
 
 const ARTICLE: Record<string, Article> = { m: "der", f: "die", n: "das", pl: "die" };
 

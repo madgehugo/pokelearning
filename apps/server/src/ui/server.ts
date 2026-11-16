@@ -10,6 +10,7 @@ import { WebSocketServer, type WebSocket } from "ws";
 import type { ProcessedLine, ServerMessage, ServerStatus, WordBankSummary } from "@pokelearning/shared";
 import type { AppDb } from "../db/app-db.ts";
 import type { Games } from "../games/games.ts";
+import type { Setup } from "../setup/setup.ts";
 import type { WordBank } from "../wordbank/wordbank.ts";
 import { handleApi, sendJson } from "./api.ts";
 
@@ -32,6 +33,7 @@ export interface UiServerOptions {
   db: AppDb;
   wordbank: WordBank;
   games: Games;
+  setup: Setup;
   status: () => ServerStatus;
   /** Built web app; if missing, "/" explains how to build or run it. */
   staticDir: string;
@@ -42,6 +44,7 @@ export interface UiServer {
   broadcastLine(line: ProcessedLine): void;
   broadcastStatus(): void;
   broadcastWordBank(): void;
+  broadcastSetup(): void;
   close(): void;
 }
 
@@ -65,9 +68,9 @@ function serveStatic(staticDir: string, urlPath: string, res: http.ServerRespons
   fs.createReadStream(file).pipe(res);
 }
 
-export function createUiServer({ db, wordbank, games, status, staticDir }: UiServerOptions): UiServer {
+export function createUiServer({ db, wordbank, games, setup, status, staticDir }: UiServerOptions): UiServer {
   const summary = (): WordBankSummary => ({ saved: wordbank.savedKeys(), stats: wordbank.stats() });
-  const apiDeps = { db, wordbank, games, status, onWordBankChange: () => broadcast({ type: "wordbank", wordbank: summary() }) };
+  const apiDeps = { db, wordbank, games, setup, status, onWordBankChange: () => broadcast({ type: "wordbank", wordbank: summary() }) };
 
   const server = http.createServer((req, res) => {
     const url = new URL(req.url ?? "/", "http://localhost");
@@ -113,6 +116,7 @@ export function createUiServer({ db, wordbank, games, status, staticDir }: UiSer
     broadcastLine: (line) => broadcast({ type: "line", line }),
     broadcastStatus: () => broadcast({ type: "status", status: status() }),
     broadcastWordBank: apiDeps.onWordBankChange,
+    broadcastSetup: () => broadcast({ type: "setup", setup: setup.status() }),
     close: () => {
       clearInterval(heartbeat);
       wss.close();

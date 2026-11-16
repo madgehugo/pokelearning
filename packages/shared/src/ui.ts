@@ -3,6 +3,7 @@
  * The server sends a snapshot on connect, then one message per event.
  */
 import type { ProcessedLine } from "./analysis.ts";
+import type { SetupStatus } from "./setup.ts";
 import type { WordBankStats } from "./wordbank.ts";
 
 export const UI_PORT = 8766;
@@ -30,4 +31,6 @@ export type ServerMessage =
   | { type: "line"; line: ProcessedLine }
   | { type: "status"; status: ServerStatus }
   /** After a word is saved or removed, a card is answered, or settings change. */
-  | { type: "wordbank"; wordbank: WordBankSummary };
+  | { type: "wordbank"; wordbank: WordBankSummary }
+  /** First-launch setup progress (dictionary, names, translation model). */
+  | { type: "setup"; setup: SetupStatus };
