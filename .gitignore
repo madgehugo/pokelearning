@@ -14,3 +14,6 @@ dist/
 *.db
 *.db-*
 .env
+
+# downloaded dictionaries and the local database
+data/
