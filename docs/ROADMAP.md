@@ -21,10 +21,16 @@
 - Use syntax to rank function words. For example, the relative pronoun *das* after a comma is currently read as an article; the correct reading is listed as an alternative.
 - An optional DeepL or LLM translation provider behind the same interface.
 
-## Phase 3: Web UI
-- React + TypeScript + Vite in `apps/web`. The server adds a WebSocket and pushes `line`, `analysis` and `translation` events.
-- Live view: the German line, its translation, and clickable word chips (lemma, article, meaning).
-- History of recent lines. Responsive layout and installable PWA for use on a phone over the LAN.
+## Phase 3: Web UI ✅
+- React + TypeScript + Vite in `apps/web`. The server serves the built app on port 8766, with history at `GET /api/lines` and live lines over a WebSocket at `/ws` (a snapshot on connect, then one message per line).
+- The current line appears in a dialogue box and prints in like game text. Every word is tappable, with nouns underlined in their gender colour (der blue, die rose, das green).
+- The word breakdown shows the dictionary form, article, part of speech and meaning. An open word adds its grammar in plain words, all its meanings, separable-verb notes, compound parts and alternative readings. ← and → move between words.
+- History of earlier lines (tap one to read it again; "Show the latest line" returns to live), with older lines loaded on request.
+- Responsive from phone to desktop, light and dark themes, fonts bundled for offline use, a manifest for adding it to the home screen. `UI_HOST=0.0.0.0` opens it on the LAN.
+
+### Follow-ups
+- Offline support with a service worker. That needs HTTPS on the LAN (e.g. a local certificate); until then, the home-screen version needs the server running.
+- A setting to turn off the print-in effect, and a font size control.
 
 ## Phase 4: Word bank + spaced repetition
 - Save words or phrases with the sentence they came from (game, line, timestamp).

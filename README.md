@@ -32,7 +32,7 @@ game module, another emulator, or an OCR adapter. See
 | `adapters/mgba-lua/` | mGBA Lua adapter: `main.lua` entry, `lib/` (charmap, JSON, transport), `games/` (per-game plug-ins), `tools/find_text.lua` (RAM search) |
 | `packages/shared/` | TypeScript types shared by adapters, server and UI: adapter protocol, line analysis |
 | `apps/server/` | Node server: ingest → word-by-word analysis → translation → SQLite (see [docs/language-pipeline.md](docs/language-pipeline.md)) |
-| `apps/web/` | Browser UI (phase 3) |
+| `apps/web/` | Browser UI: React + Vite, responsive, live over WebSocket |
 | `docs/` | Roadmap, protocol, address-finding guide |
 
 ## Quick start
@@ -42,28 +42,34 @@ Requirements: Node 22.13+ (tested on 26; uses the built-in `node:sqlite`), mGBA 
 ```sh
 npm install
 npm run dict:import       # once: downloads the Wiktionary extract (~100 MB) and builds data/dictionary.db (~15 s)
-npm run dev:server        # listens on 127.0.0.1:8765; first start downloads the translation model (~110 MB)
-npm run send-test         # optional: in a second terminal, sends fake lines
-npm test                  # unit tests
+npm start                 # builds the web app and starts the server; open http://localhost:8766
 ```
 
-Every line then appears with its translation and a word-by-word breakdown:
-
-```
-[10:39:13] #2 pokemon-emerald-de/field
-  Möchtest du dich im POKéMON-CENTER ausruhen?
-  Would you like to rest at the Pokémon Center?
-    Möchtest        mögen (verb) to like (something or someone); would like  · second-person singular subjunctive-ii
-    du              du (pron.) you (singular familiar), thou
-    dich            du (pron.) you (singular familiar), thou  · accusative personal
-    im              im (contr.) contraction of in + dem; in the
-    POKéMON-CENTER  das Pokémon-Center (noun) Pokémon Center (heals your Pokémon)
-    ausruhen        ausruhen (verb) to rest, to recover (through rest and relaxation)
-```
+The first start downloads the translation model (~110 MB). Then load the Lua
+script in mGBA (below) and talk to someone. Each line shows up in the browser:
+the German text in a dialogue box, its English translation, and every word with
+its dictionary form, der/die/das (colour-coded: blue, rose, green) and meaning.
+Tap a word for its grammar ("feminine singular, nominative or accusative"),
+all its meanings, and the other readings it could have. ← and → move between
+words.
 
 Everything is local and free: no accounts or API keys. Downloaded data and your
 database live in `data/` (git-ignored). Set `TRANSLATOR=none` to turn off
 translation.
+
+**On your phone:** start with `UI_HOST=0.0.0.0 npm start` and open the address
+the server prints (`http://192.168.…:8766`) on a phone on the same Wi-Fi. On
+iOS, *Share → Add to Home Screen* gives it its own icon. Only the web UI is
+opened to the network; the adapter port stays local.
+
+**Developing:**
+
+```sh
+npm run dev               # server with reload + Vite dev server (http://localhost:5173)
+npm run send-test         # fake game lines, no emulator needed
+npm test                  # unit tests
+npm run typecheck
+```
 
 ### Loading the Lua script in mGBA
 
@@ -75,7 +81,7 @@ translation.
    `Pokémon Emerald detected (game code BPED, language de)` and, once the server
    is running, `connected to 127.0.0.1:8765`. If the server starts later, the
    script reconnects by itself.
-5. Talk to someone. The line shows up in the server terminal and in the mGBA console.
+5. Talk to someone. The line shows up in the browser, the server terminal and the mGBA console.
 
 Changed a Lua file? Load `main.lua` again. The script removes its old callbacks first.
 mGBA also keeps a **File → Recent scripts** list.
@@ -92,8 +98,8 @@ The buffer addresses come from the pokeemerald decompilation, which matches the
 
 ## Roadmap
 
-See [docs/ROADMAP.md](docs/ROADMAP.md). Phases 1 (adapter + ingest) and 2
-(language pipeline) are implemented; next is the web UI.
+See [docs/ROADMAP.md](docs/ROADMAP.md). Phases 1–3 (adapter, language pipeline,
+web UI) are implemented; next is the word bank with spaced repetition.
 
 ## Credits and data licences
 

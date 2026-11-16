@@ -10,7 +10,8 @@ adapter line ─▶ ingest/tcp.ts ─▶ pipeline.ts ─┬─ db/app-db.ts     
                                                    ├─ prepare.ts       game text → MT-friendly text, sentences
                                                    ├─ app-db cache     one row per translated sentence
                                                    └─ provider.ts      ← opus-mt.ts (local)
-                                         ─▶ "line" event (ProcessedLine) ─▶ print.ts (later: WebSocket)
+                                         ─▶ "line" event (ProcessedLine) ─▶ print.ts (terminal)
+                                                                         └▶ ui/server.ts (WebSocket /ws, GET /api/lines)
 ```
 
 Lines are processed one at a time, in arrival order. A failed translation is
@@ -41,7 +42,7 @@ German words are ambiguous: *die* can be an article or a pronoun, *ruhe* can com
 | The word's own entry names the lexeme (`direct`) | + |
 | Archaic or obsolete form or lexeme | − |
 | Part of speech (article > pronoun/preposition > …) and number of senses | small tie-breakers |
-| Separable reading whose particle appears later in the clause | ++, without the particle −− |
+| Separable reading whose particle is the last word of the clause | ++, otherwise −− (mid-clause *auf dich* is a preposition) |
 
 Glossary entries always win, and the dictionary readings become alternatives.
 Up to three alternatives are kept for the UI.
