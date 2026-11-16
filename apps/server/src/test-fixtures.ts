@@ -55,6 +55,18 @@ export const ENTRIES: KaikkiEntry[] = [
   },
   { word: "Ruhe", pos: "noun", senses: [{ glosses: ["calm, quiet"], tags: ["feminine"] }] },
   { word: "aus", pos: "prep", senses: [{ glosses: ["out of, from"] }] },
+  {
+    word: "warten", pos: "verb",
+    senses: [{ glosses: ["to wait"], tags: ["intransitive"] }],
+    forms: [{ form: "wartet", tags: ["present", "singular", "third-person"] }],
+  },
+  {
+    word: "aufwarten", pos: "verb",
+    head_templates: [{ args: { "1": "auf.warten" } }],
+    senses: [{ glosses: ["to serve, to wait on"] }],
+    forms: [{ form: "wartet auf", tags: ["present", "singular", "third-person"] }],
+  },
+  { word: "auf", pos: "prep", senses: [{ glosses: ["on, upon"] }] },
   { word: "ich", pos: "pron", senses: [{ glosses: ["I"] }] },
   { word: "Ich", pos: "noun", senses: [{ glosses: ["ego"], tags: ["neuter"] }] },
   { word: "dich", pos: "pron", senses: [{ glosses: ["accusative of du"], tags: ["accusative", "form-of"], form_of: [{ word: "du" }] }] },

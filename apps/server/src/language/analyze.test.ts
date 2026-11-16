@@ -60,6 +60,12 @@ describe("analyzeLine", () => {
     assert.equal(word("Ich ruhe.", "ruhe").best?.lemma, "ruhen");
   });
 
+  it("only links a particle at the end of the clause", () => {
+    assert.equal(word("Er wartet auf dich.", "wartet").best?.lemma, "warten");
+    assert.equal(word("Er wartet auf dich.", "auf").best?.lemma, "auf");
+    assert.equal(word("Er wartet gut auf.", "wartet").best?.lemma, "aufwarten");
+  });
+
   it("does not link a particle from the next clause", () => {
     assert.equal(word("Ich ruhe, aus Prinzip.", "ruhe").best?.lemma, "ruhen");
   });

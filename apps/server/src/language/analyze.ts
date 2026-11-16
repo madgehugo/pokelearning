@@ -209,18 +209,18 @@ function linkSeparableVerbs(tokens: Token[], work: (WordWork | null)[], analyses
     const needsParticle = w.candidates.filter((c) => c.match.formParticle);
     if (needsParticle.length === 0) continue;
 
-    let particleIndex = -1;
-    let particle: string | null = null;
+    // A detached prefix is the last word of its clause ("Ruh dich gut aus!").
+    // Mid-clause it is a preposition: "Er wartet auf dich" is warten + auf, not aufwarten.
+    let lastWord = -1;
     for (let j = w.index + 1; j < tokens.length; j++) {
       const t = tokens[j]!;
       if (isClauseBoundary(t)) break;
-      if (t.kind !== "word") continue;
-      const lower = t.text.toLowerCase();
-      if (needsParticle.some((c) => c.match.formParticle === lower)) {
-        particleIndex = j;
-        particle = lower;
-      }
+      if (t.kind === "word") lastWord = j;
     }
+    const lower = lastWord >= 0 ? tokens[lastWord]!.text.toLowerCase() : null;
+    const matches = lower !== null && needsParticle.some((c) => c.match.formParticle === lower);
+    const particleIndex = matches ? lastWord : -1;
+    const particle = matches ? lower : null;
 
     for (const c of needsParticle) c.score += c.match.formParticle === particle ? 5 : -5;
     const best = rank(w.candidates)[0];
