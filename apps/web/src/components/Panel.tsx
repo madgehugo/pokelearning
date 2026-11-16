@@ -4,7 +4,7 @@
  * with saving. Review, Words and Games open on the full website.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
-import { wordKey, type ProcessedLine } from "@pokelearning/shared";
+import { menuRows, wordKey, type ProcessedLine } from "@pokelearning/shared";
 import type { useServer } from "../useServer.ts";
 import { Breakdown } from "./Breakdown.tsx";
 import { DialogueBox } from "./DialogueBox.tsx";
@@ -84,7 +84,7 @@ export function Panel({ server }: { server: Server }) {
       </header>
 
       <DialogueBox line={line} selected={selected} onSelect={setSelected} print={print} saved={saved} hidden={hidden} />
-      {line && (
+      {line && !menuRows(line) && (
         <p className="translation" lang="en">
           {line.translation?.text ?? (status?.translator ? "Translating…" : "No translation for this line.")}
         </p>

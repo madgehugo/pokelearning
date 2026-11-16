@@ -1,5 +1,5 @@
-import type { CSSProperties, ReactNode } from "react";
-import { wordKey, type ProcessedLine } from "@pokelearning/shared";
+import { Fragment, type CSSProperties, type ReactNode } from "react";
+import { menuRows, wordKey, type ProcessedLine } from "@pokelearning/shared";
 import { genderKey } from "../words.ts";
 
 interface Props {
@@ -30,17 +30,19 @@ export function DialogueBox({ line, selected, onSelect, print, saved, hidden }: 
   const msPerChar = Math.min(16, PRINT_MS / Math.max(line.text.length, 1));
   const delay = (offset: number) => ({ "--delay": `${Math.round(offset * msPerChar)}ms` }) as CSSProperties;
 
-  const pieces: ReactNode[] = [];
+  const pieces: { at: number; node: ReactNode }[] = [];
+  const add = (at: number, node: ReactNode) => pieces.push({ at, node });
   const tokens = line.analysis?.tokens;
   if (!tokens) {
-    pieces.push(line.text);
+    add(0, line.text);
   } else {
     let cursor = 0;
     tokens.forEach((t, i) => {
-      if (t.start > cursor) pieces.push(line.text.slice(cursor, t.start));
+      if (t.start > cursor) add(cursor, line.text.slice(cursor, t.start));
       cursor = t.end;
       if (t.kind !== "word" || (t.best && hidden.has(wordKey(t.best.lemma, t.best.pos)))) {
-        pieces.push(
+        add(
+          t.start,
           <span key={i} className="piece" style={delay(t.start)}>
             {t.text}
           </span>,
@@ -50,7 +52,8 @@ export function DialogueBox({ line, selected, onSelect, print, saved, hidden }: 
       if (t.partOf !== undefined) {
         // a later word of a multi-word name: opens the whole name
         const head = tokens[t.partOf]!;
-        pieces.push(
+        add(
+          t.start,
           <button
             key={i}
             type="button"
@@ -66,7 +69,8 @@ export function DialogueBox({ line, selected, onSelect, print, saved, hidden }: 
         return;
       }
       const known = !!t.best || !!t.parts?.some((p) => p.best);
-      pieces.push(
+      add(
+        t.start,
         <button
           key={i}
           type="button"
@@ -82,13 +86,32 @@ export function DialogueBox({ line, selected, onSelect, print, saved, hidden }: 
         </button>,
       );
     });
-    if (cursor < line.text.length) pieces.push(line.text.slice(cursor));
+    if (cursor < line.text.length) add(cursor, line.text.slice(cursor));
+  }
+
+  // A menu screen: each label with its translation underneath.
+  const rows = menuRows(line);
+  if (rows) {
+    return (
+      <section className="box" aria-label="Current menu" aria-live="polite">
+        <ul className="menu line" lang={line.lang ?? "de"} data-print={print ? "" : undefined} key={line.id}>
+          {rows.map((row, i) => (
+            <li key={i} className="menu__row">
+              <span className="menu__label">
+                {pieces.filter((p) => p.at >= row.start && p.at < row.end).map((p, j) => <Fragment key={j}>{p.node}</Fragment>)}
+              </span>
+              <span className="menu__translation" lang="en">{row.translation}</span>
+            </li>
+          ))}
+        </ul>
+      </section>
+    );
   }
 
   return (
     <section className="box" aria-label="Current line" aria-live="polite">
       <p className="line" lang={line.lang ?? "de"} data-print={print ? "" : undefined} key={line.id}>
-        {pieces}
+        {pieces.map((p, i) => <Fragment key={i}>{p.node}</Fragment>)}
       </p>
     </section>
   );

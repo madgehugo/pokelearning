@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { wordKey, type GameKind } from "@pokelearning/shared";
+import { menuRows, wordKey, type GameKind } from "@pokelearning/shared";
 import { Breakdown } from "./components/Breakdown.tsx";
 import { GamesPage } from "./components/games/GamesPage.tsx";
 import { DialogueBox } from "./components/DialogueBox.tsx";
@@ -117,7 +117,7 @@ function Live({ top, lines, status, hasOlder, loadOlder, saved, hidden }: LivePr
           </button>
         )}
         <DialogueBox line={current} selected={selected} onSelect={setSelected} print={print} saved={saved} hidden={hidden} />
-        {current && (
+        {current && !menuRows(current) && (
           <p className="translation" lang="en">
             {current.translation?.text ?? (status?.translator ? "Translating…" : "No translation for this line.")}
           </p>

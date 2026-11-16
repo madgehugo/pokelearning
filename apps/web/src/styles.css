@@ -1291,3 +1291,19 @@ kbd {
 .hidden-list__word .gloss {
   color: var(--ink-soft);
 }
+
+/* Menu screens: each label with its translation underneath. */
+.menu {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 0.55em;
+}
+.menu__row {
+  display: grid;
+}
+.menu__translation {
+  font-size: var(--step-0);
+  color: var(--ink-soft);
+  line-height: 1.3;
+}
