@@ -123,3 +123,46 @@ h.test("menu: flush doesn't fire before the quiet period, even with items waitin
   h.eq(menu:flush(100 + Menu.QUIET_FRAMES - 1), nil)
   h.eq(menu:flush(100 + Menu.QUIET_FRAMES), "Neues Spiel")
 end)
+
+-- AddTextPrinter lookup
+local HEAD = "\xF0\xB5\x06\x1C\x94\x46\x09\x06\x0D\x0E"
+local function printerCode(offsetByte) return HEAD .. string.char(offsetByte) .. "\x48\x00\x68\x00\x28\x04\xD1" end
+local BASE = 0x08000000
+
+h.test("menu: locates AddTextPrinter by its code, wherever the build put it", function()
+  local e = setup()
+  e.poke(BASE + 0x1234, printerCode(0x03))
+  h.eq(Menu.locatePrinter(nil, BASE, 0x4000), BASE + 0x1234)
+  h.eq(Menu.locatePrinter({ addr = BASE + 0x9999, bytes = "\1\2" }, BASE, 0x4000), BASE + 0x1234, "pinned address is wrong")
+end)
+
+h.test("menu: a pinned address is used when its bytes match", function()
+  local e = setup()
+  e.poke(BASE + 0x100, "\xAA\xBB")
+  h.eq(Menu.locatePrinter({ addr = BASE + 0x100, bytes = "\xAA\xBB" }, BASE, 0x4000), BASE + 0x100)
+end)
+
+h.test("menu: finds a match that straddles a scan chunk", function()
+  local e = setup()
+  local at = BASE + 0x10000 - 5 -- chunks are 0x10000 bytes
+  e.poke(at, printerCode(0x0A))
+  h.eq(Menu.locatePrinter(nil, BASE, 0x20000), at)
+end)
+
+h.test("menu: no match, or more than one, means no printer", function()
+  local e = setup()
+  local addr, why = Menu.locatePrinter(nil, BASE, 0x4000)
+  h.eq(addr, nil)
+  h.eq(why, "not found")
+  e.poke(BASE + 0x10, printerCode(0x03))
+  e.poke(BASE + 0x400, printerCode(0x03))
+  addr, why = Menu.locatePrinter(nil, BASE, 0x4000)
+  h.eq(addr, nil)
+  h.eq(why, "found more than once")
+end)
+
+h.test("menu: the first bytes alone aren't enough", function()
+  local e = setup()
+  e.poke(BASE + 0x10, HEAD .. "\x03\x49\x00\x68\x00\x28") -- ldr into r1: a different function
+  h.eq(Menu.locatePrinter(nil, BASE, 0x4000), nil)
+end)

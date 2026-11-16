@@ -14,7 +14,7 @@ local CONFIG = {
 }
 
 local ADAPTER = "mgba-gen3"
-local VERSION = "0.2.0"
+local VERSION = "0.3.0"
 
 ---------------------------------------------------------------------------
 -- module loading (works from any folder, and survives reloading the script)
@@ -136,18 +136,20 @@ end
 
 local function setupMenuHook()
   state.menu = nil
-  local printer = state.cfg.printer
-  if not printer then return end
   if not (emu.setBreakpoint and emu.readRegister) then
     warn("[pokelearning] this mGBA can't watch menus (it needs scripting breakpoints: use the app's mGBA)")
     return
   end
-  if emu:readRange(printer.addr, #printer.bytes) ~= printer.bytes then
-    warn("[pokelearning] the text printer isn't at the expected address in this ROM, menus won't be translated")
+  local addr, why = Menu.locatePrinter(state.cfg.printer)
+  if not addr then
+    warn("[pokelearning] couldn't find the game's text printer (" .. why .. "), menus won't be translated")
     return
   end
+  if not (state.cfg.printer and state.cfg.printer.addr == addr) then
+    log(string.format("[pokelearning] text printer found at 0x%08X", addr))
+  end
   local menu = Menu.new(state.cfg.lang)
-  local ok, id = pcall(emu.setBreakpoint, emu, function() menu:onPrint(state.frame) end, printer.addr)
+  local ok, id = pcall(emu.setBreakpoint, emu, function() menu:onPrint(state.frame) end, addr)
   if ok then
     state.menu = menu
     table.insert(_POKELEARNING.breakpoints, id)

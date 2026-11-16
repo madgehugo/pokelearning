@@ -15,6 +15,46 @@ M.__index = M
 M.QUIET_FRAMES = 15 -- ~0.25 s without a new string
 M.MAX_ITEMS = 24
 
+-- Finding AddTextPrinter. Games list its address in their config when it is known (checked
+-- against the function's first bytes). Otherwise it's found by the start of its code, which
+-- the compiler produces from the same source in every Gen 3 game: push {r4-r7,lr};
+-- adds r6,r0,#0; mov ip,r2; lsls r1,r1,#24; lsrs r5,r1,#24 — then ldr r0,[pc,#n]; ldr r0,[r0]; cmp r0,#0.
+local SIGNATURE_HEAD = "\xF0\xB5\x06\x1C\x94\x46\x09\x06\x0D\x0E"
+local SIGNATURE_TAIL = "\x48\x00\x68\x00\x28" -- after one byte of pc-relative offset
+local SCAN_BYTES = 0x100000 -- the text code is in the first megabyte of the ROM
+local SCAN_CHUNK = 0x10000
+
+-- Addresses in [from, from + size) where the signature matches.
+function M.findPrinters(from, size)
+  local found = {}
+  local head, tail = SIGNATURE_HEAD, SIGNATURE_TAIL
+  local span = #head + 1 + #tail
+  for offset = 0, size - 1, SCAN_CHUNK do
+    local len = math.min(SCAN_CHUNK + span - 1, size - offset)
+    local bytes = emu:readRange(from + offset, len)
+    local pos = 1
+    while true do
+      local at = bytes:find(head, pos, true)
+      if not at then break end
+      -- matches that start in the overlap belong to the next chunk
+      if at <= SCAN_CHUNK and bytes:sub(at + #head + 1, at + #head + #tail) == tail then
+        found[#found + 1] = from + offset + at - 1
+      end
+      pos = at + 1
+    end
+  end
+  return found
+end
+
+-- The address of AddTextPrinter, or nil and the reason it wasn't found.
+-- `printer` is the game's config entry { addr, bytes }, if it has one.
+function M.locatePrinter(printer, from, size)
+  if printer and emu:readRange(printer.addr, #printer.bytes) == printer.bytes then return printer.addr end
+  local found = M.findPrinters(from or 0x08000000, size or SCAN_BYTES)
+  if #found == 1 then return found[1] end
+  return nil, #found == 0 and "not found" or "found more than once"
+end
+
 function M.new(lang)
   return setmetatable({ lang = lang, items = {}, seen = {}, address = nil, lastFrame = 0, lastSent = nil }, M)
 end
