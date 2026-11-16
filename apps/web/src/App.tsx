@@ -9,6 +9,7 @@ import { Setup } from "./components/Setup.tsx";
 import { Review } from "./components/Review.tsx";
 import { StatusBar } from "./components/StatusBar.tsx";
 import { Words } from "./components/Words.tsx";
+import { usePrefs } from "./prefs.ts";
 import { useServer } from "./useServer.ts";
 import { wordsOf } from "./words.ts";
 
@@ -87,7 +88,7 @@ function Live({ top, lines, status, hasOlder, loadOlder, saved, hidden }: LivePr
   // Only lines that arrive while you watch print in; the first snapshot appears at once.
   const firstSeenId = useRef<number | null>(null);
   if (firstSeenId.current === null && latest) firstSeenId.current = latest.id;
-  const print = following && !!current && current.id !== firstSeenId.current;
+  const print = usePrefs().printIn && following && !!current && current.id !== firstSeenId.current;
 
   useEffect(() => setSelected(null), [current?.id]);
 

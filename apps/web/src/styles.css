@@ -80,13 +80,14 @@
 
 html {
   -webkit-text-size-adjust: 100%;
+  font-size: calc(100% * var(--text-scale, 1)); /* the "Aa" menu */
 }
 
 body {
   margin: 0;
   background: var(--bg);
   color: var(--ink);
-  font: 400 17px/1.5 var(--font-ui);
+  font: 400 1.0625rem/1.5 var(--font-ui);
 }
 
 button {
@@ -1323,4 +1324,46 @@ kbd {
 }
 .undo-button:hover:not(:disabled) {
   color: var(--ink);
+}
+
+/* "Aa" display settings */
+.prefs {
+  position: relative;
+  font-size: var(--step--1);
+}
+.prefs summary {
+  cursor: pointer;
+  list-style: none;
+  color: var(--ink-soft);
+  padding: 2px 6px;
+  border-radius: 6px;
+  user-select: none;
+}
+.prefs summary::-webkit-details-marker {
+  display: none;
+}
+.prefs[open] summary {
+  background: var(--cursor-wash);
+}
+.prefs__body {
+  position: absolute;
+  right: 0;
+  z-index: 10;
+  min-width: 13em;
+  margin-top: 4px;
+  padding: 10px 12px;
+  display: grid;
+  gap: 8px;
+  background: var(--box);
+  border: 1px solid var(--frame-inner);
+  border-radius: 10px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+}
+.prefs__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.prefs__row span:first-child {
+  flex: 1;
 }

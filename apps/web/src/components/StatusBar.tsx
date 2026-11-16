@@ -2,6 +2,7 @@ import type { ServerStatus } from "@pokelearning/shared";
 import type { Route } from "../App.tsx";
 import type { Connection } from "../useServer.ts";
 import { gameName } from "../words.ts";
+import { PrefsMenu } from "./PrefsMenu.tsx";
 
 interface Props {
   connection: Connection;
@@ -45,6 +46,7 @@ export function StatusBar(props: Props) {
         {text}
         {translationOff && <span className="status__extra"> Translation is loading or off.</span>}
       </p>
+      <PrefsMenu />
     </header>
   );
 }

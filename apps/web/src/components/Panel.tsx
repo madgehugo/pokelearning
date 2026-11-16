@@ -9,6 +9,8 @@ import type { useServer } from "../useServer.ts";
 import { Breakdown } from "./Breakdown.tsx";
 import { DialogueBox } from "./DialogueBox.tsx";
 import { HiddenList } from "./HiddenList.tsx";
+import { PrefsMenu } from "./PrefsMenu.tsx";
+import { usePrefs } from "../prefs.ts";
 
 type Server = ReturnType<typeof useServer>;
 
@@ -50,7 +52,8 @@ export function Panel({ server }: { server: Server }) {
 
   const firstSeen = useRef<number | null>(null);
   if (firstSeen.current === null && lines[0]) firstSeen.current = lines[0].id;
-  const print = offset === 0 && !!line && line.id !== firstSeen.current;
+  const prefs = usePrefs();
+  const print = prefs.printIn && offset === 0 && !!line && line.id !== firstSeen.current;
 
   const site = `${location.origin}/#/`;
   return (
@@ -80,6 +83,7 @@ export function Panel({ server }: { server: Server }) {
               Dock
             </button>
           )}
+          <PrefsMenu />
         </nav>
       </header>
 
