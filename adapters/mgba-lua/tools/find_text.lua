@@ -4,6 +4,9 @@
 -- then type commands into the scripting console's input line:
 --
 --   find("Hallo")             search EWRAM + IWRAM for this text (as Gen 3 bytes)
+--   find("Hallo", true)       … and the ROM too (text printed straight from ROM)
+--   findPointer(0x08123456)   list RAM words pointing into the string at this address
+--   watchCursor(0x03001234)   print the string a pointer at this RAM address points into
 --   watch(0x02021FC4)         print the string at this address whenever it changes
 --   unwatch()                 stop all watches
 --   dump(0x02021FC4, 64)      hex dump + decoded text
@@ -19,7 +22,9 @@ if not package.path:find(root, 1, true) then
   package.path = root .. "/?.lua;" .. package.path
 end
 package.loaded["lib.charmap"] = nil
+package.loaded["lib.textmem"] = nil
 local charmap = require("lib.charmap")
+local textmem = require("lib.textmem")
 
 local REGIONS = {
   { name = "EWRAM", start = 0x02000000, size = 0x40000 },
@@ -39,23 +44,6 @@ local function preview(bytes, max)
     text = text:sub(1, utf8.offset(text, max + 1) - 1) .. "…"
   end
   return text
-end
-
--- Walk back from a hit to the likely start of the string. Stops after the
--- previous terminator, or before a run of 4+ identical bytes (uninitialised or
--- filled memory, which real text practically never contains).
--- Returns the start position, or nil if no plausible start within 1000 bytes.
-local function stringStart(mem, pos)
-  local p = pos
-  while p > 1 and pos - p < 1000 do
-    local b = mem:byte(p - 1)
-    if b == 0xFF then return p end
-    if p > 4 and mem:byte(p - 2) == b and mem:byte(p - 3) == b and mem:byte(p - 4) == b then
-      return p
-    end
-    p = p - 1
-  end
-  return nil
 end
 
 -- Known buffers of the running game (from games/emerald.lua), to label hits.
@@ -78,7 +66,9 @@ local function label(addr, buffers)
   return ""
 end
 
-function find(text)
+local watches = {}
+
+function find(text, includeRom)
   local needle, bad = charmap.encode(text, LANG)
   if not needle then
     log("find: cannot encode character '" .. tostring(bad) .. "'")
@@ -94,11 +84,10 @@ function find(text)
       if not s then break end
       hits = hits + 1
       local addr = r.start + s - 1
-      local start = stringStart(mem, s)
+      local start, found = textmem.stringStart(addr, 1000)
       log(string.format("%s hit at 0x%08X%s", r.name, addr, label(addr, buffers)))
-      if start then
-        log(string.format("  string starts ~0x%08X: \"%s\"", r.start + start - 1,
-          preview(mem:sub(start, start + 300))))
+      if found then
+        log(string.format("  string starts ~0x%08X: \"%s\"", start, preview(textmem.readString(start, 300))))
       else
         log("  string start unclear (no terminator within 1000 bytes)")
       end
@@ -106,10 +95,54 @@ function find(text)
       pos = s + 1
     end
   end
+  if includeRom then
+    local romSize, chunk = 0x02000000, 0x100000
+    for off = 0, romSize - 1, chunk do
+      local base = textmem.ROM_START + off
+      local mem = emu:readRange(base, math.min(chunk + #needle, romSize - off))
+      local pos = 1
+      while true do
+        local s = mem:find(needle, pos, true)
+        if not s or s > chunk then break end
+        hits = hits + 1
+        local addr = base + s - 1
+        local start = textmem.stringStart(addr, 1000)
+        log(string.format("ROM hit at 0x%08X  string starts 0x%08X: \"%s\"", addr, start,
+          preview(textmem.readString(start, 300))))
+        log(string.format("  next: findPointer(0x%08X) while this text is on screen", start))
+        pos = s + 1
+      end
+    end
+  end
   log(string.format("find(\"%s\"): %d hit(s)", text, hits))
 end
 
-local watches = {}
+-- RAM words whose value points into the string at `addr` (a text printer's
+-- cursor, while that text is on screen).
+function findPointer(addr, len)
+  len = len or #textmem.readString(addr, 1000) + 2
+  local found, n = textmem.scanPointers(addr, addr + len), 0
+  for where, value in pairs(found) do
+    n = n + 1
+    log(string.format("0x%08X -> 0x%08X (+%d)", where, value, value - addr))
+  end
+  log(string.format("findPointer(0x%08X): %d pointer(s). Try watchCursor(...) on each, then change the text on screen.", addr, n))
+end
+
+function watchCursor(where)
+  local lastStart
+  local id = callbacks:add("frame", function()
+    local ptr = emu:read32(where)
+    local start = (textmem.isRom(ptr) or textmem.isRam(ptr)) and textmem.printerStringStart(ptr, 1000) or nil
+    if start ~= lastStart then
+      lastStart = start
+      log(string.format("[cursor 0x%08X] %s", where,
+        start and string.format("0x%08X \"%s\"", start, preview(textmem.readString(start, 300), 200)) or "-"))
+    end
+  end)
+  watches[#watches + 1] = id
+  log(string.format("watching cursor 0x%08X (unwatch() to stop)", where))
+end
 
 function watch(addr, size)
   size = size or 1000
@@ -165,4 +198,4 @@ function strings(minLen)
   log(string.format("strings(%d): %d candidate(s)", minLen, count))
 end
 
-log("[find_text] ready: find(\"text\"), watch(addr), unwatch(), dump(addr, len), strings(minLen)")
+log("[find_text] ready: find(\"text\"[, true]), findPointer(addr), watchCursor(addr), watch(addr), unwatch(), dump(addr, len), strings(minLen)")

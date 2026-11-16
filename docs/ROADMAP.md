@@ -34,12 +34,10 @@
 ## Phase 5: Mini-games
 - Article sprint (der/die/das), cloze from your own game lines, listening (TTS), matching.
 
-## Adapter gaps (from phase 1)
-- **The same message twice in a row** isn't re-sent, because the buffer doesn't change. Options, best first:
-  1. Detect when the text box opens. Find the field message box state in RAM (pokeemerald's `sFieldMessageBoxMode`, or the active flag in `sTextPrinters[0]`) with a value-search helper, then emit on every transition to "printing", even if the text is the same.
-  2. Clear the buffer's first byte to `0xFF` once the box has closed, so the next message always looks like a change. This needs the same "box closed" signal as option 1, because writing during printing would break the game.
-  3. Use breakpoints on `ShowFieldMessage` once mGBA's scripting API exposes them (newer development builds). That is the most precise option.
-- **Text outside the two buffers** (some menus, item/Pokédex descriptions, the naming screen): add more buffers to `games/emerald.lua` (e.g. `gStringVar1–3`), read description pointers from ROM, or fall back to the OCR adapter.
+## Adapter gaps (from phase 1) ✅ (tested against a simulated printer; confirm in-game)
+- **The same message twice in a row**: the adapter finds the game's text printer cursor by itself (a RAM pointer that moves through the buffer while a message prints) and sends the message again, marked `repeated`, whenever that cursor jumps back into the buffer.
+- **Text printed straight from ROM** (item descriptions, Pokédex entries…): "cursor sources" in `games/emerald.lua` follow a printer's pointer into ROM and send the whole string once it has stayed on screen for about 0.5 s. Each one needs its address found once with `find(…, true)`, `findPointer` and `watchCursor` (docs/finding-addresses.md).
+- Still not covered: screens that draw text without a text printer (e.g. the naming screen). That would need the OCR adapter.
 
 ## Phase 6: More adapters
 - Other Gen 3 games (Rubin/Saphir, Feuerrot/Blattgrün) as additional `games/*.lua` modules.

@@ -37,6 +37,8 @@ export interface LineMeta {
   source?: string;
   /** The text split into text-box pages, each with "\n" line breaks. */
   pages?: string[];
+  /** The same message was shown again (e.g. talking to the same NPC twice). */
+  repeated?: boolean;
   [key: string]: unknown;
 }
 

@@ -75,6 +75,53 @@ the `BPED` entry.
 8. Write the confirmed addresses into the `BPED` entry in
    `adapters/mgba-lua/games/emerald.lua` and set that buffer's `verified = true`.
 
+## 3. The text printer (repeated messages): automatic
+
+You don't need to do anything here. After a few messages, the console prints
+`field text printer found at 0x0300…`. This is the game's pointer to the
+character being printed. From then on, a message shown twice in a row (the same
+NPC again, or the same battle message) is sent again, marked "again". If it
+stops working, the adapter notices and searches again. Once you know the
+address, you can pin it in `games/emerald.lua` with `cursor = 0x0300…` on the
+buffer.
+
+## 4. Text printed straight from ROM (bag, Pokédex…)
+
+Item descriptions and Pokédex entries never pass through the two buffers; the
+game prints them directly from the ROM. You can register each screen once:
+
+1. Open the bag and highlight an item, e.g. a Trank. Its description is on screen.
+2. Search including the ROM:
+
+   ```lua
+   find("wiederherstellt", true)
+   ```
+
+   ```
+   ROM hit at 0x08xxxxxx  string starts 0x08yyyyyy: "Ein Trank, der 20 KP wiederherstellt."
+     next: findPointer(0x08yyyyyy) while this text is on screen
+   ```
+
+3. Find the RAM word pointing into that string (the printer's cursor):
+
+   ```lua
+   findPointer(0x08yyyyyy)
+   ```
+
+4. Confirm each candidate with `watchCursor(0x0300zzzz)` and move to another
+   item. The right one prints the new description every time.
+5. Try it live with `pokelearning.addCursor("bag", 0x0300zzzz)`, then add it
+   to the `BPED` entry in `games/emerald.lua`:
+
+   ```lua
+   cursors = { { name = "bag", addr = 0x0300zzzz } },
+   ```
+
+The same steps work for the Pokédex (search for a word from an entry) and other
+screens. Different screens often use different printers, so each gets its own
+`cursors` entry. Text is sent once it has stayed on screen for about half a
+second, so scrolling through the bag doesn't flood you.
+
 ## Other helpers
 
 - `dump(0x02021FC4, 64)` shows a hex dump plus the decoded text. Use it to spot
@@ -93,8 +140,5 @@ the `BPED` entry.
 
 ## Known limitations
 
-- The same message twice in a row (talking to the same NPC again) is not
-  re-sent, because the buffer content doesn't change. A later version can
-  watch the text printer's "active" flag to catch this.
-- Text that bypasses these two buffers (some menus, the naming screen) is not
-  captured.
+- Screens that draw text without a text printer (e.g. the naming screen) are
+  not captured.

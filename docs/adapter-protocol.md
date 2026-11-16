@@ -44,13 +44,13 @@ One complete piece of dialogue (a whole message, which can span several text-box
 | `line` | yes (line) | Text with layout line breaks flattened to single spaces. A hyphen at a line break is kept (`POKéMON-Center`). |
 | `timestamp` | yes | Unix epoch **milliseconds**; `0` if unknown |
 | `lang` | no | Language of the text |
-| `meta` | no | Adapter-specific. `source` and `pages` are conventions. |
+| `meta` | no | Adapter-specific. Conventions: `source` (`field`, `battle`, `bag`…), `pages`, and `repeated: true` when an unchanged message is shown again. |
 
 ## Writing a new adapter
 
 - **Another Gen 3 game for mGBA**: add `adapters/mgba-lua/games/<game>.lua`
   exporting `name`, `matches(gameCode)` and `config(gameCode)`. `config`
-  returns `{ game, lang, verified, buffers = { { name, addr, size } } }`.
+  returns `{ game, lang, buffers = { { name, addr, size, verified, cursor? } }, cursors? = { { name, addr } } }`.
   Register it in `GAMES` in `main.lua`.
 - **Anything else** (OCR, another emulator): open a TCP connection, send
   `hello`, then one `line` per new dialogue line.

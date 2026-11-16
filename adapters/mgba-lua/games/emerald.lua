@@ -16,6 +16,11 @@ M.name = "Pokémon Emerald"
 
 -- Keyed by the 4-letter game code at ROM 0x080000AC.
 -- `verified = false` means the address is a guess: main.lua warns about it.
+-- A buffer may also set `cursor` (RAM address of the text printer's pointer
+-- into it); otherwise main.lua discovers it after a few messages.
+-- `cursors` lists text printed straight from ROM, e.g.
+--   cursors = { { name = "bag", addr = 0x0300xxxx } }
+-- (find addresses with tools/find_text.lua: docs/finding-addresses.md).
 M.versions = {
   BPEE = {
     game = "pokemon-emerald-en",
@@ -33,6 +38,7 @@ M.versions = {
       { name = "field",  addr = 0x02021FC4, size = 1000, verified = true },
       { name = "battle", addr = 0x02022E2C, size = 300,  verified = true },
     },
+    cursors = {},
   },
 }
 
