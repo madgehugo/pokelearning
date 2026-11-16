@@ -67,7 +67,7 @@ final class PanelController: NSObject, NSWindowDelegate, WKNavigationDelegate, W
   var onClose: () -> Void = {}
   private let panel: FloatingPanel
   private let web: WKWebView
-  private var following = true
+  private var following = true { didSet { pushDockState() } }
   private var placing = false
   private var lastEmulator: NSRect?
   private var retry: Timer?
@@ -131,6 +131,13 @@ final class PanelController: NSObject, NSWindowDelegate, WKNavigationDelegate, W
     panel.setFrame(NSRect(x: x, y: y, width: width, height: height), display: true, animate: false)
     placing = false
   }
+
+  /// Tell the page whether the panel is docked; it only offers "Dock" once you've moved it away.
+  private func pushDockState() {
+    web.evaluateJavaScript("window.__panelDocked = \(following); window.dispatchEvent(new Event('panel-docked'))")
+  }
+
+  func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) { pushDockState() }
 
   // You moved the panel yourself: stop following until "Dock".
   func windowDidMove(_ notification: Notification) {

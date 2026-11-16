@@ -23,7 +23,7 @@ export interface WordSense {
   formTags?: string;
   /** Separable verb prefix if this reading is a separable verb ("aus" in ausruhen). */
   particle?: string;
-  source: "dictionary" | "glossary";
+  source: "dictionary" | "glossary" | "derived";
 }
 
 export interface TokenAnalysis {

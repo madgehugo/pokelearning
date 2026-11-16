@@ -55,6 +55,21 @@ export interface SavedWord {
 /** Identifies a word across the app: `${lemma}|${pos}`. */
 export const wordKey = (lemma: string, pos: string) => `${lemma}|${pos}`;
 
+/** `pos` of a hidden word that has no dictionary entry (a player's name, say): it is hidden by its spelling. */
+export const UNKNOWN_POS = "unknown";
+
+/** What a hidden word is called in the list of hidden words: its lemma and part of speech, or its spelling if the dictionary doesn't know it. */
+export function hiddenWordOf(token: { text: string; kind: string; best?: { lemma: string; pos: string; glosses: string[] } }): { lemma: string; pos: string } | null {
+  if (token.best) return { lemma: token.best.lemma, pos: token.best.pos };
+  return token.kind === "word" ? { lemma: token.text.toLowerCase(), pos: UNKNOWN_POS } : null;
+}
+
+/** The wordKey() a token is hidden under, if it can be hidden. */
+export function hiddenKeyOf(token: Parameters<typeof hiddenWordOf>[0]): string | null {
+  const w = hiddenWordOf(token);
+  return w ? wordKey(w.lemma, w.pos) : null;
+}
+
 /** A word hidden from the breakdown, with enough to recognise it in the list of hidden words. */
 export interface HiddenWord {
   lemma: string;

@@ -118,3 +118,44 @@ describe("analyzeLine", () => {
     assert.equal(a.tokens[0]?.best, undefined);
   });
 });
+
+describe("compounds without an entry", () => {
+  const noun = (word: string, gloss: string, gender = "m") => ({
+    word, pos: "noun", head_templates: [{ args: { "1": `${gender},s,^e` } }], senses: [{ glosses: [gloss] }],
+  });
+  const compoundDeps = {
+    dictionary: fixtureDictionary([
+      noun("Knopf", "button"),
+      noun("Geburt", "birth", "f"),
+      noun("Tag", "day"),
+      { word: "belegen", pos: "verb", senses: [{ glosses: ["to cover; to occupy"] }] },
+    ]),
+    glossary: createGlossary([]),
+  };
+  const analyse = (text: string) => analyzeLine(text, compoundDeps).tokens[0]!;
+
+  it("splits a compound into its dictionary words", () => {
+    const t = analyse("KNOPFTAG");
+    assert.equal(t.best, undefined);
+    assert.deepEqual(t.parts?.map((p) => [p.text, p.best?.lemma]), [["KNOPF", "Knopf"], ["TAG", "Tag"]]);
+    assert.deepEqual([t.parts![0]!.start, t.parts![1]!.end], [t.start, t.end]);
+  });
+
+  it("allows a linking s", () => {
+    assert.deepEqual(analyse("Geburtstag").parts?.map((p) => [p.text, p.best?.lemma]), [["Geburts", "Geburt"], ["tag", "Tag"]]);
+  });
+
+  it("reads a noun in -ung from its verb", () => {
+    const t = analyse("KNOPFBELEGUNG");
+    const last = t.parts!.at(-1)!;
+    assert.equal(last.best?.lemma, "Belegung");
+    assert.equal(last.best?.source, "derived");
+    assert.deepEqual(last.best?.articles, ["die"]);
+    assert.match(last.best!.glosses[0]!, /belegen/);
+  });
+
+  it("leaves words alone that aren't compounds of known words", () => {
+    assert.equal(analyse("XYZABCDEFG").parts, undefined);
+    assert.equal(analyse("AAa").parts, undefined);
+  });
+});

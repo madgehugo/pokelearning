@@ -1,5 +1,5 @@
 import { Fragment, type CSSProperties, type ReactNode } from "react";
-import { menuRows, wordKey, type ProcessedLine } from "@pokelearning/shared";
+import { hiddenKeyOf, menuRows, wordKey, type ProcessedLine } from "@pokelearning/shared";
 import { genderKey } from "../words.ts";
 
 interface Props {
@@ -40,7 +40,7 @@ export function DialogueBox({ line, selected, onSelect, print, saved, hidden }: 
     tokens.forEach((t, i) => {
       if (t.start > cursor) add(cursor, line.text.slice(cursor, t.start));
       cursor = t.end;
-      if (t.kind !== "word" || (t.best && hidden.has(wordKey(t.best.lemma, t.best.pos)))) {
+      if (t.kind !== "word" || hidden.has(hiddenKeyOf(t) ?? "")) {
         add(
           t.start,
           <span key={i} className="piece" style={delay(t.start)}>

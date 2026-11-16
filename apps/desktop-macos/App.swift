@@ -6,6 +6,7 @@
 // closes mGBA and stops the server.
 
 import AppKit
+import Carbon.HIToolbox
 import UniformTypeIdentifiers
 import WebKit
 
@@ -15,6 +16,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   private lazy var server = ServerProcess(paths: paths)
   private var emulator: Process?
   private var panel: PanelController?
+  private let hotKeys = HotKeys()
   private let scriptingWindow = ScriptingWindowHider()
   private var setupWindow: NSWindow?
   private var quitting = false
@@ -36,6 +38,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       return
     }
     buildMenu()
+    hotKeys.register(key: kVK_ANSI_P) { [weak self] in self?.showPanel() }
+    hotKeys.register(key: kVK_ANSI_D) { [weak self] in self?.panel?.dock() }
     server.onUnexpectedExit = { [weak self] code in self?.serverStopped(code) }
     Task { await launch() }
   }
@@ -235,7 +239,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       item("Words", #selector(openWords), "3"),
       item("Games", #selector(openGames), "4"),
     ])
-    submenu("Panel", [item("Show Panel", #selector(showPanelAction), "p"), item("Dock Next to mGBA", #selector(dock), "d")])
+    // Control-Option, not Command: mGBA uses Command-P to pause, and these also work while the game has the keyboard (see HotKeys)
+    let show = item("Show Panel", #selector(showPanelAction), "p")
+    let dockItem = item("Dock Next to mGBA", #selector(dock), "d")
+    [show, dockItem].forEach { $0.keyEquivalentModifierMask = [.control, .option] }
+    submenu("Panel", [show, dockItem])
     phoneItem.target = self
     submenu("Phone", [phoneItem])
     NSApp.mainMenu = main

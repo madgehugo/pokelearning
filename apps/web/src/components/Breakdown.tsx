@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { wordKey, type SaveWordRequest, type TokenAnalysis, type WordSense } from "@pokelearning/shared";
+import { hiddenKeyOf, hiddenWordOf, wordKey, type HiddenWord, type SaveWordRequest, type TokenAnalysis, type WordSense } from "@pokelearning/shared";
 import { api } from "../api.ts";
 import {
   describeForm,
@@ -25,7 +25,7 @@ interface Props {
 }
 
 export function Breakdown({ lineId, tokens, selected, onSelect, saved, hidden }: Props) {
-  const words = wordsOf(tokens).filter(({ token }) => !(token.best && hidden.has(wordKey(token.best.lemma, token.best.pos))));
+  const words = wordsOf(tokens).filter(({ token }) => !hidden.has(hiddenKeyOf(token) ?? ""));
   const selectedRow = useRef<HTMLLIElement>(null);
 
   useEffect(() => {
@@ -102,7 +102,7 @@ function Details({ token, tokens, lineId, index, saved, onHidden }: DetailsProps
     <div className="details">
       {sense && <SenseDetails sense={sense} />}
       {sense && <SaveButton sense={sense} saved={saved} request={{ lineId, tokenIndex: index }} />}
-      {sense && <HideButton sense={sense} onHidden={onHidden} />}
+      <HideButton token={token} onHidden={onHidden} />
       {sense?.particle && linked && sense.formTags !== "separated prefix" && (
         <p className="note">
           Separable verb: <i lang="de">{linked.text}</i> at the end of the clause belongs to it, giving{" "}
@@ -202,11 +202,17 @@ function SenseDetails({ sense, compact = false }: { sense: WordSense; compact?: 
 }
 
 /** Takes the word out of the breakdown (it can be shown again from the list of hidden words). */
-function HideButton({ sense, onHidden }: { sense: WordSense; onHidden(): void }) {
+function HideButton({ token, onHidden }: { token: TokenAnalysis; onHidden(): void }) {
   const [error, setError] = useState<string | null>(null);
+  const word = hiddenWordOf(token);
+  if (!word) return null;
   const hide = async () => {
     try {
-      await api.hideWord({ lemma: sense.lemma, pos: sense.pos, gloss: shortGloss(sense.glosses[0]) });
+      const hidden: HiddenWord = {
+        ...word,
+        gloss: token.best ? shortGloss(token.best.glosses[0]) : "not in the dictionary",
+      };
+      await api.hideWord(hidden);
       onHidden();
     } catch (err) {
       setError((err as Error).message);

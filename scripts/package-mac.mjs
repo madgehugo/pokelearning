@@ -138,7 +138,7 @@ step("compiling the app");
 run("swiftc", [
   "-O", "-parse-as-library", "-target", "arm64-apple-macos14.0",
   "-o", path.join(contents, "MacOS/Pokelearning"),
-  "apps/panel-macos/PanelCore.swift", "apps/desktop-macos/ScriptingWindow.swift", "apps/desktop-macos/Server.swift", "apps/desktop-macos/App.swift",
+  "apps/panel-macos/PanelCore.swift", "apps/desktop-macos/ScriptingWindow.swift", "apps/desktop-macos/Server.swift", "apps/desktop-macos/HotKeys.swift", "apps/desktop-macos/App.swift",
 ]);
 
 // 8. icon -------------------------------------------------------------------------------------------

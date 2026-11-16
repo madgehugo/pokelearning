@@ -62,7 +62,7 @@ to load. Quitting mGBA quits the app.
 
 The app's menus:
 - **Go**: Live, Review, Words and Games, in your browser (⌘1–⌘4).
-- **Panel**: Show Panel (⌘P) and Dock Next to mGBA (⌘D).
+- **Panel**: Show Panel (⌃⌥P) and Dock Next to mGBA (⌃⌥D). These also work while the game has the keyboard; ⌘P would pause mGBA.
 - **File**:
   - Change ROM…
   - Back Up Progress… and Restore Progress…
@@ -148,7 +148,7 @@ running until you quit it.
   The number next to Review is how many cards are due.
 - The panel stays on top of the game (it hides while another app is in front) and follows mGBA when you move it.
   Clicking in it doesn't take the keyboard away from the game. If you drag the
-  panel somewhere else, it stays there. **Dock** puts it back next to mGBA.
+  panel somewhere else, it stays there. **Dock** (it appears in the panel once you have moved it) puts it back next to mGBA.
 
 ### The website
 
@@ -255,7 +255,7 @@ Start with the two status lines: the panel's (or the website's top bar), and
 | Setup says *No internet connection* | A download failed | Connect, then **Try again**. Finished steps aren't downloaded again |
 | *mGBA didn't start* | The app is incomplete | Download the DMG again and replace the app |
 | *The companion server stopped* | It crashed | **Restart**. If it happens again, File → Show Logs and send the log |
-| The panel is gone | It was closed | **Panel → Show Panel** (⌘P) |
+| The panel is gone | It was closed | **Panel → Show Panel**, press ⌃⌥P, or click the Pokélearning icon in the Dock |
 | The wrong game starts | A different ROM was chosen | **File → Change ROM…** |
 | mGBA's keys or settings differ from your own mGBA | The app's mGBA shares settings with any mGBA you have installed (`~/.config/mGBA`) | Change them in mGBA's settings as usual |
 

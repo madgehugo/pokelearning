@@ -29,7 +29,21 @@ function state(server: Server): { state: "live" | "waiting" | "offline"; text: s
   return { state: "live", text: "Live" };
 }
 
+/** Whether the panel sits next to mGBA; the native panel says so whenever that changes. */
+function useDocked(): boolean {
+  const read = () => (window as unknown as { __panelDocked?: boolean }).__panelDocked !== false;
+  const [docked, setDocked] = useState(read);
+  useEffect(() => {
+    const update = () => setDocked(read());
+    window.addEventListener("panel-docked", update);
+    update();
+    return () => window.removeEventListener("panel-docked", update);
+  }, []);
+  return docked;
+}
+
 export function Panel({ server }: { server: Server }) {
+  const docked = useDocked();
   const { lines, status, wordbank } = server;
   const saved = useMemo(() => new Set(wordbank?.saved ?? []), [wordbank]);
   const hiddenWords = wordbank?.hidden ?? [];
@@ -78,7 +92,7 @@ export function Panel({ server }: { server: Server }) {
               Latest ›
             </button>
           )}
-          {bridge() && (
+          {bridge() && !docked && (
             <button type="button" className="link-button" onClick={() => bridge()!.postMessage("dock")}>
               Dock
             </button>
