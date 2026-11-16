@@ -70,6 +70,17 @@ describe("analyzeLine", () => {
     assert.equal(word("Ich ruhe, aus Prinzip.", "ruhe").best?.lemma, "ruhen");
   });
 
+  it("prefers a present-tense reading over another verb's subjunctive", () => {
+    const deps2 = {
+      dictionary: fixtureDictionary([
+        { word: "führen", pos: "verb", senses: [{ glosses: ["to lead"] }], forms: [{ form: "führt", tags: ["indicative", "present", "singular", "third-person"] }] },
+        { word: "fahren", pos: "verb", senses: [{ glosses: ["to drive"] }, { glosses: ["to go"] }, { glosses: ["to ride"] }], forms: [{ form: "führt", tags: ["plural", "second-person", "subjunctive-ii"] }] },
+      ]),
+      glossary,
+    };
+    assert.equal(analyzeLine("Der Weg führt dorthin.", deps2).tokens.find((t) => t.text === "führt")?.best?.lemma, "führen");
+  });
+
   it("does not read a lowercase word as a noun", () => {
     assert.equal(word("Ich ruhe.", "ruhe").best?.pos, "verb");
     assert.equal(word("Die Ruhe.", "Ruhe").best?.lemma, "Ruhe");

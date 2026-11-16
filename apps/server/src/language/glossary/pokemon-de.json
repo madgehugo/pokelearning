@@ -1,93 +1,106 @@
 [
   {
-    "match": ["Pokémon"],
+    "match": [
+      "Pokémon"
+    ],
     "lemma": "Pokémon",
     "pos": "noun",
     "gender": "n",
-    "glosses": ["Pokémon (the creatures)"]
+    "glosses": [
+      "Pokémon (the creatures)"
+    ]
   },
   {
-    "match": ["Pokéball"],
-    "lemma": "Pokéball",
-    "pos": "noun",
-    "gender": "m",
-    "glosses": ["Poké Ball"],
-    "mt": "Poké Ball"
-  },
-  {
-    "match": ["Pokédex"],
+    "match": [
+      "Pokédex"
+    ],
     "lemma": "Pokédex",
     "pos": "noun",
     "gender": "m",
-    "glosses": ["Pokédex"]
+    "glosses": [
+      "Pokédex"
+    ]
   },
   {
-    "match": ["Pokémon-Center"],
+    "match": [
+      "Pokémon-Center"
+    ],
     "lemma": "Pokémon-Center",
     "pos": "noun",
     "gender": "n",
-    "glosses": ["Pokémon Center (heals your Pokémon)"],
+    "glosses": [
+      "Pokémon Center (heals your Pokémon)"
+    ],
     "mt": "Pokémon Center"
   },
   {
-    "match": ["KP"],
+    "match": [
+      "KP"
+    ],
     "lemma": "KP (Kraftpunkte)",
     "pos": "abbrev",
     "gender": "pl",
-    "glosses": ["HP, hit points"],
+    "glosses": [
+      "HP, hit points"
+    ],
     "mt": "HP"
   },
   {
-    "match": ["AP"],
+    "match": [
+      "AP"
+    ],
     "lemma": "AP (Angriffspunkte)",
     "pos": "abbrev",
     "gender": "pl",
-    "glosses": ["PP, power points"],
+    "glosses": [
+      "PP, power points"
+    ],
     "mt": "PP"
   },
   {
-    "match": ["VM"],
+    "match": [
+      "VM"
+    ],
     "lemma": "VM (Versteckte Maschine)",
     "pos": "abbrev",
     "gender": "f",
-    "glosses": ["HM, hidden machine"],
+    "glosses": [
+      "HM, hidden machine"
+    ],
     "mt": "HM"
   },
   {
-    "match": ["TM"],
+    "match": [
+      "TM"
+    ],
     "lemma": "TM (Technische Maschine)",
     "pos": "abbrev",
     "gender": "f",
-    "glosses": ["TM, technical machine"],
+    "glosses": [
+      "TM, technical machine"
+    ],
     "mt": "TM"
   },
   {
-    "match": ["Prof"],
+    "match": [
+      "Prof"
+    ],
     "lemma": "Professor",
     "pos": "noun",
     "gender": "m",
-    "glosses": ["professor (abbreviated Prof.)"]
+    "glosses": [
+      "professor (abbreviated Prof.)"
+    ]
   },
   {
-    "match": ["Birk"],
+    "match": [
+      "Birk"
+    ],
     "lemma": "Birk",
     "pos": "name",
-    "glosses": ["Professor Birch (English name)"],
+    "glosses": [
+      "Professor Birch (English name)"
+    ],
     "mt": "Birch"
-  },
-  {
-    "match": ["Wurzelheim"],
-    "lemma": "Wurzelheim",
-    "pos": "name",
-    "glosses": ["Littleroot Town (your hometown)"],
-    "mt": "Littleroot"
-  },
-  {
-    "match": ["Trank"],
-    "lemma": "Trank",
-    "pos": "noun",
-    "gender": "m",
-    "glosses": ["Potion (item that restores HP)", "drink, potion"],
-    "mt": "Potion"
   }
 ]

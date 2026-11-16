@@ -24,8 +24,8 @@ const warn = (text: string) => console.warn(styleText("yellow", `[${time()}] ${t
 
 const db = new AppDb(config.appDbPath);
 const { glossary, names } = loadGameGlossary();
-if (names !== null) info(`Pokémon names: ${names} species and moves up to generation ${config.namesMaxGeneration}`);
-else warn("no Pokémon names found: run `npm run names:import` to translate Pokémon and move names");
+if (names !== null) info(`game names: ${names} Pokémon, moves, abilities, items and places`);
+else warn("no game names found: run `npm run names:import` to translate Pokémon, moves, items and places");
 const dictionary = openDictionary(config.dictionaryDbPath);
 if (dictionary) info(`dictionary ${dictionary.version}`);
 else warn("no dictionary found: run `npm run dict:import` for the word-by-word breakdown");

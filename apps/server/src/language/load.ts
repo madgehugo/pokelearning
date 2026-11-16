@@ -5,6 +5,6 @@ import { loadNames, nameEntries } from "./names.ts";
 
 export function loadGameGlossary(): { glossary: Glossary; names: number | null } {
   const names = loadNames(config.namesPath);
-  const entries = names ? nameEntries(names, config.namesMaxGeneration) : [];
+  const entries = names ? nameEntries(names, config.namesScope) : [];
   return { glossary: loadGlossary(defaultGlossaryFile, entries), names: names ? entries.length : null };
 }

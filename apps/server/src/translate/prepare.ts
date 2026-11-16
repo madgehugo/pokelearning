@@ -46,8 +46,17 @@ function protect(text: string, glossary: Glossary): { text: string; slots: strin
 
   let out = "";
   let last = 0;
-  for (const t of tokenize(text)) {
+  const tokens = tokenize(text);
+  for (let i = 0; i < tokens.length; i++) {
+    const t = tokens[i]!;
     if (t.kind !== "word" || /^X\d+$/.test(t.text)) continue;
+    const phrase = glossary.phraseAt(tokens, i, text);
+    if (phrase?.entry.mt) {
+      out += text.slice(last, t.start) + slot(phrase.entry.mt);
+      last = tokens[phrase.last]!.end;
+      i = phrase.last;
+      continue;
+    }
     let replacement: string | undefined;
     const spelling = isAllCaps(t.text) ? titleCase(t.text) : t.text;
     const entry = glossary.get(spelling);
@@ -75,12 +84,22 @@ export function prepareSentences(text: string, glossary: Glossary): PreparedSent
   });
 }
 
-/** Put the English text back. Returns null if the translation lost a placeholder. */
+/**
+ * Put the English text back. Returns null if the translation lost a placeholder.
+ * The translator picked "a" or "an" for "X1", so it is fixed for the real name
+ * ("an X1" → "a Super Potion", "a X1" → "an Ember").
+ */
 export function restoreSlots(translated: string, slots: string[]): string | null {
   for (let i = 0; i < slots.length; i++) {
     if (!new RegExp(`\\bX${i + 1}\\b`).test(translated)) return null;
   }
-  return translated.replace(SLOT, (match, n: string) => slots[Number(n) - 1] ?? match);
+  return translated
+    .replace(/\b([Aa])n? (X(\d+))\b/g, (match, a: string, slot: string, n: string) => {
+      const name = slots[Number(n) - 1];
+      if (name === undefined) return match;
+      return `${/^[aeiou]/i.test(name) ? `${a}n` : a} ${slot}`;
+    })
+    .replace(SLOT, (match, n: string) => slots[Number(n) - 1] ?? match);
 }
 
 /** The sentence with the English text in place of the placeholders (fallback input). */

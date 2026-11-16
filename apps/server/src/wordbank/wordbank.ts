@@ -101,7 +101,7 @@ function findWord(tokens: TokenAnalysis[], lemma: string, pos: string): TokenAna
 
 function cardKinds(sense: Pick<WordSense, "pos" | "articles">, settings: Settings): CardKind[] {
   const kinds: CardKind[] = ["meaning"];
-  if (sense.pos === "noun" && sense.articles?.length === 1) kinds.push("article");
+  if ((sense.pos === "noun" || sense.pos === "item") && sense.articles?.length === 1) kinds.push("article");
   if (settings.recallCards) kinds.push("recall");
   return kinds;
 }
@@ -170,9 +170,10 @@ export class WordBank {
       )
       .get(wordId, line.text);
     if (dup) return false;
+    const end = token.phraseEnd ?? token.end; // a multi-word name is highlighted as a whole
     this.db
       .prepare("INSERT INTO word_contexts (word_id, line_id, form, start, end, created_at) VALUES (?, ?, ?, ?, ?, ?)")
-      .run(wordId, line.id, token.text, token.start, token.end, now);
+      .run(wordId, line.id, line.text.slice(token.start, end), token.start, end, now);
     this.db
       .prepare(
         `DELETE FROM word_contexts WHERE word_id = ? AND id NOT IN

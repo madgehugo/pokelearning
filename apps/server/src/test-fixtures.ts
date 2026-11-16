@@ -68,6 +68,11 @@ export const ENTRIES: KaikkiEntry[] = [
   },
   { word: "auf", pos: "prep", senses: [{ glosses: ["on, upon"] }] },
   { word: "Glut", pos: "noun", senses: [{ glosses: ["embers"], tags: ["feminine"] }] },
+  { word: "Trank", pos: "noun", senses: [{ glosses: ["drink, potion"], tags: ["masculine"] }] },
+  {
+    word: "Ball", pos: "noun", senses: [{ glosses: ["ball"], tags: ["masculine"] }],
+    forms: [{ form: "Bälle", tags: ["nominative", "plural"] }],
+  },
   { word: "ich", pos: "pron", senses: [{ glosses: ["I"] }] },
   { word: "Ich", pos: "noun", senses: [{ glosses: ["ego"], tags: ["neuter"] }] },
   { word: "dich", pos: "pron", senses: [{ glosses: ["accusative of du"], tags: ["accusative", "form-of"], form_of: [{ word: "du" }] }] },

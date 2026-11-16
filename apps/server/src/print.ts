@@ -7,7 +7,7 @@ export const time = () => new Date().toLocaleTimeString("de-DE", { hour12: false
 const POS_LABEL: Record<string, string> = {
   noun: "noun", verb: "verb", adj: "adj.", adv: "adv.", pron: "pron.", det: "det.", article: "article",
   prep: "prep.", conj: "conj.", contraction: "contr.", intj: "interj.", name: "name", num: "num.",
-  abbrev: "abbr.", particle: "particle", phrase: "phrase", pokemon: "Pokémon", move: "move",
+  abbrev: "abbr.", particle: "particle", phrase: "phrase", pokemon: "Pokémon", move: "move", ability: "ability", item: "item", place: "place",
 };
 
 function describeSense(s: WordSense): string {
@@ -19,8 +19,13 @@ function describeSense(s: WordSense): string {
 
 function wordRows(tokens: TokenAnalysis[]): [string, string][] {
   const rows: [string, string][] = [];
-  for (const t of tokens) {
-    if (t.kind !== "word") continue;
+  for (const [i, t] of tokens.entries()) {
+    if (t.kind !== "word" || t.partOf !== undefined) continue;
+    if (t.phraseEnd !== undefined && t.best) {
+      const words = [t, ...tokens.filter((p) => p.partOf === i)].map((p) => p.text).join(" ");
+      rows.push([words, describeSense(t.best)]);
+      continue;
+    }
     if (t.parts) {
       rows.push([t.text, styleText("dim", "compound:")]);
       for (const p of t.parts) rows.push([`  ${p.text}`, p.best ? describeSense(p.best) : styleText("dim", "?")]);

@@ -40,6 +40,10 @@ export interface TokenAnalysis {
   parts?: TokenAnalysis[];
   /** Index of the token this one belongs to as a separable-verb particle (or vice versa). */
   linkedTo?: number;
+  /** Multi-word name ("BLÜTENBURG CITY"): on its first word, the end offset of the whole name. */
+  phraseEnd?: number;
+  /** On the other words of a multi-word name: index of its first word. */
+  partOf?: number;
 }
 
 export interface LineAnalysis {

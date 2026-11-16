@@ -9,7 +9,7 @@
  */
 import type { LineAnalysis, TokenAnalysis, WordSense } from "@pokelearning/shared";
 import type { Dictionary, FormMatch } from "../dictionary/db.ts";
-import { articlesFor, glossarySense, type Glossary } from "./glossary.ts";
+import { articlesFor, glossarySense, type Glossary, type GlossaryEntry } from "./glossary.ts";
 import { isAllCaps, isClauseBoundary, isSentenceEnd, titleCase, tokenize, type Token } from "./tokenize.ts";
 
 export interface AnalyzerDeps {
@@ -55,6 +55,11 @@ function scoreMatch(match: FormMatch, spelling: string, ctx: WordContext, allCap
   else if (allCaps) score += 2;
   if (match.direct) score += 1;
   if (match.formTags && /\b(archaic|obsolete|dated|dialectal)\b/.test(match.formTags)) score -= 1.5;
+  // A form that is only a subjunctive ("führt" as ihr-subjunctive of fahren) loses to a
+  // plain present-tense reading of another verb (führen); "möchtest" has no rival, so it stays.
+  if (match.formTags && /subjunctive/.test(match.formTags) && !/indicative|imperative|infinitive/.test(match.formTags)) {
+    score -= 0.6;
+  }
 
   const capitalised = /^\p{Lu}/u.test(spelling);
   if (!capitalised && nounLike) score -= 3;
@@ -131,9 +136,28 @@ export function analyzeLine(text: string, deps: AnalyzerDeps): LineAnalysis {
   const analyses: TokenAnalysis[] = [];
 
   let sentenceStart = true;
+  let phraseHead = -1;
+  let phraseLast = -1;
   tokens.forEach((token, index) => {
     const analysis: TokenAnalysis = { text: token.text, start: token.start, end: token.end, kind: token.kind };
     analyses.push(analysis);
+
+    // Multi-word names ("BLÜTENBURG CITY"): the first word carries the reading.
+    if (index <= phraseLast) {
+      analysis.partOf = phraseHead;
+      work.push(null);
+      return;
+    }
+    const phrase = deps.glossary.phraseAt(tokens, index, text);
+    if (phrase) {
+      analysis.best = glossarySense(phrase.entry);
+      analysis.phraseEnd = tokens[phrase.last]!.end;
+      [phraseHead, phraseLast] = [index, phrase.last];
+      sentenceStart = false;
+      work.push(null);
+      return;
+    }
+
     if (token.kind !== "word") {
       work.push(null);
       if (isSentenceEnd(token)) sentenceStart = true;
@@ -167,18 +191,55 @@ export function analyzeLine(text: string, deps: AnalyzerDeps): LineAnalysis {
   return { lang: "de", tokens: analyses, dictionaryVersion: deps.dictionary?.version ?? null };
 }
 
+/**
+ * An item in the plural ("POKéBÄLLE"): a compound whose last part is a plural
+ * the dictionary knows ("Bälle" → Ball), so "Pokébälle" is the item Pokéball.
+ */
+function itemPlural(spelling: string, deps: AnalyzerDeps): GlossaryEntry | undefined {
+  if (!deps.dictionary) return undefined;
+  for (let i = 1; i <= spelling.length - 3; i++) {
+    const tail = spelling.charAt(i).toUpperCase() + spelling.slice(i + 1);
+    for (const m of deps.dictionary.lookup(tail)) {
+      if (m.lexeme.pos !== "noun" || m.form !== tail || !m.formTags?.includes("plural")) continue;
+      const entry = deps.glossary.get(spelling.slice(0, i) + m.lexeme.lemma.toLowerCase());
+      if (entry?.pos === "item") return { ...entry, glosses: [...entry.glosses], plural: spelling };
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Items are German nouns, but PokéAPI has no genders. Take it from the
+ * dictionary ("Trank": der), or from a compound's last element, which decides
+ * a German compound's gender ("Supertrank" → Trank → der, "Pokéball" → Ball → der).
+ */
+function withItemGender(sense: WordSense, candidates: Candidate[], dict: Dictionary | null): WordSense {
+  if (sense.pos !== "item" || sense.articles || !dict) return sense;
+  const lemma = sense.lemma.toLowerCase();
+  const own = candidates.find((c) => c.match.lexeme.pos === "noun" && c.match.lexeme.lemma.toLowerCase() === lemma);
+  let gender = own?.match.lexeme.gender ?? null;
+  for (let i = 1; !gender && i <= sense.lemma.length - 3; i++) {
+    const tail = sense.lemma.slice(i).replace(/^-/, "");
+    if (tail.length < 3) break;
+    const noun = tail.charAt(0).toUpperCase() + tail.slice(1);
+    gender = dict.lookup(noun).find((m) => m.lexeme.pos === "noun" && m.lexeme.lemma === noun)?.lexeme.gender ?? null;
+  }
+  const articles = articlesFor(gender);
+  return gender && articles ? { ...sense, gender, articles } : sense;
+}
+
 function analyzeWord(token: Token, index: number, ctx: WordContext, deps: AnalyzerDeps, analysis: TokenAnalysis): WordWork {
   const spelling = lookupSpelling(token.text);
   if (spelling !== token.text) analysis.normalized = spelling;
 
   const candidates = deps.dictionary ? candidatesFor(token.text, ctx, deps.dictionary) : [];
-  const glossary = deps.glossary.get(spelling);
+  const glossary = deps.glossary.get(spelling) ?? (isAllCaps(token.text) ? itemPlural(spelling, deps) : undefined);
   if (glossary?.capsOnly && !isAllCaps(token.text) && candidates.length > 0) {
     // "Glut" in normal text: embers, not the move GLUT (Ember)
     return { index, analysis, candidates, extra: glossarySense(glossary) };
   }
   if (glossary) {
-    analysis.best = glossarySense(glossary);
+    analysis.best = withItemGender(glossarySense(glossary), candidates, deps.dictionary);
     const alts = rank(candidates).slice(0, MAX_ALTERNATIVES).map((c) => toSense(c, false));
     if (alts.length) analysis.alternatives = alts;
     return { index, analysis, candidates: [] };
