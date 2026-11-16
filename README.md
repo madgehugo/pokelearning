@@ -42,6 +42,7 @@ Requirements: Node 22.13+ (tested on 26; uses the built-in `node:sqlite`), mGBA 
 ```sh
 npm install
 npm run dict:import       # once: downloads the Wiktionary extract (~100 MB) and builds data/dictionary.db (~15 s)
+npm run names:import      # once: German ↔ English Pokémon and move names from PokéAPI (~1 MB)
 npm start                 # builds the web app and starts the server; open http://localhost:8766
 ```
 
@@ -65,6 +66,14 @@ Grade yourself with Again, Hard, Good or Easy; each button shows when the card
 comes back. Keys: Space shows the answer, 1–4 grade, 1–3 pick an article.
 **Words** lists your saved words with their example sentences, encounters and
 next review.
+
+Pokémon and move names get their English name: *ZIGZACHS* is Zigzagoon
+(No. 263, the *Kleindachs-Pokémon*), *GLUT* is the Fire-type move Ember. The
+translator sees them as English too, so "FLEMMLI setzt GLUT ein!" becomes
+"Torchic uses Ember!". Gen 3 writes these names in capitals, which is how a
+move like *GLUT* is told apart from the word *Glut* (embers) in normal text.
+After importing names or rebuilding the dictionary, `npm run reprocess`
+updates the lines you've already played.
 
 Everything is local and free: no accounts or API keys. Downloaded data and your
 database live in `data/` (git-ignored). Set `TRANSLATOR=none` to turn off
@@ -119,6 +128,7 @@ web UI, word bank with FSRS review) are implemented; next are mini-games.
 - Character encoding and RAM symbols: the [pret/pokeemerald](https://github.com/pret/pokeemerald) decompilation.
 - Dictionary: [Wiktionary](https://en.wiktionary.org/) (CC BY-SA 4.0), via the
   [Kaikki.org](https://kaikki.org/) extract (wiktextract).
+- Pokémon and move names: [PokéAPI](https://github.com/PokeAPI/pokeapi) CSV data (BSD 3-Clause). Pokémon names are trademarks of Nintendo, Creatures and Game Freak.
 - Scheduling: [ts-fsrs](https://github.com/open-spaced-repetition/ts-fsrs) (FSRS-6).
 - Translation: [Opus-MT](https://github.com/Helsinki-NLP/Opus-MT) by Helsinki-NLP (CC BY 4.0),
   ONNX conversion `Xenova/opus-mt-de-en`, run with [transformers.js](https://github.com/huggingface/transformers.js).

@@ -16,7 +16,10 @@
 - Unit tests (`npm test`).
 
 ### Follow-ups
-- Import Pokémon, item and move names (German ↔ English) from PokéAPI's CSV data into the glossary, so a word like *ZIGZACHS* gets a reading.
+- ✅ Pokémon and move names (German ↔ English) from PokéAPI (`npm run names:import`). Names written in Gen 3 capitals reach the translator as placeholders (X1, X2) and go back in as English afterwards.
+- Items, abilities and places from PokéAPI the same way.
+- Multi-word names (the only Gen 1–3 one is the move *Rechte Hand*, Helping Hand).
+- Gen 3 sometimes shortened German names that later games spell in full. If one doesn't match, add it to `glossary/pokemon-de.json`, which overrides imported names.
 - Split German compounds that have no hyphen and no dictionary entry (e.g. *Pokémonzentrum*).
 - Use syntax to rank function words. For example, the relative pronoun *das* after a comma is currently read as an article; the correct reading is listed as an alternative.
 - An optional DeepL or LLM translation provider behind the same interface.

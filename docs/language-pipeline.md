@@ -50,10 +50,47 @@ Up to three alternatives are kept for the UI.
 ## Translation
 
 `prepare.ts` rewrites Gen 3 capitals ("POKéMON" → "Pokémon"; acronyms of up to
-three letters like KP stay) and swaps glossary names (`mt` field: "BIRK" →
-"Birch"). It then splits the line into sentences, because Opus-MT tends to drop
-short sentences when given several at once. Each sentence is cached by
-provider + language pair + text, so a repeated line is free.
+three letters like KP stay). It then replaces glossary terms that have an
+English form (`mt` field: Pokémon, moves, "BIRK" → "Birch", "E.-Punkte") with
+numbered placeholders, and splits the line into sentences:
+
+```
+FLEMMLI setzt GLUT ein!   →   "X1 setzt X2 ein!"  slots: Torchic, Ember
+                          →   "X1 uses X2!"       (Opus-MT)
+                          →   "Torchic uses Ember!"
+```
+
+Opus-MT garbles English names inside German text ("Scratch" → "SStitch",
+"Tackle" → "Ta-Nearly"), but copies X1, X2 unchanged. In a comparison on real
+battle lines, all placeholders survived, and the translations read better than
+with real first names or [1]-style brackets as placeholders. If a placeholder
+ever goes missing, that sentence is translated again with the English names
+written in.
+
+Placeholders are numbered per sentence, and each sentence is cached by
+provider + language pair + text. So "X1 setzt X2 ein!" is translated once for
+every Pokémon and move, and a repeated line is free. Sentences are translated
+one at a time, because Opus-MT tends to drop short sentences when given
+several at once.
+
+## Pokémon and move names
+
+`npm run names:import` downloads PokéAPI's species, move and type tables and
+writes `data/pokemon-names.json`. The server turns every species and move up
+to `NAMES_MAX_GENERATION` (default 3, for Emerald) into a glossary entry with:
+
+- the English name and translator form,
+- the Pokédex number and category (*Kleindachs-Pokémon*, Tiny Raccoon Pokémon) for species,
+- the type, in English and German (*Typ Feuer*), for moves.
+
+These entries are `capsOnly`: Gen 3 writes names in capitals, so *GLUT* is the
+move Ember, while *Glut* in normal text keeps its dictionary meaning (embers)
+with the move offered as an alternative. A name in normal case that the
+dictionary doesn't know (*Zigzachs*) still uses the name. Entries in
+`glossary/pokemon-de.json` override imported names.
+
+`npm run reprocess` re-analyses and re-translates stored lines after a names
+import or dictionary rebuild. Unchanged sentences come from the cache.
 
 To add a provider (DeepL, an LLM, …), implement `TranslationProvider` and
 select it in `index.ts` via `TRANSLATOR`. Give it its own `id` so its cache
@@ -66,4 +103,5 @@ entries stay separate.
 | `data/kaikki-german.jsonl.gz` | Downloaded Wiktionary extract | yes (re-downloaded by `dict:import`) |
 | `data/dictionary.db` | Built dictionary | yes (`npm run dict:import`) |
 | `data/models/` | Translation model | yes (re-downloaded on start) |
+| `data/pokemon-names.json` | Pokémon and move names | yes (`npm run names:import`) |
 | `data/app.db` | **Your history, word bank and review history** | no: back it up |
