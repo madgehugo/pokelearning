@@ -8,7 +8,7 @@ interface Props {
   onLoadOlder(): void;
 }
 
-const SOURCES: Record<string, string> = { battle: "Battle", bag: "Bag" };
+const SOURCES: Record<string, string> = { battle: "Battle", bag: "Bag", ocr: "Read from screen" };
 
 const clock = (ms: number) => new Date(ms).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 

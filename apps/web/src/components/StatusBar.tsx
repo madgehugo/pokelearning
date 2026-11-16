@@ -1,7 +1,7 @@
 import type { ServerStatus } from "@pokelearning/shared";
 import type { Route } from "../App.tsx";
 import type { Connection } from "../useServer.ts";
-import { GAME_NAMES } from "../words.ts";
+import { gameName } from "../words.ts";
 
 interface Props {
   connection: Connection;
@@ -15,7 +15,7 @@ function describe({ connection, status }: Pick<Props, "connection" | "status">):
   if (connection === "offline") return { state: "offline", text: "Server not running. Start it with npm run dev." };
   if (connection === "connecting" || !status) return { state: "waiting", text: "Connecting to the server…" };
   if (status.adapters === 0) return { state: "waiting", text: "Waiting for mGBA. Load adapters/mgba-lua/main.lua." };
-  const game = status.game ? (GAME_NAMES[status.game] ?? status.game) : "the game";
+  const game = status.game ? gameName(status.game) : "the game";
   return { state: "live", text: `Following ${game}` };
 }
 

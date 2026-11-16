@@ -80,10 +80,21 @@ export function wordText(tokens: TokenAnalysis[], index: number): string {
 /** The saved names that come straight from PokéAPI (not dictionary words). */
 export const GAME_NAME_POS = new Set(["pokemon", "move", "ability", "item", "place"]);
 
-export const GAME_NAMES: Record<string, string> = {
-  "pokemon-emerald-de": "Pokémon Smaragd",
-  "pokemon-emerald-en": "Pokémon Emerald",
+const TITLES: Record<string, [english: string, german: string]> = {
+  ruby: ["Pokémon Ruby", "Pokémon Rubin"],
+  sapphire: ["Pokémon Sapphire", "Pokémon Saphir"],
+  firered: ["Pokémon FireRed", "Pokémon Feuerrot"],
+  leafgreen: ["Pokémon LeafGreen", "Pokémon Blattgrün"],
+  emerald: ["Pokémon Emerald", "Pokémon Smaragd"],
 };
+
+/** "pokemon-emerald-de" → "Pokémon Smaragd"; unknown ids are shown as they are. */
+export function gameName(id: string): string {
+  const [, title, lang] = id.match(/^pokemon-([a-z]+)-([a-z]+)$/) ?? [];
+  const names = title ? TITLES[title] : undefined;
+  if (!names) return id;
+  return lang === "de" ? names[1] : names[0];
+}
 
 /** "now", "in 10 min", "in 3 days", "3 days ago". */
 export function relativeTime(ms: number, now = Date.now()): string {
