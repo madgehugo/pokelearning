@@ -1,5 +1,9 @@
 # Finding text buffer addresses (German ROM)
 
+> For games other than Emerald, you don't need this guide to start: the adapter
+> finds the buffers while you play (see "Automatic discovery" at the end). Use
+> this guide to confirm an address, or when discovery doesn't find one.
+
 The adapter reads dialogue from two RAM buffers. pokeemerald (US release, game
 code `BPEE`) puts them here:
 
@@ -152,3 +156,26 @@ second, so scrolling through the bag doesn't flood you.
 
 - Screens that draw text without a text printer (e.g. the naming screen) are
   not captured.
+
+## Automatic discovery (games without known addresses)
+
+For Ruby, Sapphire, FireRed, LeafGreen and other-language versions of Emerald,
+the adapter has no addresses. Instead, twice a second it looks at which strings
+in EWRAM changed, and keeps track of start addresses where sentence-like text
+appears. Once three different messages have appeared at the same address, the
+console prints:
+
+```
+found a text buffer at 0x02021D18 (field). To skip the search next time, add
+{ name = "field", addr = 0x02021D18, size = 1000, verified = true } for BPRD to a games/ file.
+```
+
+From then on that buffer is watched like Emerald's, and its text printer (for
+repeated messages) is found as described above. The battle buffer is found the
+same way during your first battle. The first two messages per buffer are only
+used for the search, so they aren't sent.
+
+`pokelearning.status()` shows the search: `searching for text buffers: 0x0202… (2 of 3 messages)`.
+
+To pin found addresses, create e.g. `games/firered.lua` in the style of
+`games/emerald.lua` and add it to `KNOWN` in `games/gen3.lua`.

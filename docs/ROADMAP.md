@@ -74,7 +74,13 @@ Built from your own material: saved words first, then the words and lines you pl
 - **Text printed straight from ROM** (item descriptions, Pokédex entries…): "cursor sources" in `games/emerald.lua` follow a printer's pointer into ROM and send the whole string once it has stayed on screen for about 0.5 s. Each one needs its address found once with `find(…, true)`, `findPointer` and `watchCursor` (docs/finding-addresses.md).
 - Still not covered: screens that draw text without a text printer (e.g. the naming screen). That would need the OCR adapter.
 
-## Phase 6: More adapters
-- Other Gen 3 games (Rubin/Saphir, Feuerrot/Blattgrün) as additional `games/*.lua` modules.
-- A generic OCR adapter (screen region → text) for games without a RAM adapter.
-- Other emulators or consoles behind the same protocol.
+## Phase 6: More adapters ✅
+- **All Gen 3 Pokémon games** in the mGBA adapter (`games/gen3.lua`): Ruby, Sapphire, FireRed, LeafGreen and Emerald, in German, English, French, Italian and Spanish, recognised by game code. Japanese uses another character set and isn't supported.
+- **Text buffer discovery** (`lib/discover.lua`) for games without known addresses. Twice a second it checks which strings in EWRAM changed, and adopts a start address once three different sentence-like messages have appeared there. Stale tails of longer messages and blank memory before a buffer are filtered out. Tested on a simulated FireRed with field and battle buffers, not yet on a real ROM.
+- **Per-game names**: each game id gets its generation's and region's names (FireRed: Kanto, Emerald: Hoenn). Lines in languages the translator can't handle are stored and shown without a translation.
+- **OCR adapter for macOS** (`adapters/ocr-macos`): captures a window with ScreenCaptureKit, reads the text area with Apple Vision, and sends each finished text box. Works with any emulator or game. Tested on rendered GBA-style text boxes and end to end with a replayed session; live capture needs Screen Recording permission.
+
+### Follow-ups
+- Pin the addresses that discovery finds for Ruby, Sapphire, FireRed and LeafGreen in `games/` files, once found on real ROMs.
+- An OCR adapter for Windows/Linux (e.g. Tesseract), or reading memory through RetroArch's network commands.
+- Gen 4 (DS) games: a different character set and emulators (melonDS, DeSmuME); OCR works today.

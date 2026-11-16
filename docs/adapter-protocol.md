@@ -52,9 +52,15 @@ adapters don't need to track that.
 
 ## Writing a new adapter
 
-- **Another Gen 3 game for mGBA**: add `adapters/mgba-lua/games/<game>.lua`
-  exporting `name`, `matches(gameCode)` and `config(gameCode)`. `config`
-  returns `{ game, lang, buffers = { { name, addr, size, verified, cursor? } }, cursors? = { { name, addr } } }`.
-  Register it in `GAMES` in `main.lua`.
+- **Gen 3 games for mGBA** are all covered by `adapters/mgba-lua/games/gen3.lua`,
+  which finds text buffers by itself. Known addresses for a title go in
+  `games/<title>.lua` (like `games/emerald.lua`) and are listed in `KNOWN` there.
+- **Another game family for mGBA**: add a module exporting `name`,
+  `matches(gameCode)` and `config(gameCode)`, where `config` returns
+  `{ game, lang, title?, buffers = { { name, addr, size, verified, cursor? } }, cursors?, discover? }`.
+  Register it in `GAMES` in `main.lua`. A different character set also needs
+  its own decoder in place of `lib/charmap.lua`.
+- **Any game on screen**: the OCR adapter in `adapters/ocr-macos` already speaks
+  this protocol; use `--game` to set the game id.
 - **Anything else** (OCR, another emulator): open a TCP connection, send
   `hello`, then one `line` per new dialogue line.

@@ -29,7 +29,8 @@ game module, another emulator, or an OCR adapter. See
 
 | Path | What |
 | --- | --- |
-| `adapters/mgba-lua/` | mGBA Lua adapter: `main.lua` entry, `lib/` (charmap, JSON, transport), `games/` (per-game plug-ins), `tools/find_text.lua` (RAM search) |
+| `adapters/mgba-lua/` | mGBA Lua adapter for all Gen 3 Pokémon games: `main.lua` entry, `lib/` (charmap, JSON, transport, buffer discovery), `games/` (game registry, known addresses), `tools/find_text.lua` (RAM search) |
+| `adapters/ocr-macos/` | Screen-reading adapter for any game window (Apple Vision), see its [README](adapters/ocr-macos/README.md) |
 | `packages/shared/` | TypeScript types shared by adapters, server and UI: adapter protocol, line analysis |
 | `apps/server/` | Node server: ingest → word-by-word analysis → translation → SQLite (see [docs/language-pipeline.md](docs/language-pipeline.md)) |
 | `apps/web/` | Browser UI: React + Vite, responsive, live over WebSocket |
@@ -127,6 +128,21 @@ mGBA also keeps a **File → Recent scripts** list.
 Commands you can type into the console's input line:
 `pokelearning.status()` and `pokelearning.setBuffer("field", 0x0202xxxx)`.
 
+### Other Gen 3 games
+
+The adapter recognises Ruby, Sapphire, FireRed, LeafGreen and Emerald in
+German, English, French, Italian and Spanish. Emerald's text buffer addresses
+are known. For the other games, the adapter finds them while you play: after
+about three messages, the console prints `found a text buffer at 0x…`, and lines
+start coming in. FireRed and LeafGreen get Kanto's place names, the others
+Hoenn's.
+
+### Games without a RAM adapter
+
+The [OCR adapter](adapters/ocr-macos/README.md) reads a game window's text box
+with Apple Vision and sends the text over the same protocol:
+`npm run ocr:build`, then `npm run ocr -- --window mGBA --game pokemon-emerald-de`.
+
 ### If no lines appear: finding the German addresses
 
 The buffer addresses come from the pokeemerald decompilation, which matches the
@@ -136,9 +152,9 @@ The buffer addresses come from the pokeemerald decompilation, which matches the
 
 ## Roadmap
 
-See [docs/ROADMAP.md](docs/ROADMAP.md). Phases 1–4 (adapter, language pipeline,
-web UI, word bank with FSRS review, mini-games) are implemented; next are more
-game adapters.
+See [docs/ROADMAP.md](docs/ROADMAP.md). All six phases are implemented: adapter,
+language pipeline, web UI, word bank with FSRS review, mini-games, and more
+adapters (all Gen 3 games, OCR).
 
 ## Credits and data licences
 
