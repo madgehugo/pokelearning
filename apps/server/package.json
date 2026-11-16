@@ -1,0 +1,14 @@
+{
+  "name": "@pokelearning/server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "send-test": "tsx scripts/send-test.ts"
+  },
+  "dependencies": {
+    "@pokelearning/shared": "*"
+  }
+}
