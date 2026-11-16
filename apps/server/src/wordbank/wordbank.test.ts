@@ -34,6 +34,23 @@ beforeEach(() => {
   pipeline.on("line", (l) => bank.recordLine(l));
 });
 
+describe("hidden words", () => {
+  it("hides and shows a word, and saving it shows it again", async () => {
+    bank.hide({ lemma: "gut", pos: "adj", gloss: "good" });
+    bank.hide({ lemma: "gut", pos: "adj", gloss: "good" }); // twice is fine
+    assert.deepEqual(bank.hiddenWords(), [{ lemma: "gut", pos: "adj", gloss: "good" }]);
+    const word = save(await play("Ich bin gut."), "gut");
+    assert.equal(bank.hiddenWords().length, 0, `saving ${word.lemma} un-hides it`);
+    bank.hide({ lemma: "Haus", pos: "noun", gloss: "house" });
+    bank.unhide("Haus", "noun");
+    assert.deepEqual(bank.hiddenWords(), []);
+  });
+
+  it("needs a lemma and a part of speech", () => {
+    assert.throws(() => bank.hide({ lemma: "", pos: "noun", gloss: "" }), /required/);
+  });
+});
+
 describe("saving words", () => {
   it("saves a noun with a meaning and an article card, and its sentence", async () => {
     const line = await play("Die Häusern sind gut.");

@@ -132,6 +132,16 @@ const MIGRATIONS = [
   );
   CREATE INDEX game_results_kind ON game_results(kind, played_at);
   `,
+  // 4: words hidden from the breakdown (display only; separate from the word bank)
+  `
+  CREATE TABLE hidden_words (
+    lemma     TEXT NOT NULL,
+    pos       TEXT NOT NULL,
+    gloss     TEXT NOT NULL,
+    hidden_at INTEGER NOT NULL,
+    PRIMARY KEY (lemma, pos)
+  );
+  `,
 ];
 
 const LINE_SELECT = `

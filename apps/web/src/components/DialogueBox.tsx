@@ -10,12 +10,14 @@ interface Props {
   print: boolean;
   /** wordKey()s of saved words, marked in the text. */
   saved: Set<string>;
+  /** wordKey()s of hidden words: shown as plain text. */
+  hidden: Set<string>;
 }
 
 /** Total time for a line to print in, like the game's text, whatever its length. */
 const PRINT_MS = 700;
 
-export function DialogueBox({ line, selected, onSelect, print, saved }: Props) {
+export function DialogueBox({ line, selected, onSelect, print, saved, hidden }: Props) {
   if (!line) {
     return (
       <section className="box box--empty" aria-label="Current line">
@@ -37,7 +39,7 @@ export function DialogueBox({ line, selected, onSelect, print, saved }: Props) {
     tokens.forEach((t, i) => {
       if (t.start > cursor) pieces.push(line.text.slice(cursor, t.start));
       cursor = t.end;
-      if (t.kind !== "word") {
+      if (t.kind !== "word" || (t.best && hidden.has(wordKey(t.best.lemma, t.best.pos)))) {
         pieces.push(
           <span key={i} className="piece" style={delay(t.start)}>
             {t.text}

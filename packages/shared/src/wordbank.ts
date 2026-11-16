@@ -55,6 +55,16 @@ export interface SavedWord {
 /** Identifies a word across the app: `${lemma}|${pos}`. */
 export const wordKey = (lemma: string, pos: string) => `${lemma}|${pos}`;
 
+/** A word hidden from the breakdown, with enough to recognise it in the list of hidden words. */
+export interface HiddenWord {
+  lemma: string;
+  pos: string;
+  gloss: string;
+}
+
+/** POST /api/hidden and /api/hidden/remove */
+export type HideWordRequest = HiddenWord;
+
 export interface ReviewItem {
   card: CardSummary;
   word: SavedWord;

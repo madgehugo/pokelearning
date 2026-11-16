@@ -13,6 +13,7 @@ import {
   type CardKind,
   type CardSummary,
   type Grade,
+  type HiddenWord,
   type ProcessedLine,
   type ReviewItem,
   type ReviewQueue,
@@ -206,6 +207,7 @@ export class WordBank {
       const { id } = this.db
         .prepare("SELECT id FROM words WHERE lemma = ? AND pos = ?")
         .get(sense.lemma, sense.pos) as { id: number };
+      this.unhide(sense.lemma, sense.pos); // saving a word means you want to see it
       for (const kind of cardKinds(sense, this.settings())) this.createCard(id, kind, now);
       if (isNew) this.backfill(id, sense.lemma, sense.pos, now);
       this.addContext(id, line, token, now);
@@ -324,6 +326,24 @@ export class WordBank {
         cards: cards.filter((c) => c.word_id === w.id && kinds.has(c.kind)).map(summary),
       };
     });
+  }
+
+  // Hidden words ------------------------------------------------------------
+
+  hiddenWords(): HiddenWord[] {
+    const rows = this.db.prepare("SELECT lemma, pos, gloss FROM hidden_words ORDER BY hidden_at DESC").all() as unknown as HiddenWord[];
+    return rows.map(({ lemma, pos, gloss }) => ({ lemma, pos, gloss }));
+  }
+
+  hide(word: HiddenWord, now = Date.now()): void {
+    if (!word.lemma || !word.pos) throw new WordBankError("lemma and pos are required");
+    this.db
+      .prepare("INSERT OR REPLACE INTO hidden_words (lemma, pos, gloss, hidden_at) VALUES (?, ?, ?, ?)")
+      .run(word.lemma, word.pos, String(word.gloss ?? "").slice(0, 200), now);
+  }
+
+  unhide(lemma: string, pos: string): void {
+    this.db.prepare("DELETE FROM hidden_words WHERE lemma = ? AND pos = ?").run(lemma, pos);
   }
 
   savedKeys(): string[] {

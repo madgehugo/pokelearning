@@ -9,6 +9,7 @@ import type {
   GameResultResponse,
   ReviewQueue,
   SavedWord,
+  HiddenWord,
   SaveWordRequest,
   Settings,
 } from "@pokelearning/shared";
@@ -28,6 +29,8 @@ async function call<T>(method: string, path: string, body?: unknown): Promise<T>
 
 export const api = {
   saveWord: (req: SaveWordRequest) => call<SavedWord>("POST", "/api/words", req),
+  hideWord: (word: HiddenWord) => call<void>("POST", "/api/hidden", word),
+  showWord: (word: Pick<HiddenWord, "lemma" | "pos">) => call<void>("POST", "/api/hidden/remove", word),
   removeWord: (id: number) => call<void>("DELETE", `/api/words/${id}`),
   words: () => call<SavedWord[]>("GET", "/api/words"),
   queue: () => call<ReviewQueue>("GET", "/api/review"),

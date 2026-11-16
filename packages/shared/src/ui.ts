@@ -4,7 +4,7 @@
  */
 import type { ProcessedLine } from "./analysis.ts";
 import type { SetupStatus } from "./setup.ts";
-import type { WordBankStats } from "./wordbank.ts";
+import type { HiddenWord, WordBankStats } from "./wordbank.ts";
 
 export const UI_PORT = 8766;
 
@@ -22,6 +22,8 @@ export interface ServerStatus {
 /** Which words are saved (as wordKey strings) and the review counts. */
 export interface WordBankSummary {
   saved: string[];
+  /** Words hidden from the breakdown. */
+  hidden: HiddenWord[];
   stats: WordBankStats;
 }
 

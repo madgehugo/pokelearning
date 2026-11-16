@@ -4,10 +4,11 @@
  * with saving. Review, Words and Games open on the full website.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { ProcessedLine } from "@pokelearning/shared";
+import { wordKey, type ProcessedLine } from "@pokelearning/shared";
 import type { useServer } from "../useServer.ts";
 import { Breakdown } from "./Breakdown.tsx";
 import { DialogueBox } from "./DialogueBox.tsx";
+import { HiddenList } from "./HiddenList.tsx";
 
 type Server = ReturnType<typeof useServer>;
 
@@ -28,6 +29,9 @@ function state(server: Server): { state: "live" | "waiting" | "offline"; text: s
 export function Panel({ server }: { server: Server }) {
   const { lines, status, wordbank } = server;
   const saved = useMemo(() => new Set(wordbank?.saved ?? []), [wordbank]);
+  const hiddenWords = wordbank?.hidden ?? [];
+  const hidden = useMemo(() => new Set(hiddenWords.map((w) => wordKey(w.lemma, w.pos))), [hiddenWords]);
+  const [showHidden, setShowHidden] = useState(false);
   const [offset, setOffset] = useState(0); // 0 = newest line; ← and → in the header step through earlier ones
   const [selected, setSelected] = useState<number | null>(null);
   const line: ProcessedLine | undefined = lines[offset];
@@ -78,15 +82,16 @@ export function Panel({ server }: { server: Server }) {
         </nav>
       </header>
 
-      <DialogueBox line={line} selected={selected} onSelect={setSelected} print={print} saved={saved} />
+      <DialogueBox line={line} selected={selected} onSelect={setSelected} print={print} saved={saved} hidden={hidden} />
       {line && (
         <p className="translation" lang="en">
           {line.translation?.text ?? (status?.translator ? "Translating…" : "No translation for this line.")}
         </p>
       )}
       {line?.analysis && (
-        <Breakdown lineId={line.id} tokens={line.analysis.tokens} selected={selected} onSelect={setSelected} saved={saved} />
+        <Breakdown lineId={line.id} tokens={line.analysis.tokens} selected={selected} onSelect={setSelected} saved={saved} hidden={hidden} />
       )}
+      {showHidden && <HiddenList words={hiddenWords} />}
 
       <footer className="panel__links">
         <a href={`${site}review`} target="_blank" rel="noreferrer">
@@ -98,6 +103,11 @@ export function Panel({ server }: { server: Server }) {
         <a href={`${site}games`} target="_blank" rel="noreferrer">
           Games
         </a>
+        {hiddenWords.length > 0 && (
+          <button type="button" className="link-button" aria-expanded={showHidden} onClick={() => setShowHidden(!showHidden)}>
+            Hidden ({hiddenWords.length})
+          </button>
+        )}
       </footer>
     </div>
   );

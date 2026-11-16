@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
-import type { SavedWord, Settings, WordBankStats } from "@pokelearning/shared";
+import type { HiddenWord, SavedWord, Settings, WordBankStats } from "@pokelearning/shared";
 import { api } from "../api.ts";
+import { HiddenList } from "./HiddenList.tsx";
 import { genderKey, headword, posLabel, relativeTime, shortGloss } from "../words.ts";
 
 interface Props {
   stats: WordBankStats | undefined;
+  hidden: HiddenWord[];
   /** Changes whenever the server reports a word-bank change, to reload the list. */
   version: unknown;
 }
@@ -28,7 +30,7 @@ function nextReview(word: SavedWord): string {
   return due <= Date.now() ? "Due now" : `Next review ${relativeTime(due)}`;
 }
 
-export function Words({ stats, version }: Props) {
+export function Words({ stats, hidden, version }: Props) {
   const [words, setWords] = useState<SavedWord[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
@@ -75,6 +77,13 @@ export function Words({ stats, version }: Props) {
           </ul>
           {shown.length === 0 && <p className="muted">No saved word matches “{query}”.</p>}
         </>
+      )}
+      {hidden.length > 0 && (
+        <section>
+          <h2>Hidden words</h2>
+          <p className="muted">These don't appear in the word list under a line.</p>
+          <HiddenList words={hidden} />
+        </section>
       )}
       <SettingsForm />
     </div>

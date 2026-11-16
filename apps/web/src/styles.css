@@ -1270,3 +1270,24 @@ kbd {
 .setup__step p {
   margin: 6px 0 0;
 }
+
+/* Hidden words ---------------------------------------------------------- */
+.hide-button {
+  margin-left: 12px;
+}
+.hidden-list {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+.hidden-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+.hidden-list__word .gloss {
+  color: var(--ink-soft);
+}

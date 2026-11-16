@@ -86,6 +86,29 @@ describe("UI server", () => {
     assert.equal((await fetch(`http://${base}/api/words/1`, { method: "DELETE", headers: { origin: "https://evil.example" } })).status, 403);
   });
 
+  it("hides and shows words, and tells open views", async () => {
+    const post = (p: string, body: unknown, origin?: string) =>
+      fetch(`http://${base}${p}`, {
+        method: "POST",
+        headers: { "content-type": "application/json", ...(origin ? { origin } : {}) },
+        body: JSON.stringify(body),
+      });
+    const ws = new WebSocket(`ws://${base}/ws`);
+    const messages: ServerMessage[] = [];
+    ws.addEventListener("message", (e) => messages.push(JSON.parse(String(e.data)) as ServerMessage));
+    await new Promise((r) => ws.addEventListener("open", r, { once: true }));
+    const word = { lemma: "AP", pos: "noun", gloss: "PP" };
+    assert.equal((await post("/api/hidden", word, "https://evil.example")).status, 403);
+    assert.equal((await post("/api/hidden", word)).status, 204);
+    await new Promise((r) => setTimeout(r, 50));
+    const hidden = (m: ServerMessage) => (m.type === "wordbank" ? m.wordbank.hidden : undefined);
+    assert.deepEqual(messages.map(hidden).findLast(Boolean), [word]);
+    assert.equal((await post("/api/hidden/remove", { lemma: "AP", pos: "noun" })).status, 204);
+    await new Promise((r) => setTimeout(r, 50));
+    assert.deepEqual(messages.map(hidden).findLast((h) => h !== undefined), []);
+    ws.close();
+  });
+
   it("sends a snapshot on connect, then live lines", async () => {
     const ws = new WebSocket(`ws://${base}/ws`);
     const messages: ServerMessage[] = [];

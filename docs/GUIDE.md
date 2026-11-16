@@ -138,10 +138,15 @@ running until you quit it.
 - **Save word** puts the word in your word bank, with the sentence it came from.
   Saved words get an amber dot. If the reading is wrong, open the word and
   choose **Save this reading** on one of the alternatives instead.
+- **Hide this word** (in an open word) removes it from the list under the line,
+  for words you already know or don't want to see, such as *AP* (a move's PP).
+  The word stays in the sentence as plain text. **Hidden (n)** at the bottom
+  lists them, with **Show again**. Hiding applies to the website's live view too,
+  and doesn't affect your word bank or reviews.
 - **‹ Earlier** steps back through recent lines; **Latest ›** returns.
 - **Review, Words, Games** at the bottom open the website in your browser.
   The number next to Review is how many cards are due.
-- The panel stays on top of other windows and follows mGBA when you move it.
+- The panel stays on top of the game (it hides while another app is in front) and follows mGBA when you move it.
   Clicking in it doesn't take the keyboard away from the game. If you drag the
   panel somewhere else, it stays there. **Dock** puts it back next to mGBA.
 

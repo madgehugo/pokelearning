@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import type { GameKind } from "@pokelearning/shared";
+import { wordKey, type GameKind } from "@pokelearning/shared";
 import { Breakdown } from "./components/Breakdown.tsx";
 import { GamesPage } from "./components/games/GamesPage.tsx";
 import { DialogueBox } from "./components/DialogueBox.tsx";
@@ -40,6 +40,7 @@ export function App() {
   const server = useServer();
   const { lines, status, connection, hasOlder, loadOlder, wordbank } = server;
   const saved = useMemo(() => new Set(wordbank?.saved ?? []), [wordbank]);
+  const hidden = useMemo(() => new Set((wordbank?.hidden ?? []).map((w) => wordKey(w.lemma, w.pos))), [wordbank]);
   const due = wordbank?.stats.dueNow ?? 0;
   const top = <StatusBar connection={connection} status={status} route={route} due={due} />;
   if (route === "panel") return <Panel server={server} />;
@@ -55,13 +56,13 @@ export function App() {
           ) : route === "games" ? (
             <GamesPage key={game ?? "list"} game={game} />
           ) : (
-            <Words stats={wordbank?.stats} version={wordbank} />
+            <Words stats={wordbank?.stats} hidden={wordbank?.hidden ?? []} version={wordbank} />
           )}
         </main>
       </div>
     );
   }
-  return <Live top={top} {...{ lines, status, hasOlder, loadOlder, saved }} />;
+  return <Live top={top} {...{ lines, status, hasOlder, loadOlder, saved, hidden }} />;
 }
 
 interface LiveProps {
@@ -71,9 +72,10 @@ interface LiveProps {
   hasOlder: boolean;
   loadOlder(): Promise<void>;
   saved: Set<string>;
+  hidden: Set<string>;
 }
 
-function Live({ top, lines, status, hasOlder, loadOlder, saved }: LiveProps) {
+function Live({ top, lines, status, hasOlder, loadOlder, saved, hidden }: LiveProps) {
   /** null = follow the newest line; otherwise the history line being read. */
   const [pinnedId, setPinnedId] = useState<number | null>(null);
   const [selected, setSelected] = useState<number | null>(null);
@@ -114,7 +116,7 @@ function Live({ top, lines, status, hasOlder, loadOlder, saved }: LiveProps) {
             Show the latest line
           </button>
         )}
-        <DialogueBox line={current} selected={selected} onSelect={setSelected} print={print} saved={saved} />
+        <DialogueBox line={current} selected={selected} onSelect={setSelected} print={print} saved={saved} hidden={hidden} />
         {current && (
           <p className="translation" lang="en">
             {current.translation?.text ?? (status?.translator ? "Translating…" : "No translation for this line.")}
@@ -132,6 +134,7 @@ function Live({ top, lines, status, hasOlder, loadOlder, saved }: LiveProps) {
             selected={selected}
             onSelect={setSelected}
             saved={saved}
+            hidden={hidden}
           />
         )}
       </main>

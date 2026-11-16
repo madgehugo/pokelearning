@@ -20,10 +20,12 @@ interface Props {
   onSelect(index: number | null): void;
   /** wordKey()s of saved words. */
   saved: Set<string>;
+  /** wordKey()s of words hidden from this list. */
+  hidden: Set<string>;
 }
 
-export function Breakdown({ lineId, tokens, selected, onSelect, saved }: Props) {
-  const words = wordsOf(tokens);
+export function Breakdown({ lineId, tokens, selected, onSelect, saved, hidden }: Props) {
+  const words = wordsOf(tokens).filter(({ token }) => !(token.best && hidden.has(wordKey(token.best.lemma, token.best.pos))));
   const selectedRow = useRef<HTMLLIElement>(null);
 
   useEffect(() => {
@@ -50,7 +52,9 @@ export function Breakdown({ lineId, tokens, selected, onSelect, saved }: Props) 
                 </span>
                 <Summary token={token} />
               </button>
-              {isSelected && <Details token={token} tokens={tokens} lineId={lineId} index={index} saved={saved} />}
+              {isSelected && (
+                <Details token={token} tokens={tokens} lineId={lineId} index={index} saved={saved} onHidden={() => onSelect(null)} />
+              )}
             </li>
           );
         })}
@@ -88,15 +92,17 @@ interface DetailsProps {
   lineId: number;
   index: number;
   saved: Set<string>;
+  onHidden(): void;
 }
 
-function Details({ token, tokens, lineId, index, saved }: DetailsProps) {
+function Details({ token, tokens, lineId, index, saved, onHidden }: DetailsProps) {
   const sense = token.best;
   const linked = token.linkedTo !== undefined ? tokens[token.linkedTo] : undefined;
   return (
     <div className="details">
       {sense && <SenseDetails sense={sense} />}
       {sense && <SaveButton sense={sense} saved={saved} request={{ lineId, tokenIndex: index }} />}
+      {sense && <HideButton sense={sense} onHidden={onHidden} />}
       {sense?.particle && linked && sense.formTags !== "separated prefix" && (
         <p className="note">
           Separable verb: <i lang="de">{linked.text}</i> at the end of the clause belongs to it, giving{" "}
@@ -191,6 +197,27 @@ function SenseDetails({ sense, compact = false }: { sense: WordSense; compact?: 
         ) : (
           <p className="glosses">{glosses[0]}</p>
         ))}
+    </>
+  );
+}
+
+/** Takes the word out of the breakdown (it can be shown again from the list of hidden words). */
+function HideButton({ sense, onHidden }: { sense: WordSense; onHidden(): void }) {
+  const [error, setError] = useState<string | null>(null);
+  const hide = async () => {
+    try {
+      await api.hideWord({ lemma: sense.lemma, pos: sense.pos, gloss: shortGloss(sense.glosses[0]) });
+      onHidden();
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  };
+  return (
+    <>
+      <button type="button" className="link-button hide-button" onClick={() => void hide()}>
+        Hide this word
+      </button>
+      {error && <span className="error"> Couldn't hide: {error}</span>}
     </>
   );
 }

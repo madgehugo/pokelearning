@@ -6,6 +6,8 @@
  *   GET    /api/words                        SavedWord[]
  *   POST   /api/words                        SaveWordRequest → SavedWord
  *   DELETE /api/words/:id
+ *   POST   /api/hidden                       HideWordRequest (hide a word in the breakdown)
+ *   POST   /api/hidden/remove                { lemma, pos }
  *   GET    /api/review                       ReviewQueue
  *   POST   /api/review/:cardId               AnswerRequest → ReviewQueue
  *   GET    /api/stats                        WordBankStats
@@ -22,7 +24,7 @@
  * the same browser can't change your word bank (the UI may be on the LAN).
  */
 import type http from "node:http";
-import type { AnswerRequest, GameKind, GameResultRequest, SaveWordRequest, ServerStatus, Settings } from "@pokelearning/shared";
+import type { AnswerRequest, GameKind, GameResultRequest, HideWordRequest, SaveWordRequest, ServerStatus, Settings } from "@pokelearning/shared";
 import type { AppDb } from "../db/app-db.ts";
 import path from "node:path";
 import { GAME_KINDS, GameError, type Games } from "../games/games.ts";
@@ -129,6 +131,19 @@ export async function handleApi(
         deps.onWordBankChange();
         sendJson(res, 204, undefined);
         break;
+      case "POST /api/hidden": {
+        wordbank.hide(await readJson<HideWordRequest>(req));
+        deps.onWordBankChange();
+        sendJson(res, 204, undefined);
+        break;
+      }
+      case "POST /api/hidden/remove": {
+        const body = await readJson<{ lemma: string; pos: string }>(req);
+        wordbank.unhide(body.lemma, body.pos);
+        deps.onWordBankChange();
+        sendJson(res, 204, undefined);
+        break;
+      }
       case "GET /api/review":
         sendJson(res, 200, wordbank.queue());
         break;
