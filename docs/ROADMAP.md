@@ -53,8 +53,21 @@
 - Count in-game encounters of saved words as light practice (FSRS doesn't model passive exposure, so this needs a separate rule).
 - Collapse repeated lines (the same battle message several times) in the history.
 
-## Phase 5: Mini-games
-- Article sprint (der/die/das), cloze from your own game lines, listening (TTS), matching.
+## Phase 5: Mini-games ✅
+Built from your own material: saved words first, then the words and lines you played (the last 1,500 lines).
+
+- **Article sprint**: 60 seconds of der/die/das. Mistakes are listed afterwards with the plural.
+- **Fill the gap**: a line with one content word blanked, preferring saved words. The other three options are words of the same part of speech from your lines. The translation is available as a hint.
+- **Listening**: the browser's German voice (Web Speech API) reads a line, and you pick its translation from four lines you played. You can replay it, or hear it slower.
+- **Matching**: six German words and their meanings. Time counts, with 3 s added per wrong pair.
+- Words seen only in Gen 3 capitals (menu and battle words like *ZURÜCK*, *NORMAL*) are left out of the noun games, because capitalised they look like nouns.
+- Results and bests are stored in `game_results`. They don't change FSRS scheduling.
+
+### Follow-ups
+- A typing mode (spell the word), with umlaut buttons for phones.
+- Listening in "dictation" mode: type what you hear.
+- Pick game words only from a chosen part of the game, or only saved words.
+- Optionally, count a game answer as light FSRS practice.
 
 ## Adapter gaps (from phase 1) ✅ (tested against a simulated printer; confirm in-game)
 - **The same message twice in a row**: the adapter finds the game's text printer cursor by itself (a RAM pointer that moves through the buffer while a message prints) and sends the message again whenever that cursor jumps back into the buffer. The server counts how often each line came up.

@@ -67,6 +67,16 @@ comes back. Keys: Space shows the answer, 1–4 grade, 1–3 pick an article.
 **Words** lists your saved words with their example sentences, encounters and
 next review.
 
+**Games** are built from your own words and lines, saved words first:
+- *Article sprint*: 60 seconds of der, die or das.
+- *Fill the gap*: a line from your game with one word missing, four choices.
+- *Listening*: the browser reads a line aloud in German (on a Mac, the built-in
+  voice Anna), and you pick what it means. R replays, Shift+R slower.
+- *Matching*: pair six German words with their meanings against the clock.
+
+Results and personal bests are kept, but games don't change your review
+schedule.
+
 Game names get their English name:
 
 - Pokémon: *ZIGZACHS* is Zigzagoon (No. 263, the *Kleindachs-Pokémon*).
@@ -127,7 +137,8 @@ The buffer addresses come from the pokeemerald decompilation, which matches the
 ## Roadmap
 
 See [docs/ROADMAP.md](docs/ROADMAP.md). Phases 1–4 (adapter, language pipeline,
-web UI, word bank with FSRS review) are implemented; next are mini-games.
+web UI, word bank with FSRS review, mini-games) are implemented; next are more
+game adapters.
 
 ## Credits and data licences
 
