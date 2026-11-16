@@ -36,6 +36,7 @@ export function StatusBar(props: Props) {
           {link("live", "Live")}
           {link("review", "Review", props.due > 0 ? String(props.due) : undefined)}
           {link("words", "Words")}
+          {link("games", "Games")}
         </nav>
       </div>
       <p className="status" data-state={state} role="status">

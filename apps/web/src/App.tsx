@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import type { GameKind } from "@pokelearning/shared";
 import { Breakdown } from "./components/Breakdown.tsx";
+import { GamesPage } from "./components/games/GamesPage.tsx";
 import { DialogueBox } from "./components/DialogueBox.tsx";
 import { History } from "./components/History.tsx";
 import { Review } from "./components/Review.tsx";
@@ -8,14 +10,17 @@ import { Words } from "./components/Words.tsx";
 import { useServer } from "./useServer.ts";
 import { wordsOf } from "./words.ts";
 
-export type Route = "live" | "review" | "words";
+export type Route = "live" | "review" | "words" | "games";
 
-function routeFromHash(): Route {
-  const h = location.hash.replace(/^#\/?/, "");
-  return h === "review" || h === "words" ? h : "live";
+const GAMES: GameKind[] = ["articles", "cloze", "listening", "matching"];
+
+function routeFromHash(): { route: Route; game: GameKind | null } {
+  const [h, sub] = location.hash.replace(/^#\/?/, "").split("/");
+  if (h === "games") return { route: "games", game: GAMES.includes(sub as GameKind) ? (sub as GameKind) : null };
+  return { route: h === "review" || h === "words" ? h : "live", game: null };
 }
 
-function useRoute(): Route {
+function useRoute(): { route: Route; game: GameKind | null } {
   const [route, setRoute] = useState(routeFromHash);
   useEffect(() => {
     const onHash = () => {
@@ -29,7 +34,7 @@ function useRoute(): Route {
 }
 
 export function App() {
-  const route = useRoute();
+  const { route, game } = useRoute();
   const { lines, status, connection, hasOlder, loadOlder, wordbank } = useServer();
   const saved = useMemo(() => new Set(wordbank?.saved ?? []), [wordbank]);
   const due = wordbank?.stats.dueNow ?? 0;
@@ -40,7 +45,13 @@ export function App() {
       <div className="app app--single">
         {top}
         <main className="reader">
-          {route === "review" ? <Review /> : <Words stats={wordbank?.stats} version={wordbank} />}
+          {route === "review" ? (
+            <Review />
+          ) : route === "games" ? (
+            <GamesPage key={game ?? "list"} game={game} />
+          ) : (
+            <Words stats={wordbank?.stats} version={wordbank} />
+          )}
         </main>
       </div>
     );

@@ -1,5 +1,17 @@
 /** Calls to the server's JSON API (same origin; Vite proxies it in development). */
-import type { AnswerRequest, ReviewQueue, SavedWord, SaveWordRequest, Settings } from "@pokelearning/shared";
+import type {
+  AnswerRequest,
+  GameAvailability,
+  GameKind,
+  GameMaterial,
+  GameRecord,
+  GameResultRequest,
+  GameResultResponse,
+  ReviewQueue,
+  SavedWord,
+  SaveWordRequest,
+  Settings,
+} from "@pokelearning/shared";
 
 async function call<T>(method: string, path: string, body?: unknown): Promise<T> {
   const res = await fetch(path, {
@@ -22,4 +34,7 @@ export const api = {
   answer: (cardId: number, req: AnswerRequest) => call<ReviewQueue>("POST", `/api/review/${cardId}`, req),
   settings: () => call<Settings>("GET", "/api/settings"),
   updateSettings: (patch: Partial<Settings>) => call<Settings>("PUT", "/api/settings", patch),
+  games: () => call<{ availability: GameAvailability[]; records: GameRecord[] }>("GET", "/api/games"),
+  gameMaterial: <K extends GameKind>(kind: K) => call<Extract<GameMaterial, { kind: K }>>("GET", `/api/games/${kind}`),
+  saveGameResult: (result: GameResultRequest) => call<GameResultResponse>("POST", "/api/games/results", result),
 };
