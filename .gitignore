@@ -1,0 +1,16 @@
+node_modules/
+dist/
+*.tsbuildinfo
+.DS_Store
+
+# game files: never commit ROMs, saves or save states
+*.gba
+*.sav
+*.ss[0-9]
+*.ss
+*.srm
+
+# local data
+*.db
+*.db-*
+.env

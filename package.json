@@ -1,0 +1,22 @@
+{
+  "name": "pokelearning",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "apps/server"
+  ],
+  "scripts": {
+    "dev:server": "npm run dev -w @pokelearning/server",
+    "send-test": "npm run send-test -w @pokelearning/server",
+    "typecheck": "tsc -p packages/shared && tsc -p apps/server"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  },
+  "engines": {
+    "node": ">=20.12"
+  }
+}
