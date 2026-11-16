@@ -30,20 +30,40 @@ game module, another emulator, or an OCR adapter. See
 | Path | What |
 | --- | --- |
 | `adapters/mgba-lua/` | mGBA Lua adapter: `main.lua` entry, `lib/` (charmap, JSON, transport), `games/` (per-game plug-ins), `tools/find_text.lua` (RAM search) |
-| `packages/shared/` | TypeScript types and validator for the adapter protocol |
-| `apps/server/` | Node server (phase 1: receives lines and prints them) |
+| `packages/shared/` | TypeScript types shared by adapters, server and UI: adapter protocol, line analysis |
+| `apps/server/` | Node server: ingest → word-by-word analysis → translation → SQLite (see [docs/language-pipeline.md](docs/language-pipeline.md)) |
 | `apps/web/` | Browser UI (phase 3) |
 | `docs/` | Roadmap, protocol, address-finding guide |
 
 ## Quick start
 
-Requirements: Node 20.12+ (tested on 26), mGBA 0.10+ (tested on 0.10.5).
+Requirements: Node 22.13+ (tested on 26; uses the built-in `node:sqlite`), mGBA 0.10+ (tested on 0.10.5).
 
 ```sh
 npm install
-npm run dev:server        # listens on 127.0.0.1:8765
+npm run dict:import       # once: downloads the Wiktionary extract (~100 MB) and builds data/dictionary.db (~15 s)
+npm run dev:server        # listens on 127.0.0.1:8765; first start downloads the translation model (~110 MB)
 npm run send-test         # optional: in a second terminal, sends fake lines
+npm test                  # unit tests
 ```
+
+Every line then appears with its translation and a word-by-word breakdown:
+
+```
+[10:39:13] #2 pokemon-emerald-de/field
+  Möchtest du dich im POKéMON-CENTER ausruhen?
+  Would you like to rest at the Pokémon Center?
+    Möchtest        mögen (verb) to like (something or someone); would like  · second-person singular subjunctive-ii
+    du              du (pron.) you (singular familiar), thou
+    dich            du (pron.) you (singular familiar), thou  · accusative personal
+    im              im (contr.) contraction of in + dem; in the
+    POKéMON-CENTER  das Pokémon-Center (noun) Pokémon Center (heals your Pokémon)
+    ausruhen        ausruhen (verb) to rest, to recover (through rest and relaxation)
+```
+
+Everything is local and free: no accounts or API keys. Downloaded data and your
+database live in `data/` (git-ignored). Set `TRANSLATOR=none` to turn off
+translation.
 
 ### Loading the Lua script in mGBA
 
@@ -72,11 +92,14 @@ The buffer addresses come from the pokeemerald decompilation, which matches the
 
 ## Roadmap
 
-See [docs/ROADMAP.md](docs/ROADMAP.md). Phase 1 (adapter + ingest) is what is
-implemented now.
+See [docs/ROADMAP.md](docs/ROADMAP.md). Phases 1 (adapter + ingest) and 2
+(language pipeline) are implemented; next is the web UI.
 
-## Credits
+## Credits and data licences
 
-Character encoding and RAM symbols come from the
-[pret/pokeemerald](https://github.com/pret/pokeemerald) decompilation.
-Inspired by Lexicart.
+- Character encoding and RAM symbols: the [pret/pokeemerald](https://github.com/pret/pokeemerald) decompilation.
+- Dictionary: [Wiktionary](https://en.wiktionary.org/) (CC BY-SA 4.0), via the
+  [Kaikki.org](https://kaikki.org/) extract (wiktextract).
+- Translation: [Opus-MT](https://github.com/Helsinki-NLP/Opus-MT) by Helsinki-NLP (CC BY 4.0),
+  ONNX conversion `Xenova/opus-mt-de-en`, run with [transformers.js](https://github.com/huggingface/transformers.js).
+- Inspired by Lexicart.
