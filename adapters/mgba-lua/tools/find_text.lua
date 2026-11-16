@@ -48,13 +48,13 @@ end
 
 -- Known buffers of the running game (from games/emerald.lua), to label hits.
 local function knownBuffers()
-  package.loaded["games.emerald"] = nil
-  local ok, emerald = pcall(require, "games.emerald")
+  package.loaded["games.gen3"], package.loaded["games.emerald"] = nil, nil
+  local ok, gen3 = pcall(require, "games.gen3")
   if not ok then return {} end
   local code = {}
   for i = 0, 3 do code[#code + 1] = string.char(emu:read8(0x080000AC + i)) end
-  local cfg = emerald.config(table.concat(code))
-  return cfg and cfg.buffers or {}
+  code = table.concat(code)
+  return gen3.matches(code) and gen3.config(code).buffers or {}
 end
 
 local function label(addr, buffers)

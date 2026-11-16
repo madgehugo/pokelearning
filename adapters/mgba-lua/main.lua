@@ -30,13 +30,17 @@ for name in pairs(package.loaded) do
 end
 
 local charmap = require("lib.charmap")
+local Discovery = require("lib.discover")
 local textmem = require("lib.textmem")
 local Transport = require("lib.transport")
 
 -- Game plug-ins. Each exports matches(gameCode) and config(gameCode).
 local GAMES = {
-  require("games.emerald"),
+  require("games.gen3"),
 }
+
+-- Looking for text buffers takes a full EWRAM read, so only every so often.
+local DISCOVER_EVERY_FRAMES = 30
 
 local function log(msg)
   if console then console:log(msg) else print(msg) end
@@ -63,6 +67,7 @@ local state = {
   cfg = nil,
   watchers = {}, -- one per buffer, see setupWatchers()
   sources = {},  -- one per cursor source (text printed straight from ROM)
+  discovery = nil, -- finds text buffers when the game's addresses aren't known
   frame = 0,
 }
 
@@ -93,21 +98,24 @@ local transport = Transport.new({
 })
 _POKELEARNING.transport = transport
 
+local function addWatcher(buf)
+  state.watchers[#state.watchers + 1] = {
+    buf = buf,
+    candidate = nil, stable = 0, emitted = nil, -- content debounce
+    cursor = buf.cursor,  -- RAM address of the text printer's pointer into this buffer
+    track = nil,          -- cursor discovery for the current message, see trackStep()
+    evidence = {},        -- { [address] = messages in which it moved forward }
+    verify = nil,         -- a known cursor must keep moving on new messages
+    missed = 0,
+    lastPtr = nil, lastInRange = false,
+    seen = {}, seenCount = 0, -- texts already sent this session
+  }
+end
+
 local function setupWatchers()
   state.watchers = {}
-  for _, buf in ipairs(state.cfg.buffers) do
-    state.watchers[#state.watchers + 1] = {
-      buf = buf,
-      candidate = nil, stable = 0, emitted = nil, -- content debounce
-      cursor = buf.cursor,  -- RAM address of the text printer's pointer into this buffer
-      track = nil,          -- cursor discovery for the current message, see trackStep()
-      evidence = {},        -- { [address] = messages in which it moved forward }
-      verify = nil,         -- a known cursor must keep moving on new messages
-      missed = 0,
-      lastPtr = nil, lastInRange = false,
-      seen = {}, seenCount = 0, -- texts already sent this session
-    }
-  end
+  for _, buf in ipairs(state.cfg.buffers) do addWatcher(buf) end
+  state.discovery = state.cfg.discover and Discovery.new(state.cfg.lang) or nil
   state.sources = {}
   for _, src in ipairs(state.cfg.cursors or {}) do
     state.sources[#state.sources + 1] = { src = src, start = nil, stable = 0, emittedStart = nil }
@@ -122,7 +130,11 @@ local function initGame()
     if g.matches(state.gameCode) then
       state.cfg = g.config(state.gameCode)
       log(string.format("[pokelearning] %s detected (game code %s, language %s)",
-        g.name, state.gameCode, state.cfg.lang))
+        state.cfg.title or g.name, state.gameCode, state.cfg.lang))
+      if state.cfg.discover then
+        log("[pokelearning] text buffer addresses for this game aren't known yet: they're found while you play. " ..
+          "Talk to a few people; the first lines appear after about three messages.")
+      end
       for _, buf in ipairs(state.cfg.buffers) do
         if not buf.verified then
           warn(string.format("[pokelearning] %s buffer address 0x%08X is unverified for %s. " ..
@@ -324,6 +336,16 @@ local function onFrame()
   if state.frame % CONFIG.checkEveryFrames ~= 0 then return end
   for _, w in ipairs(state.watchers) do checkWatcher(w) end
   for _, s in ipairs(state.sources) do checkSource(s) end
+  if state.discovery and state.frame % DISCOVER_EVERY_FRAMES == 0 then
+    local buf = state.discovery:step()
+    if buf then
+      buf.name = #state.watchers == 0 and "field" or ("text" .. (#state.watchers + 1))
+      addWatcher(buf)
+      log(string.format("[pokelearning] found a text buffer at 0x%08X (%s). To skip the search next time, add " ..
+        "{ name = \"%s\", addr = 0x%08X, size = %d, verified = true } for %s to a games/ file.",
+        buf.addr, buf.name, buf.name, buf.addr, buf.size, state.gameCode))
+    end
+  end
 end
 
 ---------------------------------------------------------------------------
@@ -351,6 +373,14 @@ pokelearning = {
     for _, s in ipairs(state.sources) do
       log(string.format("  %-7s cursor 0x%08X  showing: %s", s.src.name, s.src.addr,
         s.start and string.format("0x%08X", s.start) or "-"))
+    end
+    if state.discovery then
+      local top = {}
+      for i, c in ipairs(state.discovery:summary()) do
+        if i > 3 then break end
+        top[#top + 1] = string.format("0x%08X (%d of 3 messages)", c.addr, c.distinct)
+      end
+      log("  searching for text buffers" .. (#top > 0 and (": " .. table.concat(top, ", ")) or ": no candidates yet"))
     end
   end,
   -- Register text printed from ROM, e.g. pokelearning.addCursor("bag", 0x0300xxxx)
