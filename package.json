@@ -9,7 +9,9 @@
   "scripts": {
     "dev:server": "npm run dev -w @pokelearning/server",
     "send-test": "npm run send-test -w @pokelearning/server",
-    "typecheck": "tsc -p packages/shared && tsc -p apps/server"
+    "typecheck": "tsc -p packages/shared && tsc -p apps/server",
+    "dict:import": "npm run dict:import -w @pokelearning/server",
+    "test": "npm test -w @pokelearning/server"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
@@ -17,6 +19,6 @@
     "typescript": "^5.7.0"
   },
   "engines": {
-    "node": ">=20.12"
+    "node": ">=22.13"
   }
 }

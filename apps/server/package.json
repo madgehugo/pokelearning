@@ -6,9 +6,12 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "start": "tsx src/index.ts",
-    "send-test": "tsx scripts/send-test.ts"
+    "send-test": "tsx scripts/send-test.ts",
+    "dict:import": "tsx scripts/import-dictionary.ts",
+    "test": "tsx --test \"src/**/*.test.ts\""
   },
   "dependencies": {
+    "@huggingface/transformers": "^4.3.2",
     "@pokelearning/shared": "*"
   }
 }
