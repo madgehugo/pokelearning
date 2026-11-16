@@ -143,13 +143,19 @@ local MENU_MAX_ITEMS = 24
 
 local function onPrint()
   local m = state.menu
-  if not m then return end
+  if not m or #m.items >= MENU_MAX_ITEMS then return end
   local template = emu:readRegister("r0")
   if not textmem.isRam(template) then return end
   local ptr = emu:read32(template)
-  if not textmem.isRom(ptr) or m.seen[ptr] or #m.items >= MENU_MAX_ITEMS then return end
-  m.seen[ptr] = true
+  -- Dialogue is printed letter by letter (speed 1-3) and read from its buffer instead.
+  -- Labels print at once (speed 0 or 0xFF); some are built in RAM first (the Continue
+  -- screen's SPIELER, ORDEN…), so those are read at the moment they're drawn.
+  local speed = emu:readRegister("r1") & 0xFF
+  local instant = speed == 0 or speed == 0xFF
+  if not (textmem.isRom(ptr) or (instant and textmem.isRam(ptr))) then return end
   local raw = textmem.readString(ptr, 200)
+  if m.seen[raw] then return end
+  m.seen[raw] = true
   local text, stats = charmap.decode(raw, state.cfg.lang)
   if not looksLikeText(stats) then return end
   local flat = charmap.flatten(text)
