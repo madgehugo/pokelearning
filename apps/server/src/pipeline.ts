@@ -45,6 +45,7 @@ export class LinePipeline extends EventEmitter<PipelineEvents> {
 
   private async process(msg: LineMessage, receivedAt: number): Promise<ProcessedLine> {
     const id = this.db.insertLine(msg, receivedAt);
+    const seenBefore = this.db.countEarlier(msg.game, msg.line, id);
     const lang = msg.lang ?? "de";
 
     const analysis = ANALYSED_LANGS.has(lang) ? analyzeLine(msg.line, this.analyzer) : null;
@@ -70,6 +71,7 @@ export class LinePipeline extends EventEmitter<PipelineEvents> {
       receivedAt,
       analysis,
       translation,
+      seenBefore,
     };
     this.emit("line", processed);
     return processed;

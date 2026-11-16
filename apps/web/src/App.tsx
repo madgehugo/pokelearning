@@ -54,6 +54,11 @@ export function App() {
             {current.translation?.text ?? (status?.translator ? "Translating…" : "No translation for this line.")}
           </p>
         )}
+        {current && current.seenBefore > 0 && (
+          <p className="seen">
+            {current.seenBefore === 1 ? "You've seen this line once before." : `You've seen this line ${current.seenBefore} times before.`}
+          </p>
+        )}
         {current?.analysis && <Breakdown tokens={current.analysis.tokens} selected={selected} onSelect={setSelected} />}
       </main>
       <aside className="side">

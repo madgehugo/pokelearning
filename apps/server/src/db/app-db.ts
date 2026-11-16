@@ -18,6 +18,7 @@ interface LineRow {
   translation: string | null;
   translation_provider: string | null;
   analysis: string | null;
+  seen_before: number;
 }
 
 /** Each entry upgrades the schema by one version (PRAGMA user_version). Never edit old entries. */
@@ -97,6 +98,14 @@ export class AppDb {
     return Number(lastInsertRowid);
   }
 
+  /** Earlier lines with the same text in the same game. */
+  countEarlier(game: string, text: string, beforeId: number): number {
+    const row = this.db
+      .prepare("SELECT count(*) AS n FROM lines WHERE game = ? AND text = ? AND id < ?")
+      .get(game, text, beforeId) as { n: number };
+    return row.n;
+  }
+
   saveAnalysis(lineId: number, analysis: LineAnalysis): void {
     this.db
       .prepare(
@@ -133,7 +142,8 @@ export class AppDb {
     const rows = this.db
       .prepare(
         `SELECT l.id, l.game, l.source, l.lang, l.text, l.received_at, l.translation, l.translation_provider,
-                a.analysis
+                a.analysis,
+                (SELECT count(*) FROM lines e WHERE e.game = l.game AND e.text = l.text AND e.id < l.id) AS seen_before
          FROM lines l LEFT JOIN line_analyses a ON a.line_id = l.id
          WHERE (? IS NULL OR l.id < ?)
          ORDER BY l.id DESC LIMIT ?`,
@@ -151,6 +161,7 @@ export class AppDb {
         r.translation && r.translation_provider
           ? { provider: r.translation_provider, from: r.lang ?? "de", to: "en", text: r.translation, cached: true }
           : null,
+      seenBefore: r.seen_before,
     }));
   }
 

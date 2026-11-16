@@ -294,6 +294,12 @@ button {
   max-width: 62ch;
 }
 
+.seen {
+  margin: 6px 4px 0;
+  font-size: var(--step--1);
+  color: var(--ink-faint);
+}
+
 .live-button {
   display: block;
   margin: 0 0 12px auto;

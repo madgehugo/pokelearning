@@ -38,7 +38,8 @@ function wordRows(tokens: TokenAnalysis[]): [string, string][] {
 
 export function printLine(line: ProcessedLine): void {
   const source = line.source ? `/${line.source}` : "";
-  console.log(styleText("dim", `[${time()}] #${line.id} ${line.game}${source}`));
+  const seen = line.seenBefore ? `, seen ${line.seenBefore}× before` : "";
+  console.log(styleText("dim", `[${time()}] #${line.id} ${line.game}${source}${seen}`));
   console.log("  " + styleText("bold", line.text));
   if (line.translation) {
     const cached = line.translation.cached ? " (cached)" : "";

@@ -88,6 +88,14 @@ describe("LinePipeline", () => {
     assert.deepEqual(errors, ["model exploded"]);
   });
 
+  it("counts how often a line came up before", async () => {
+    const { pipeline } = setup();
+    assert.equal((await pipeline.submit(line("Hallo!")))?.seenBefore, 0);
+    await pipeline.submit(line("Tschüss!"));
+    assert.equal((await pipeline.submit(line("Hallo!")))?.seenBefore, 1);
+    assert.equal((await pipeline.submit(line("Hallo!")))?.seenBefore, 2);
+  });
+
   it("processes lines in arrival order", async () => {
     const { pipeline } = setup();
     const order: string[] = [];

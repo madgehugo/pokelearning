@@ -34,6 +34,7 @@ describe("UI server", () => {
     const first = (await (await fetch(`http://${base}/api/lines?limit=2`)).json()) as ProcessedLine[];
     assert.deepEqual(first.map((l) => l.text), ["drei", "zwei"]);
     assert.equal(first[0]?.translation?.text, "EN drei");
+    assert.equal(first[0]?.seenBefore, 0);
     const older = (await (await fetch(`http://${base}/api/lines?before=${first[1]!.id}`)).json()) as ProcessedLine[];
     assert.deepEqual(older.map((l) => l.text), ["eins"]);
   });

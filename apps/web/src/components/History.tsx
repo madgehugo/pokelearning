@@ -33,6 +33,7 @@ export function History({ lines, currentId, hasOlder, onPick, onLoadOlder }: Pro
               <span className="history__meta">
                 <time dateTime={new Date(l.receivedAt).toISOString()}>{clock(l.receivedAt)}</time>
                 {l.source && SOURCES[l.source] && <span className="history__source">{SOURCES[l.source]}</span>}
+                {l.seenBefore > 0 && <span className="history__source">seen before</span>}
               </span>
             </button>
           </li>

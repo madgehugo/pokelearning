@@ -68,4 +68,6 @@ export interface ProcessedLine {
   receivedAt: number;
   analysis: LineAnalysis | null;
   translation: Translation | null;
+  /** How many times this exact text came up before this line (same game, all sessions). */
+  seenBefore: number;
 }
