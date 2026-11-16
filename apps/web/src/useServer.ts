@@ -1,6 +1,6 @@
 /** Live connection to the server: lines (newest first), status, history paging. */
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { ProcessedLine, ServerMessage, ServerStatus } from "@pokelearning/shared";
+import type { ProcessedLine, ServerMessage, ServerStatus, WordBankSummary } from "@pokelearning/shared";
 
 export type Connection = "connecting" | "open" | "offline";
 
@@ -17,6 +17,7 @@ export function useServer() {
   const [status, setStatus] = useState<ServerStatus | null>(null);
   const [connection, setConnection] = useState<Connection>("connecting");
   const [hasOlder, setHasOlder] = useState(true);
+  const [wordbank, setWordbank] = useState<WordBankSummary | null>(null);
   const loadingOlder = useRef(false);
 
   useEffect(() => {
@@ -37,10 +38,13 @@ export function useServer() {
         if (msg.type === "snapshot") {
           setLines((prev) => merge(msg.lines, prev));
           setStatus(msg.status);
+          setWordbank(msg.wordbank);
         } else if (msg.type === "line") {
           setLines((prev) => merge([msg.line], prev));
         } else if (msg.type === "status") {
           setStatus(msg.status);
+        } else if (msg.type === "wordbank") {
+          setWordbank(msg.wordbank);
         }
       };
       ws.onclose = () => {
@@ -73,5 +77,15 @@ export function useServer() {
     }
   }, [lines]);
 
-  return { lines, status, connection, hasOlder, loadOlder };
+  // Cards fall due as time passes, without any event: refresh the counts now and then.
+  useEffect(() => {
+    if (connection !== "open") return;
+    const timer = setInterval(async () => {
+      const stats = await fetch("/api/stats").then((r) => r.json()).catch(() => null);
+      if (stats) setWordbank((prev) => (prev ? { ...prev, stats } : prev));
+    }, 60_000);
+    return () => clearInterval(timer);
+  }, [connection]);
+
+  return { lines, status, connection, hasOlder, loadOlder, wordbank };
 }

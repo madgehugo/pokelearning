@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
-import type { ProcessedLine } from "@pokelearning/shared";
+import { wordKey, type ProcessedLine } from "@pokelearning/shared";
 import { genderKey } from "../words.ts";
 
 interface Props {
@@ -8,12 +8,14 @@ interface Props {
   onSelect(index: number | null): void;
   /** Animate the text printing in (only for lines that just arrived). */
   print: boolean;
+  /** wordKey()s of saved words, marked in the text. */
+  saved: Set<string>;
 }
 
 /** Total time for a line to print in, like the game's text, whatever its length. */
 const PRINT_MS = 700;
 
-export function DialogueBox({ line, selected, onSelect, print }: Props) {
+export function DialogueBox({ line, selected, onSelect, print, saved }: Props) {
   if (!line) {
     return (
       <section className="box box--empty" aria-label="Current line">
@@ -51,6 +53,7 @@ export function DialogueBox({ line, selected, onSelect, print }: Props) {
           className="piece word"
           data-gender={genderKey(t.best)}
           data-unknown={known ? undefined : ""}
+          data-saved={t.best && saved.has(wordKey(t.best.lemma, t.best.pos)) ? "" : undefined}
           aria-pressed={selected === i}
           style={delay(t.start)}
           onClick={() => onSelect(selected === i ? null : i)}

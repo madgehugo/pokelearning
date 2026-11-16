@@ -4,13 +4,13 @@ import type { TokenAnalysis, WordSense } from "@pokelearning/shared";
 export type GenderKey = "der" | "die" | "das" | "mixed";
 
 /** Colour key for a reading: one article → its colour; several (der/das) → neutral. */
-export function genderKey(sense: WordSense | undefined): GenderKey | undefined {
+export function genderKey(sense: Pick<WordSense, "articles" | "pos"> | undefined): GenderKey | undefined {
   if (!sense?.articles || (sense.pos !== "noun" && sense.pos !== "name")) return undefined;
   return sense.articles.length === 1 ? sense.articles[0] : "mixed";
 }
 
 /** "die Leute", "der/das Leut", "ausruhen". */
-export function headword(sense: WordSense): string {
+export function headword(sense: Pick<WordSense, "articles" | "pos" | "lemma">): string {
   return sense.articles && sense.pos === "noun" ? `${sense.articles.join("/")} ${sense.lemma}` : sense.lemma;
 }
 
@@ -76,3 +76,18 @@ export const GAME_NAMES: Record<string, string> = {
   "pokemon-emerald-de": "Pokémon Smaragd",
   "pokemon-emerald-en": "Pokémon Emerald",
 };
+
+/** "now", "in 10 min", "in 3 days", "3 days ago". */
+export function relativeTime(ms: number, now = Date.now()): string {
+  const diff = ms - now;
+  const abs = Math.abs(diff);
+  if (abs < 60_000) return "now";
+  const min = Math.round(abs / 60_000);
+  const text =
+    min < 60
+      ? `${min} min`
+      : min < 60 * 24
+        ? `${Math.round(min / 60)} h`
+        : `${Math.round(min / 1440)} ${Math.round(min / 1440) === 1 ? "day" : "days"}`;
+  return diff > 0 ? `in ${text}` : `${text} ago`;
+}

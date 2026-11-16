@@ -1,14 +1,18 @@
-import { useEffect, useRef } from "react";
-import type { TokenAnalysis, WordSense } from "@pokelearning/shared";
+import { useEffect, useRef, useState } from "react";
+import { wordKey, type SaveWordRequest, type TokenAnalysis, type WordSense } from "@pokelearning/shared";
+import { api } from "../api.ts";
 import { describeForm, FORM_MATTERS, genderKey, headword, posLabel, shortGloss, wordsOf } from "../words.ts";
 
 interface Props {
+  lineId: number;
   tokens: TokenAnalysis[];
   selected: number | null;
   onSelect(index: number | null): void;
+  /** wordKey()s of saved words. */
+  saved: Set<string>;
 }
 
-export function Breakdown({ tokens, selected, onSelect }: Props) {
+export function Breakdown({ lineId, tokens, selected, onSelect, saved }: Props) {
   const words = wordsOf(tokens);
   const selectedRow = useRef<HTMLLIElement>(null);
 
@@ -27,6 +31,7 @@ export function Breakdown({ tokens, selected, onSelect }: Props) {
               <button
                 type="button"
                 className="word-row"
+                data-saved={token.best && saved.has(wordKey(token.best.lemma, token.best.pos)) ? "" : undefined}
                 aria-expanded={isSelected}
                 onClick={() => onSelect(isSelected ? null : index)}
               >
@@ -35,7 +40,7 @@ export function Breakdown({ tokens, selected, onSelect }: Props) {
                 </span>
                 <Summary token={token} />
               </button>
-              {isSelected && <Details token={token} tokens={tokens} />}
+              {isSelected && <Details token={token} tokens={tokens} lineId={lineId} index={index} saved={saved} />}
             </li>
           );
         })}
@@ -67,12 +72,21 @@ function Summary({ token }: { token: TokenAnalysis }) {
   );
 }
 
-function Details({ token, tokens }: { token: TokenAnalysis; tokens: TokenAnalysis[] }) {
+interface DetailsProps {
+  token: TokenAnalysis;
+  tokens: TokenAnalysis[];
+  lineId: number;
+  index: number;
+  saved: Set<string>;
+}
+
+function Details({ token, tokens, lineId, index, saved }: DetailsProps) {
   const sense = token.best;
   const linked = token.linkedTo !== undefined ? tokens[token.linkedTo] : undefined;
   return (
     <div className="details">
       {sense && <SenseDetails sense={sense} />}
+      {sense && <SaveButton sense={sense} saved={saved} request={{ lineId, tokenIndex: index }} />}
       {sense?.particle && linked && sense.formTags !== "separated prefix" && (
         <p className="note">
           Separable verb: <i lang="de">{linked.text}</i> at the end of the clause belongs to it, giving{" "}
@@ -93,7 +107,14 @@ function Details({ token, tokens }: { token: TokenAnalysis; tokens: TokenAnalysi
               <span className="word-row__form" lang="de">
                 {p.text}
               </span>
-              {p.best ? <SenseDetails sense={p.best} compact /> : <p className="muted">not in the dictionary</p>}
+              {p.best ? (
+                <>
+                  <SenseDetails sense={p.best} compact />
+                  <SaveButton sense={p.best} saved={saved} request={{ lineId, tokenIndex: index, part: i }} small />
+                </>
+              ) : (
+                <p className="muted">not in the dictionary</p>
+              )}
             </div>
           ))}
         </div>
@@ -107,7 +128,8 @@ function Details({ token, tokens }: { token: TokenAnalysis; tokens: TokenAnalysi
                 <span className="headword" lang="de" data-gender={genderKey(alt)}>
                   {headword(alt)}
                 </span>{" "}
-                <span className="pos">{posLabel(alt.pos)}</span> {shortGloss(alt.glosses[0])}
+                <span className="pos">{posLabel(alt.pos)}</span> {shortGloss(alt.glosses[0])}{" "}
+                <SaveButton sense={alt} saved={saved} request={{ lineId, tokenIndex: index, alternative: i }} small />
               </li>
             ))}
           </ul>
@@ -153,6 +175,43 @@ function SenseDetails({ sense, compact = false }: { sense: WordSense; compact?: 
         ) : (
           <p className="glosses">{glosses[0]}</p>
         ))}
+    </>
+  );
+}
+
+interface SaveButtonProps {
+  sense: WordSense;
+  saved: Set<string>;
+  request: SaveWordRequest;
+  /** Inline text button, for alternatives and compound parts. */
+  small?: boolean;
+}
+
+function SaveButton({ sense, saved, request, small = false }: SaveButtonProps) {
+  const [state, setState] = useState<"idle" | "saving" | { error: string }>("idle");
+  if (saved.has(wordKey(sense.lemma, sense.pos))) {
+    return <span className={small ? "saved-note saved-note--small" : "saved-note"}>In your word bank</span>;
+  }
+  const save = async () => {
+    setState("saving");
+    try {
+      await api.saveWord(request);
+      setState("idle"); // the word bank update from the server marks it saved
+    } catch (err) {
+      setState({ error: (err as Error).message });
+    }
+  };
+  return (
+    <>
+      <button
+        type="button"
+        className={small ? "link-button" : "save-button"}
+        disabled={state === "saving"}
+        onClick={() => void save()}
+      >
+        {small ? "Save this reading" : "Save word"}
+      </button>
+      {typeof state === "object" && <span className="error"> Couldn't save: {state.error}</span>}
     </>
   );
 }
