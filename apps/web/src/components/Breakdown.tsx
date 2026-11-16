@@ -99,7 +99,13 @@ function Details({ token, tokens, lineId, index, saved }: DetailsProps) {
           to the end of the clause.
         </p>
       )}
-      {sense?.source === "glossary" && <p className="note">From the game glossary.</p>}
+      {sense?.source === "glossary" && (
+        <p className="note">
+          {sense.pos === "pokemon" || sense.pos === "move"
+            ? "German and English names from PokéAPI."
+            : "From the game glossary."}
+        </p>
+      )}
       {token.parts && (
         <div className="parts">
           {token.parts.map((p, i) => (

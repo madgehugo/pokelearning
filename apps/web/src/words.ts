@@ -18,7 +18,7 @@ const POS: Record<string, string> = {
   noun: "noun", name: "name", verb: "verb", adj: "adjective", adv: "adverb", pron: "pronoun",
   det: "determiner", article: "article", prep: "preposition", conj: "conjunction",
   contraction: "contraction", intj: "interjection", num: "number", abbrev: "abbreviation",
-  particle: "particle", phrase: "phrase",
+  particle: "particle", phrase: "phrase", pokemon: "Pokémon", move: "move",
 };
 export const posLabel = (pos: string) => POS[pos] ?? pos;
 
@@ -53,11 +53,16 @@ export function describeForm(tags: string | undefined): string | undefined {
   return parts.join(", ") || undefined;
 }
 
-/** Short gloss for scanning: drop a long parenthetical explanation. */
+/**
+ * Short gloss for scanning: drop parenthetical explanations from long glosses.
+ * "people (several individual persons, …), folk" → "people, folk";
+ * "great heat from (or as if from) something that glows" → "great heat from something that glows".
+ */
 export function shortGloss(gloss: string | undefined): string {
   if (!gloss) return "";
-  const cut = gloss.indexOf(" (");
-  return cut > 0 && gloss.length > 48 ? gloss.slice(0, cut) : gloss;
+  if (gloss.length <= 48) return gloss;
+  const short = gloss.replace(/\s*\([^()]*\)/g, "").replace(/\s+([,;.])/g, "$1").trim();
+  return short || gloss;
 }
 
 /** Parts of speech whose case/number form is the main thing to learn. */
