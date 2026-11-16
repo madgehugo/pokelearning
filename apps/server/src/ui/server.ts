@@ -9,6 +9,7 @@ import path from "node:path";
 import { WebSocketServer, type WebSocket } from "ws";
 import type { ProcessedLine, ServerMessage, ServerStatus, WordBankSummary } from "@pokelearning/shared";
 import type { AppDb } from "../db/app-db.ts";
+import type { Games } from "../games/games.ts";
 import type { WordBank } from "../wordbank/wordbank.ts";
 import { handleApi, sendJson } from "./api.ts";
 
@@ -30,6 +31,7 @@ const CONTENT_TYPES: Record<string, string> = {
 export interface UiServerOptions {
   db: AppDb;
   wordbank: WordBank;
+  games: Games;
   status: () => ServerStatus;
   /** Built web app; if missing, "/" explains how to build or run it. */
   staticDir: string;
@@ -63,9 +65,9 @@ function serveStatic(staticDir: string, urlPath: string, res: http.ServerRespons
   fs.createReadStream(file).pipe(res);
 }
 
-export function createUiServer({ db, wordbank, status, staticDir }: UiServerOptions): UiServer {
+export function createUiServer({ db, wordbank, games, status, staticDir }: UiServerOptions): UiServer {
   const summary = (): WordBankSummary => ({ saved: wordbank.savedKeys(), stats: wordbank.stats() });
-  const apiDeps = { db, wordbank, status, onWordBankChange: () => broadcast({ type: "wordbank", wordbank: summary() }) };
+  const apiDeps = { db, wordbank, games, status, onWordBankChange: () => broadcast({ type: "wordbank", wordbank: summary() }) };
 
   const server = http.createServer((req, res) => {
     const url = new URL(req.url ?? "/", "http://localhost");

@@ -15,6 +15,7 @@ import { LinePipeline } from "./pipeline.ts";
 import { printLine, time } from "./print.ts";
 import { OpusMtProvider } from "./translate/opus-mt.ts";
 import { Translator } from "./translate/translator.ts";
+import { Games } from "./games/games.ts";
 import { createUiServer } from "./ui/server.ts";
 import { Scheduler } from "./wordbank/scheduler.ts";
 import { WordBank } from "./wordbank/wordbank.ts";
@@ -50,7 +51,8 @@ if (config.translator === "opus-mt") {
 }
 
 const wordbank = new WordBank(db, new Scheduler());
-const ui = createUiServer({ db, wordbank, status: () => ({ ...status }), staticDir: config.webDistDir });
+const games = new Games(db, wordbank);
+const ui = createUiServer({ db, wordbank, games, status: () => ({ ...status }), staticDir: config.webDistDir });
 
 const pipeline = new LinePipeline(db, { dictionary, glossary }, translator, config.targetLang);
 pipeline.on("line", printLine);

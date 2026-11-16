@@ -119,6 +119,19 @@ const MIGRATIONS = [
 
   CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);
   `,
+  // 3: mini-game results (kept apart from FSRS reviews)
+  `
+  CREATE TABLE game_results (
+    id          INTEGER PRIMARY KEY,
+    kind        TEXT NOT NULL,     -- articles | cloze | listening | matching
+    score       INTEGER NOT NULL,
+    total       INTEGER NOT NULL,
+    duration_ms INTEGER NOT NULL,
+    mistakes    INTEGER NOT NULL,
+    played_at   INTEGER NOT NULL
+  );
+  CREATE INDEX game_results_kind ON game_results(kind, played_at);
+  `,
 ];
 
 const LINE_SELECT = `

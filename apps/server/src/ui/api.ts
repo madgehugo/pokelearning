@@ -11,13 +11,17 @@
  *   GET    /api/stats                        WordBankStats
  *   GET    /api/settings                     Settings
  *   PUT    /api/settings                     Partial<Settings> → Settings
+ *   GET    /api/games                        { availability: GameAvailability[], records: GameRecord[] }
+ *   GET    /api/games/:kind                  GameMaterial (a fresh game)
+ *   POST   /api/games/results                GameResultRequest → GameResultResponse
  *
  * Writes must be JSON from the page's own origin, so other websites open in
  * the same browser can't change your word bank (the UI may be on the LAN).
  */
 import type http from "node:http";
-import type { AnswerRequest, SaveWordRequest, ServerStatus, Settings } from "@pokelearning/shared";
+import type { AnswerRequest, GameKind, GameResultRequest, SaveWordRequest, ServerStatus, Settings } from "@pokelearning/shared";
 import type { AppDb } from "../db/app-db.ts";
+import { GAME_KINDS, GameError, type Games } from "../games/games.ts";
 import { WordBankError, type WordBank } from "../wordbank/wordbank.ts";
 
 const MAX_PAGE = 200;
@@ -26,6 +30,7 @@ const MAX_BODY = 16 * 1024;
 export interface ApiDeps {
   db: AppDb;
   wordbank: WordBank;
+  games: Games;
   status: () => ServerStatus;
   /** Called after anything that changes the word bank or the review counts. */
   onWordBankChange: () => void;
@@ -84,7 +89,11 @@ export async function handleApi(
 ): Promise<boolean> {
   if (!url.pathname.startsWith("/api/")) return false;
   const { db, wordbank } = deps;
-  const route = `${req.method} ${url.pathname.replace(/\/\d+$/, "/:id")}`;
+  const gameKind = url.pathname.match(/^\/api\/games\/([a-z]+)$/)?.[1];
+  const route =
+    gameKind && GAME_KINDS.includes(gameKind as GameKind)
+      ? `${req.method} /api/games/:kind`
+      : `${req.method} ${url.pathname.replace(/\/\d+$/, "/:id")}`;
   const param = url.pathname.match(/\/(\d+)$/)?.[1];
 
   try {
@@ -137,11 +146,22 @@ export async function handleApi(
         sendJson(res, 200, settings);
         break;
       }
+      case "GET /api/games":
+        sendJson(res, 200, { availability: deps.games.availability(), records: deps.games.records() });
+        break;
+      case "GET /api/games/:kind":
+        sendJson(res, 200, deps.games.material(gameKind as GameKind));
+        break;
+      case "POST /api/games/results": {
+        const body = await readJson<GameResultRequest>(req);
+        sendJson(res, 201, deps.games.saveResult(body));
+        break;
+      }
       default:
         sendJson(res, 404, { error: "not found" });
     }
   } catch (err) {
-    if (err instanceof HttpError || err instanceof WordBankError) {
+    if (err instanceof HttpError || err instanceof WordBankError || err instanceof GameError) {
       sendJson(res, err.status, { error: err.message });
     } else {
       console.error(err);

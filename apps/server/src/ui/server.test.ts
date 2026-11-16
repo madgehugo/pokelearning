@@ -6,6 +6,7 @@ import path from "node:path";
 import { after, before, describe, it } from "node:test";
 import type { ProcessedLine, ServerMessage, ServerStatus } from "@pokelearning/shared";
 import { AppDb } from "../db/app-db.ts";
+import { Games } from "../games/games.ts";
 import { Scheduler } from "../wordbank/scheduler.ts";
 import { WordBank } from "../wordbank/wordbank.ts";
 import { createUiServer, type UiServer } from "./server.ts";
@@ -26,7 +27,8 @@ describe("UI server", () => {
       );
       db.saveLineTranslation(id, "fake", `EN ${text}`);
     }
-    ui = createUiServer({ db, wordbank: new WordBank(db, new Scheduler()), status: () => status, staticDir });
+    const wordbank = new WordBank(db, new Scheduler());
+    ui = createUiServer({ db, wordbank, games: new Games(db, wordbank), status: () => status, staticDir });
     await new Promise<void>((r) => ui.http.listen(0, "127.0.0.1", r));
     base = `127.0.0.1:${(ui.http.address() as AddressInfo).port}`;
   });
