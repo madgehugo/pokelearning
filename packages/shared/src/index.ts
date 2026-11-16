@@ -95,3 +95,5 @@ export function parseAdapterMessage(raw: string): ParseResult {
       return { ok: false, error: `unknown message type ${JSON.stringify(data.type)}` };
   }
 }
+
+export * from "./analysis.ts";
