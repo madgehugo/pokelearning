@@ -1,37 +1,14 @@
-// Pokélearning panel: a small always-on-top window that docks next to mGBA and
-// shows the companion's live view (http://localhost:8766/#/panel).
-//
-//   pokelearning-panel [--url http://localhost:8766/#/panel] [--width 380] [--app mGBA]
+// Shared by the standalone panel (apps/panel-macos, used by `npm run play`) and
+// the Pokélearning app (apps/desktop-macos): a small always-on-top window that
+// docks next to mGBA and shows the companion's live view (#/panel).
 //
 // It follows the mGBA window when you move or resize it. Drag the panel away
 // and it stays put; the panel's "Dock" link snaps it back. Clicking in the
 // panel doesn't take keyboard focus from the game. Links to Review, Words and
-// Games open in your default browser. Close the panel to quit it.
+// Games open in your default browser.
 
 import AppKit
 import WebKit
-
-struct Options {
-  var url = URL(string: "http://localhost:8766/#/panel")!
-  var width: CGFloat = 380
-  var app = "mGBA"
-}
-
-func parseOptions() -> Options {
-  var o = Options()
-  var args = CommandLine.arguments.dropFirst().makeIterator()
-  while let arg = args.next() {
-    switch arg {
-    case "--url": if let u = args.next().flatMap(URL.init(string:)) { o.url = u }
-    case "--width": if let w = args.next().flatMap(Double.init) { o.width = CGFloat(w) }
-    case "--app": if let a = args.next() { o.app = a }
-    default:
-      FileHandle.standardError.write("unknown option \(arg)\n".data(using: .utf8)!)
-      exit(1)
-    }
-  }
-  return o
-}
 
 /// The emulator's game window in Cocoa coordinates (origin bottom left), if it is on screen.
 /// Window positions don't need Screen Recording permission (only titles would).
@@ -54,8 +31,17 @@ func emulatorWindowFrame(app: String) -> NSRect? {
   return NSRect(x: r.minX, y: mainHeight - r.maxY, width: r.width, height: r.height)
 }
 
+/// Settings for the panel.
+struct PanelOptions {
+  var url = URL(string: "http://localhost:8766/#/panel")!
+  var width: CGFloat = 380
+  var app = "mGBA"
+}
+
 final class PanelController: NSObject, NSWindowDelegate, WKNavigationDelegate, WKUIDelegate, WKScriptMessageHandler {
-  private let options: Options
+  private let options: PanelOptions
+  /// Called when the panel window is closed (the standalone panel quits; the app keeps running).
+  var onClose: () -> Void = {}
   private let panel: NSPanel
   private let web: WKWebView
   private var following = true
@@ -63,7 +49,7 @@ final class PanelController: NSObject, NSWindowDelegate, WKNavigationDelegate, W
   private var lastEmulator: NSRect?
   private var retry: Timer?
 
-  init(options: Options) {
+  init(options: PanelOptions) {
     self.options = options
     panel = NSPanel(
       contentRect: NSRect(x: 200, y: 200, width: options.width, height: 600),
@@ -114,16 +100,30 @@ final class PanelController: NSObject, NSWindowDelegate, WKNavigationDelegate, W
   }
 
   func windowWillClose(_ notification: Notification) {
-    NSApp.terminate(nil)
+    onClose()
+  }
+
+  /// Bring the panel back (after it was closed) and reload its page.
+  func show() {
+    panel.orderFrontRegardless()
+    web.reload()
+  }
+
+  /// Snap back next to the emulator window.
+  func dock() {
+    following = true
+    lastEmulator = nil
+    follow()
+  }
+
+  /// Load the page again, e.g. after the server restarted.
+  func reload() {
+    web.load(URLRequest(url: options.url))
   }
 
   // "Dock" in the page
   func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
-    if message.body as? String == "dock" {
-      following = true
-      lastEmulator = nil
-      follow()
-    }
+    if message.body as? String == "dock" { dock() }
   }
 
   // Links to the website (Review, Words, Games) open in the default browser.
@@ -158,15 +158,5 @@ final class PanelController: NSObject, NSWindowDelegate, WKNavigationDelegate, W
       guard let self else { return }
       self.web.load(URLRequest(url: self.options.url))
     }
-  }
-}
-
-@main
-struct PanelApp {
-  static func main() {
-    let app = NSApplication.shared
-    app.setActivationPolicy(.accessory) // no Dock icon; the panel is the app
-    let controller = PanelController(options: parseOptions())
-    withExtendedLifetime(controller) { app.run() }
   }
 }
