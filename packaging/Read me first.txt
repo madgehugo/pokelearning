@@ -1,0 +1,30 @@
+Pokélearning: learn German while you play Pokémon
+==================================================
+
+1. Drag Pokélearning into the Applications folder.
+
+2. Open it from Applications. The first time, macOS says it can't check the
+   app for malicious software, because it isn't from the App Store or signed
+   with a paid Apple developer account. To open it anyway:
+     - Click "Done" (or "OK") in that message.
+     - Open System Settings → Privacy & Security, scroll down to
+       "Pokélearning was blocked…", and click "Open Anyway".
+     - Confirm with "Open Anyway" and your password.
+   You only do this once.
+
+3. Choose your game: the .gba file of your Pokémon game, dumped from your own
+   cartridge (for example Pokémon Smaragd). No games are included.
+
+4. The first launch downloads a German dictionary, game names and a
+   translation model (about 230 MB, a few minutes). After that it works
+   without an internet connection.
+
+From then on, open Pokélearning to play: the game starts in mGBA, and a panel
+next to it shows every German line with its translation and its words.
+Review, your words and the games are in the Go menu.
+
+Your progress is kept in ~/Library/Application Support/Pokélearning.
+File → Back Up Progress… saves it to one file, for example to move to
+another Mac (File → Restore Progress… there).
+
+Licences of the included software: "Third-party notices.md".

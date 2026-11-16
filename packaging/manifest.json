@@ -1,0 +1,19 @@
+{
+  "comment": "Pinned downloads for `npm run package`. The package script verifies each sha256. mGBA's development builds are only published at a moving 'latest' URL, so the pin is the checksum: if the cached file is gone and 'latest' has moved, the script stops; update this entry after checking the new build (`--help` must list --script).",
+  "node": {
+    "version": "v26.13.0",
+    "url": "https://nodejs.org/dist/v26.13.0/node-v26.13.0-darwin-arm64.tar.xz",
+    "sha256": "6f5b3187d9df9fc007e881167905bc7d69ad26450ddc377c83d63256a2495b6e",
+    "license": "MIT"
+  },
+  "mgba": {
+    "version": "0.11-9184-190a68d60",
+    "commit": "190a68d6095d6d9ce71f0bf56a359d5db5589cfc",
+    "source": "https://github.com/mgba-emu/mgba/tree/190a68d6095d6d9ce71f0bf56a359d5db5589cfc",
+    "url": "https://s3.amazonaws.com/mgba/mGBA-build-latest-macos.dmg",
+    "file": "mGBA-build-latest-macos.dmg",
+    "sha256": "276ac4d62cd2bb8688fe5b10f06071f57ba41f89c44c13fa2b4bff06c1e03af0",
+    "downloaded": "2026-11-16",
+    "license": "MPL-2.0"
+  }
+}

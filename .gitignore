@@ -17,3 +17,8 @@ dist/
 
 # downloaded dictionaries and the local database
 data/
+
+# packaging
+packaging/cache/
+dist/
+apps/desktop-macos/bin/

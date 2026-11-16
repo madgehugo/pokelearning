@@ -1,5 +1,6 @@
 {
   "name": "pokelearning",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
   "workspaces": [
@@ -23,7 +24,9 @@
     "typecheck": "tsc -p packages/shared && tsc -p apps/server && tsc -p apps/web && tsc -p adapters/ocr-macos",
     "ocr": "npm start -w @pokelearning/ocr-macos --",
     "ocr:build": "npm run build -w @pokelearning/ocr-macos",
-    "panel:build": "mkdir -p apps/panel-macos/bin && swiftc -O -parse-as-library -o apps/panel-macos/bin/pokelearning-panel apps/panel-macos/Panel.swift"
+    "panel:build": "mkdir -p apps/panel-macos/bin && swiftc -O -parse-as-library -o apps/panel-macos/bin/pokelearning-panel apps/panel-macos/PanelCore.swift apps/panel-macos/PanelMain.swift",
+    "package": "node scripts/package-mac.mjs",
+    "app:build": "mkdir -p apps/desktop-macos/bin && swiftc -O -parse-as-library -o apps/desktop-macos/bin/Pokelearning apps/panel-macos/PanelCore.swift apps/desktop-macos/Server.swift apps/desktop-macos/App.swift"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
