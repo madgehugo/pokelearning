@@ -10,7 +10,6 @@ local CONFIG = {
   checkEveryFrames = 2,  -- how often to read the text buffers
   stableFrames = 6,      -- buffer must be unchanged this many checks before we emit
   cursorStableChecks = 15, -- ROM text (item descriptions…) must stay selected this long (~0.5 s)
-  cursorVerifyChecks = 30, -- drop a discovered cursor that doesn't follow a new message
   echo = true,           -- also print each line in the mGBA scripting console
 }
 
@@ -101,10 +100,12 @@ local function setupWatchers()
       buf = buf,
       candidate = nil, stable = 0, emitted = nil, -- content debounce
       cursor = buf.cursor,  -- RAM address of the text printer's pointer into this buffer
-      candidates = nil,     -- cursor discovery: { [address] = value }
-      rounds = 0,
+      track = nil,          -- cursor discovery for the current message, see trackStep()
+      evidence = {},        -- { [address] = messages in which it moved forward }
+      verify = nil,         -- a known cursor must keep moving on new messages
+      missed = 0,
       lastPtr = nil, lastInRange = false,
-      verify = nil,         -- checks left for a discovered cursor to prove itself
+      seen = {}, seenCount = 0, -- texts already sent this session
     }
   end
   state.sources = {}
@@ -176,33 +177,95 @@ local function emit(source, addr, raw, repeated)
 end
 
 -- Text printer cursor discovery. While a message prints, the game's text
--- printer keeps a pointer (currentChar) into the buffer. Each time a new
--- message appears we scan RAM for words pointing into the buffer, and keep
--- the ones whose value changed since the last message: constant pointers to
--- the buffer start drop out, the printer's cursor stays.
-local function discoverCursor(w)
-  local lo, hi = w.buf.addr, w.buf.addr + w.buf.size
-  local now = textmem.scanPointers(lo, hi)
-  if not w.candidates then
-    w.candidates, w.rounds = now, 1
-    return
+-- printer keeps a pointer (currentChar) into the buffer that moves forward
+-- one character at a time. Other RAM words can point into the buffer too
+-- (leftovers on the stack from building the message), but they stay put.
+-- So for the first frames of each new message we follow every word pointing
+-- into the buffer; one that moves forward in two messages is the cursor.
+local TRACK_CHECKS = 20  -- ~40 frames per message
+local MAX_TRACKED = 256
+local MAX_SEEN = 500
+
+local function inBuffer(w, v) return v >= w.buf.addr and v < w.buf.addr + w.buf.size end
+
+local function addTrackedPointers(w)
+  local t = w.track
+  for addr, v in pairs(textmem.scanPointers(w.buf.addr, w.buf.addr + w.buf.size)) do
+    if not t.ptrs[addr] and t.n < MAX_TRACKED then
+      t.ptrs[addr], t.n = { last = v, moves = 0 }, t.n + 1
+    end
   end
-  local kept, n = {}, 0
-  for addr, value in pairs(w.candidates) do
-    local v = now[addr]
-    if v and v ~= value then kept[addr], n = v, n + 1 end
+end
+
+local function finishTracking(w)
+  local best, bestMoves = nil, 1 -- must move forward at least twice
+  for addr, p in pairs(w.track.ptrs) do
+    if p.moves > bestMoves or (p.moves == bestMoves and best and addr < best) then
+      best, bestMoves = addr, p.moves
+    end
   end
-  w.rounds = w.rounds + 1
-  if n == 0 then
-    w.candidates, w.rounds = now, 1 -- nothing survived: start over with this message
-  elseif n == 1 or w.rounds >= 4 then
-    local best
-    for addr in pairs(kept) do if not best or addr < best then best = addr end end
-    w.cursor, w.candidates, w.verify = best, nil, nil
+  w.track = nil
+  if not best then return end
+  w.evidence[best] = (w.evidence[best] or 0) + 1
+  if w.evidence[best] >= 2 then
+    w.cursor, w.evidence, w.missed = best, {}, 0
     log(string.format("[pokelearning] %s text printer found at 0x%08X (repeated messages are now detected)",
       w.buf.name, best))
+  end
+end
+
+-- One check of discovery (no cursor yet) or verification (cursor known).
+local function trackStep(w)
+  if w.track then
+    local t = w.track
+    t.checks = t.checks + 1
+    -- the printer may start a moment after the text lands in the buffer
+    if t.checks == 2 or t.checks == 4 then addTrackedPointers(w) end
+    for addr, p in pairs(t.ptrs) do
+      local v = emu:read32(addr)
+      if inBuffer(w, v) then
+        if v > p.last then p.moves = p.moves + 1 end
+        p.last = v
+      else
+        t.ptrs[addr], t.n = nil, t.n - 1
+      end
+    end
+    if t.checks >= TRACK_CHECKS then finishTracking(w) end
+  elseif w.verify then
+    local v = w.verify
+    v.checks = v.checks + 1
+    local ptr = emu:read32(w.cursor)
+    if inBuffer(w, ptr) and v.last and ptr > v.last then v.moved = true end
+    v.last = ptr
+    if v.checks >= TRACK_CHECKS then
+      w.verify = nil
+      w.missed = v.moved and 0 or w.missed + 1
+      if w.missed >= 3 then
+        warn(string.format("[pokelearning] %s text printer at 0x%08X stopped following messages, searching again",
+          w.buf.name, w.cursor))
+        w.cursor, w.lastPtr, w.missed = nil, nil, 0
+      end
+    end
+  end
+end
+
+-- Called when new content lands in the buffer.
+local function onNewContent(w)
+  if w.cursor then
+    w.verify = { checks = 0, last = nil, moved = false }
   else
-    w.candidates = kept
+    w.track = { checks = 0, ptrs = {}, n = 0 }
+    addTrackedPointers(w)
+  end
+end
+
+-- Send buffer text, marking it "again" if it was already sent this session.
+local function emitBuffer(w, raw, shownAgain)
+  local again = shownAgain or w.seen[raw] ~= nil
+  emit(w.buf.name, w.buf.addr, raw, again)
+  if not w.seen[raw] then
+    if w.seenCount >= MAX_SEEN then w.seen, w.seenCount = {}, 0 end
+    w.seen[raw], w.seenCount = true, w.seenCount + 1
   end
 end
 
@@ -213,38 +276,26 @@ local function checkWatcher(w)
   if raw ~= w.candidate then
     w.candidate = raw
     w.stable = 0
+    onNewContent(w)
   elseif w.stable < CONFIG.stableFrames then
     w.stable = w.stable + 1
     if w.stable == CONFIG.stableFrames and raw ~= w.emitted then
       w.emitted = raw
-      emit(w.buf.name, w.buf.addr, raw, false)
-      if w.cursor then w.verify = CONFIG.cursorVerifyChecks
-      elseif looksLikeText(select(2, charmap.decode(raw, state.cfg.lang))) then discoverCursor(w) end
+      emitBuffer(w, raw, false)
     end
   end
+  trackStep(w)
 
   -- 2. Same content shown again: the printer cursor jumps back into the buffer.
   if not w.cursor then return end
   local ptr = emu:read32(w.cursor)
-  local inRange = ptr >= w.buf.addr and ptr < w.buf.addr + w.buf.size
+  local inRange = inBuffer(w, ptr)
   if inRange and w.lastPtr and (not w.lastInRange or ptr < w.lastPtr)
       and raw == w.emitted and w.stable >= CONFIG.stableFrames then
-    emit(w.buf.name, w.buf.addr, raw, true)
+    emitBuffer(w, raw, true)
+    w.verify = { checks = 0, last = nil, moved = false }
   end
   w.lastPtr, w.lastInRange = ptr, inRange
-
-  if w.verify then
-    if inRange then
-      w.verify = nil
-    else
-      w.verify = w.verify - 1
-      if w.verify <= 0 then
-        warn(string.format("[pokelearning] %s text printer at 0x%08X stopped following messages, searching again",
-          w.buf.name, w.cursor))
-        w.cursor, w.verify, w.lastPtr = nil, nil, nil
-      end
-    end
-  end
 end
 
 -- Cursor sources: a RAM word that points at the text currently being shown,
@@ -285,8 +336,15 @@ pokelearning = {
       state.cfg and state.cfg.game or "unsupported",
       transport:connected() and "connected" or "offline", #transport.queue))
     for _, w in ipairs(state.watchers) do
-      local cursor = w.cursor and string.format("printer 0x%08X", w.cursor)
-        or (w.candidates and "printer: searching" or "printer: waiting for a message")
+      local cursor
+      if w.cursor then
+        cursor = string.format("printer 0x%08X", w.cursor)
+      else
+        local clues = {}
+        for addr, n in pairs(w.evidence) do clues[#clues + 1] = string.format("0x%08X×%d", addr, n) end
+        cursor = "printer: searching" .. (w.track and string.format(" (following %d pointers)", w.track.n) or "")
+          .. (#clues > 0 and (", candidates " .. table.concat(clues, " ")) or "")
+      end
       log(string.format("  %-7s 0x%08X  %s  buffer: %s", w.buf.name, w.buf.addr, cursor,
         w.emitted and charmap.flatten((charmap.decode(w.emitted, state.cfg.lang))) or "-"))
     end
@@ -307,7 +365,7 @@ pokelearning = {
       if w.buf.name == name then
         w.buf.addr, w.buf.size = addr, size or w.buf.size
         w.candidate, w.stable, w.emitted = nil, 0, nil
-        w.cursor, w.candidates, w.lastPtr = nil, nil, nil
+        w.cursor, w.track, w.evidence, w.verify, w.lastPtr = nil, nil, {}, nil, nil
         log(string.format("[pokelearning] %s buffer now at 0x%08X", name, addr))
         return
       end

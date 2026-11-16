@@ -77,13 +77,23 @@ the `BPED` entry.
 
 ## 3. The text printer (repeated messages): automatic
 
-You don't need to do anything here. After a few messages, the console prints
-`field text printer found at 0x0300…`. This is the game's pointer to the
-character being printed. From then on, a message shown twice in a row (the same
-NPC again, or the same battle message) is sent again, marked "again". If it
-stops working, the adapter notices and searches again. Once you know the
-address, you can pin it in `games/emerald.lua` with `cursor = 0x0300…` on the
-buffer.
+You don't need to do anything here. The game's text printer keeps a pointer
+to the character it is printing, and it moves forward through the message.
+For the first frames of every new message, the adapter follows all RAM words
+pointing into the buffer, and accepts one that moves forward in two different
+messages. Then the console prints `field text printer found at 0x0300…`.
+Usually that takes two or three messages with normal text speed.
+
+From then on, a message shown twice in a row (the same NPC again, or the same
+battle message) is sent again. Anything already sent this session is marked
+"again" in the console. The web UI also tells you how often you've seen a line
+across all sessions.
+
+If the printer stops moving on new messages (three in a row), the adapter
+says so and searches again. `pokelearning.status()` shows the state, e.g.
+`printer: searching (following 12 pointers), candidates 0x03001008×1`. Once
+you know the address, you can pin it in `games/emerald.lua` with
+`cursor = 0x0300…` on the buffer.
 
 ## 4. Text printed straight from ROM (bag, Pokédex…)
 
