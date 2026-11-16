@@ -23,7 +23,18 @@ export const config = {
   modelsDir: path.join(dataDir, "models"),
   /** Game names (Pokémon, moves, abilities, items, places), from `npm run names:import`. */
   namesPath: path.join(dataDir, "pokemon-names.json"),
-  /** Which game's names are used. Emerald: generation 3, Hoenn (region 3). */
+  /**
+   * Which names a game uses, by its id ("pokemon-firered-de" → firered): its
+   * generation and regions (1 Kanto, 3 Hoenn). Games not listed use the default,
+   * which NAMES_GENERATION and NAMES_REGIONS can change.
+   */
+  gameScopes: {
+    ruby: { generation: 3, regions: [3] },
+    sapphire: { generation: 3, regions: [3] },
+    emerald: { generation: 3, regions: [3] },
+    firered: { generation: 3, regions: [1] },
+    leafgreen: { generation: 3, regions: [1] },
+  } as Record<string, { generation: number; regions: number[] }>,
   namesScope: {
     generation: Number(process.env.NAMES_GENERATION ?? 3),
     regions: (process.env.NAMES_REGIONS ?? "3").split(",").map(Number),

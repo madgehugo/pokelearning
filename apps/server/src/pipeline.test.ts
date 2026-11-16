@@ -15,6 +15,9 @@ const glossary = createGlossary([
 class FakeProvider implements TranslationProvider {
   readonly id = "fake";
   calls: string[] = [];
+  supports(from: string, to: string) {
+    return from === "de" && to === "en";
+  }
   fail = false;
   async warmUp() {}
   async translate(text: string) {
@@ -114,6 +117,16 @@ describe("LinePipeline", () => {
     await pipeline.submit(line("Tschüss!"));
     assert.equal((await pipeline.submit(line("Hallo!")))?.seenBefore, 1);
     assert.equal((await pipeline.submit(line("Hallo!")))?.seenBefore, 2);
+  });
+
+  it("stores lines in languages the translator can't handle, without an error", async () => {
+    const { pipeline } = setup();
+    const errors: string[] = [];
+    pipeline.on("error", (e) => errors.push(e.message));
+    const out = await pipeline.submit({ ...line("Un RONFLEX sauvage apparaît !"), lang: "fr" });
+    assert.equal(out?.translation, null);
+    assert.equal(out?.analysis, null);
+    assert.deepEqual(errors, []);
   });
 
   it("processes lines in arrival order", async () => {

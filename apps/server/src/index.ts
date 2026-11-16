@@ -10,7 +10,7 @@ import { config } from "./config.ts";
 import { AppDb } from "./db/app-db.ts";
 import { openDictionary } from "./dictionary/db.ts";
 import { createIngestServer } from "./ingest/tcp.ts";
-import { loadGameGlossary } from "./language/load.ts";
+import { loadGameGlossaries } from "./language/load.ts";
 import { LinePipeline } from "./pipeline.ts";
 import { printLine, time } from "./print.ts";
 import { OpusMtProvider } from "./translate/opus-mt.ts";
@@ -24,8 +24,10 @@ const info = (text: string) => console.log(styleText("cyan", `[${time()}] ${text
 const warn = (text: string) => console.warn(styleText("yellow", `[${time()}] ${text}`));
 
 const db = new AppDb(config.appDbPath);
-const { glossary, names } = loadGameGlossary();
-if (names !== null) info(`game names: ${names} Pokémon, moves, abilities, items and places`);
+const glossaries = loadGameGlossaries();
+const glossary = glossaries.forGame("pokemon-emerald-de");
+const names = glossaries.nameCount("pokemon-emerald-de");
+if (names !== null) info(`game names: ${names} Pokémon, moves, abilities, items and places (Emerald; other games get their own)`);
 else warn("no game names found: run `npm run names:import` to translate Pokémon, moves, items and places");
 const dictionary = openDictionary(config.dictionaryDbPath);
 if (dictionary) info(`dictionary ${dictionary.version}`);
@@ -54,7 +56,7 @@ const wordbank = new WordBank(db, new Scheduler());
 const games = new Games(db, wordbank);
 const ui = createUiServer({ db, wordbank, games, status: () => ({ ...status }), staticDir: config.webDistDir });
 
-const pipeline = new LinePipeline(db, { dictionary, glossary }, translator, config.targetLang);
+const pipeline = new LinePipeline(db, (game) => ({ dictionary, glossary: glossaries.forGame(game) }), translator, config.targetLang);
 pipeline.on("line", printLine);
 pipeline.on("line", ui.broadcastLine);
 pipeline.on("line", (line) => {

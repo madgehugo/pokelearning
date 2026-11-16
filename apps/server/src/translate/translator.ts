@@ -20,6 +20,10 @@ export class Translator {
     return this.provider.warmUp();
   }
 
+  supports(from: string, to: string): boolean {
+    return this.provider.supports(from, to);
+  }
+
   /** Cached translation of one sentence. */
   private async cached(sentence: string, from: string, to: string): Promise<{ text: string; cached: boolean }> {
     const hit = this.db.getCachedTranslation(this.provider.id, from, to, sentence);
@@ -29,10 +33,11 @@ export class Translator {
     return { text, cached: false };
   }
 
-  async translateLine(text: string, from: string, to: string): Promise<Translation> {
+  /** `glossary` is the line's game's glossary (defaults to the one given at construction). */
+  async translateLine(text: string, from: string, to: string, glossary: Glossary = this.glossary): Promise<Translation> {
     let allCached = true;
     const out: string[] = [];
-    for (const sentence of prepareSentences(text, this.glossary)) {
+    for (const sentence of prepareSentences(text, glossary)) {
       const first = await this.cached(sentence.text, from, to);
       allCached &&= first.cached;
       let translated = restoreSlots(first.text, sentence.slots);

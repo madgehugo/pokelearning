@@ -7,6 +7,9 @@ import { EventEmitter } from "node:events";
 import type { LineMessage, ProcessedLine, Translation } from "@pokelearning/shared";
 import type { AppDb } from "./db/app-db.ts";
 import { analyzeLine, type AnalyzerDeps } from "./language/analyze.ts";
+
+/** Analyzer dependencies, or a function that picks them by game id (names differ per game). */
+export type AnalyzerFor = AnalyzerDeps | ((game: string) => AnalyzerDeps);
 import type { Translator } from "./translate/translator.ts";
 
 export interface PipelineEvents {
@@ -22,7 +25,7 @@ export class LinePipeline extends EventEmitter<PipelineEvents> {
 
   constructor(
     private readonly db: AppDb,
-    private readonly analyzer: AnalyzerDeps,
+    private readonly analyzer: AnalyzerFor,
     private readonly translator: Translator | null,
     private readonly targetLang: string,
   ) {
@@ -48,13 +51,14 @@ export class LinePipeline extends EventEmitter<PipelineEvents> {
     const seenBefore = this.db.countEarlier(msg.game, msg.line, id);
     const lang = msg.lang ?? "de";
 
-    const analysis = ANALYSED_LANGS.has(lang) ? analyzeLine(msg.line, this.analyzer) : null;
+    const deps = typeof this.analyzer === "function" ? this.analyzer(msg.game) : this.analyzer;
+    const analysis = ANALYSED_LANGS.has(lang) ? analyzeLine(msg.line, deps) : null;
     if (analysis) this.db.saveAnalysis(id, analysis);
 
     let translation: Translation | null = null;
-    if (this.translator && lang !== this.targetLang) {
+    if (this.translator?.supports(lang, this.targetLang)) {
       try {
-        translation = await this.translator.translateLine(msg.line, lang, this.targetLang);
+        translation = await this.translator.translateLine(msg.line, lang, this.targetLang, deps.glossary);
         this.db.saveLineTranslation(id, translation.provider, translation.text);
       } catch (err) {
         // A failed translation shouldn't lose the line or its analysis.

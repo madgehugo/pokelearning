@@ -10,7 +10,7 @@ import { config } from "../src/config.ts";
 import { AppDb } from "../src/db/app-db.ts";
 import { openDictionary } from "../src/dictionary/db.ts";
 import { analyzeLine } from "../src/language/analyze.ts";
-import { loadGameGlossary } from "../src/language/load.ts";
+import { loadGameGlossaries } from "../src/language/load.ts";
 import { OpusMtProvider } from "../src/translate/opus-mt.ts";
 import { Translator } from "../src/translate/translator.ts";
 
@@ -19,7 +19,8 @@ const BATCH = 200;
 async function main() {
   const db = new AppDb(config.appDbPath);
   const dictionary = openDictionary(config.dictionaryDbPath);
-  const { glossary } = loadGameGlossary();
+  const glossaries = loadGameGlossaries();
+  const glossary = glossaries.forGame("pokemon-emerald-de");
   const translate = !process.argv.includes("--no-translate") && config.translator === "opus-mt";
   const translator = translate ? new Translator(new OpusMtProvider(config.modelsDir, "de", config.targetLang), db, glossary) : null;
 
@@ -34,13 +35,14 @@ async function main() {
       seen++;
       const lang = line.lang ?? "de";
       if (lang !== "de") continue;
-      const analysis = analyzeLine(line.text, { dictionary, glossary });
+      const gameGlossary = glossaries.forGame(line.game);
+      const analysis = analyzeLine(line.text, { dictionary, glossary: gameGlossary });
       if (JSON.stringify(analysis) !== JSON.stringify(line.analysis)) {
         db.saveAnalysis(line.id, analysis);
         analysesChanged++;
       }
       if (translator) {
-        const t = await translator.translateLine(line.text, lang, config.targetLang);
+        const t = await translator.translateLine(line.text, lang, config.targetLang, gameGlossary);
         if (t.text !== line.translation?.text) {
           db.saveLineTranslation(line.id, t.provider, t.text);
           translationsChanged++;

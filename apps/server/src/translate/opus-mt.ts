@@ -29,6 +29,10 @@ export class OpusMtProvider implements TranslationProvider {
     return this.model;
   }
 
+  supports(from: string, to: string): boolean {
+    return from === this.from && to === this.to;
+  }
+
   async warmUp(): Promise<void> {
     await this.load();
   }

@@ -2,6 +2,8 @@
 export interface TranslationProvider {
   /** Stable id, part of the cache key: changing the model must change the id. */
   readonly id: string;
+  /** Whether this provider can translate between these languages. */
+  supports(from: string, to: string): boolean;
   /** Start loading (e.g. download the model) so the first line isn't slow. */
   warmUp(): Promise<void>;
   /** Translate one sentence. */

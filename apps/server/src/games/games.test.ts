@@ -26,6 +26,7 @@ function seeded(seed: number) {
 
 const english: TranslationProvider = {
   id: "fake",
+  supports: (from, to) => from === "de" && to === "en",
   warmUp: async () => {},
   translate: async (text: string) => `EN: ${text}`,
 };

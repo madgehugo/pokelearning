@@ -1,10 +1,46 @@
-/** The glossary the server uses: imported Pokémon names plus the hand-written game terms. */
+/**
+ * The glossaries the server uses: imported game names plus the hand-written
+ * game terms. Each game gets the names of its own generation and regions
+ * (FireRed: Kanto, Emerald: Hoenn); glossaries are built once per scope.
+ */
 import { config } from "../config.ts";
 import { defaultGlossaryFile, loadGlossary, type Glossary } from "./glossary.ts";
-import { loadNames, nameEntries } from "./names.ts";
+import { loadNames, nameEntries, type GameScope, type NamesFile } from "./names.ts";
 
+/** "pokemon-firered-de" → FireRed's scope; anything else → the default scope. */
+export function scopeFor(game: string): GameScope {
+  const title = game.match(/^pokemon-([a-z]+)-/)?.[1];
+  return (title && config.gameScopes[title]) || config.namesScope;
+}
+
+export interface GameGlossaries {
+  /** The glossary for a game id. */
+  forGame(game: string): Glossary;
+  /** Number of name entries for a game id, or null if no names were imported. */
+  nameCount(game: string): number | null;
+}
+
+export function loadGameGlossaries(names: NamesFile | null = loadNames(config.namesPath)): GameGlossaries {
+  const cache = new Map<string, { glossary: Glossary; count: number }>();
+  const build = (game: string) => {
+    const scope = scopeFor(game);
+    const key = `${scope.generation}:${scope.regions.join(",")}`;
+    let hit = cache.get(key);
+    if (!hit) {
+      const entries = names ? nameEntries(names, scope) : [];
+      hit = { glossary: loadGlossary(defaultGlossaryFile, entries), count: entries.length };
+      cache.set(key, hit);
+    }
+    return hit;
+  };
+  return {
+    forGame: (game) => build(game).glossary,
+    nameCount: (game) => (names ? build(game).count : null),
+  };
+}
+
+/** The default game's glossary (Emerald), for scripts and tools. */
 export function loadGameGlossary(): { glossary: Glossary; names: number | null } {
-  const names = loadNames(config.namesPath);
-  const entries = names ? nameEntries(names, config.namesScope) : [];
-  return { glossary: loadGlossary(defaultGlossaryFile, entries), names: names ? entries.length : null };
+  const g = loadGameGlossaries();
+  return { glossary: g.forGame("pokemon-emerald-de"), names: g.nameCount("pokemon-emerald-de") };
 }

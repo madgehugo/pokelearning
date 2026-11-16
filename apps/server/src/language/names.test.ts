@@ -9,6 +9,7 @@ import { Scheduler } from "../wordbank/scheduler.ts";
 import { WordBank } from "../wordbank/wordbank.ts";
 import { analyzeLine } from "./analyze.ts";
 import { createGlossary } from "./glossary.ts";
+import { loadGameGlossaries, scopeFor } from "./load.ts";
 import { buildNames, nameEntries, parseCsv, type NameTables } from "./names.ts";
 
 // Tiny PokéAPI-shaped tables: language 6 is German, 9 English, 5 French (ignored).
@@ -67,6 +68,18 @@ describe("game names", () => {
     });
     assert.deepEqual(names.abilities[0], { id: 65, generation: 3, de: "Notdünger", en: "Overgrow" });
     assert.deepEqual(names.places.find((p) => p.id === 429), { id: 429, region: 3, de: "Blütenburg City", en: "Petalburg City" });
+  });
+
+  it("gives each game the names of its own region", () => {
+    assert.deepEqual(scopeFor("pokemon-firered-de"), { generation: 3, regions: [1] });
+    assert.deepEqual(scopeFor("pokemon-ruby-de"), { generation: 3, regions: [3] });
+    const kanto = { ...names, places: [...names.places, { id: 2, region: 1, de: "Alabastia", en: "Pallet Town" }] };
+    const g = loadGameGlossaries({ source: "", importedAt: "", ...kanto });
+    assert.equal(g.forGame("pokemon-firered-de").get("Alabastia")?.mt, "Pallet Town");
+    assert.equal(g.forGame("pokemon-firered-de").get("Wurzelheim"), undefined);
+    assert.equal(g.forGame("pokemon-emerald-de").get("Wurzelheim")?.mt, "Littleroot Town");
+    assert.equal(g.forGame("pokemon-emerald-de").get("Alabastia"), undefined);
+    assert.equal(g.forGame("pokemon-firered-de").get("Zigzachs")?.mt, "Zigzagoon", "same generation: same Pokémon");
   });
 
   it("only uses names from the game's generation and region", () => {
