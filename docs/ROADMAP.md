@@ -17,8 +17,8 @@
 
 ### Follow-ups
 - ✅ Pokémon and move names (German ↔ English) from PokéAPI (`npm run names:import`). Names written in Gen 3 capitals reach the translator as placeholders (X1, X2) and go back in as English afterwards.
-- Items, abilities and places from PokéAPI the same way.
-- Multi-word names (the only Gen 1–3 one is the move *Rechte Hand*, Helping Hand).
+- ✅ Abilities, items (with category and Emerald bag description) and Hoenn places from PokéAPI. Multi-word names ("BLÜTENBURG CITY", "RECHTE HAND") are matched as one, ß matches SS, and items are recognised in the plural (*POKéBÄLLE*). Items take their gender from the dictionary or from their compound's last part, so they get article cards.
+- NPC and trainer names (*MR. BRIGGS*) aren't in PokéAPI; add the ones you meet to `glossary/pokemon-de.json`.
 - Gen 3 sometimes shortened German names that later games spell in full. If one doesn't match, add it to `glossary/pokemon-de.json`, which overrides imported names.
 - Split German compounds that have no hyphen and no dictionary entry (e.g. *Pokémonzentrum*).
 - Use syntax to rank function words. For example, the relative pronoun *das* after a comma is currently read as an article; the correct reading is listed as an alternative.

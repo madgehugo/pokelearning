@@ -41,6 +41,7 @@ German words are ambiguous: *die* can be an article or a pronoun, *ruhe* can com
 | The word is a headword itself (*Leute*), not only an inflection | + |
 | The word's own entry names the lexeme (`direct`) | + |
 | Archaic or obsolete form or lexeme | − |
+| Only a subjunctive form (*führt* as a form of *fahren*) | − (loses to *führen*'s present tense) |
 | Part of speech (article > pronoun/preposition > …) and number of senses | small tie-breakers |
 | Separable reading whose particle is the last word of the clause | ++, otherwise −− (mid-clause *auf dich* is a preposition) |
 
@@ -65,7 +66,8 @@ Opus-MT garbles English names inside German text ("Scratch" → "SStitch",
 battle lines, all placeholders survived, and the translations read better than
 with real first names or [1]-style brackets as placeholders. If a placeholder
 ever goes missing, that sentence is translated again with the English names
-written in.
+written in. The translator chooses *a* or *an* for "X1", so that is corrected
+for the real name ("an X1" → "a Super Potion").
 
 Placeholders are numbered per sentence, and each sentence is cached by
 provider + language pair + text. So "X1 setzt X2 ein!" is translated once for
@@ -73,28 +75,41 @@ every Pokémon and move, and a repeated line is free. Sentences are translated
 one at a time, because Opus-MT tends to drop short sentences when given
 several at once.
 
-## Pokémon and move names
+## Game names
 
-`npm run names:import` downloads PokéAPI's species, move and type tables and
-writes `data/pokemon-names.json`. The server turns every species and move up
-to `NAMES_MAX_GENERATION` (default 3, for Emerald) into a glossary entry with:
+`npm run names:import` downloads PokéAPI's tables and writes
+`data/pokemon-names.json`. The server turns the names for the game into
+glossary entries. Emerald is generation 3 and Hoenn; set `NAMES_GENERATION` and
+`NAMES_REGIONS` for another game.
 
-- the English name and translator form,
-- the Pokédex number and category (*Kleindachs-Pokémon*, Tiny Raccoon Pokémon) for species,
-- the type, in English and German (*Typ Feuer*), for moves.
+| Kind | Example | Shown with |
+| --- | --- | --- |
+| Pokémon | ZIGZACHS → Zigzagoon | Pokédex number, category (*Kleindachs-Pokémon*, Tiny Raccoon Pokémon) |
+| Move | GLUT → Ember | type, in English and German (*Typ Feuer*) |
+| Ability | GROSSBRAND → Blaze | |
+| Item | SUPERTRANK → Super Potion | category, the English Emerald bag description, gender (*der*) |
+| Place | BLÜTENBURG CITY → Petalburg City | region |
 
-These entries are `capsOnly`: Gen 3 writes names in capitals, so *GLUT* is the
-move Ember, while *Glut* in normal text keeps its dictionary meaning (embers)
-with the move offered as an alternative. A name in normal case that the
-dictionary doesn't know (*Zigzachs*) still uses the name. Entries in
-`glossary/pokemon-de.json` override imported names.
+How they are matched:
 
-`npm run reprocess` re-analyses and re-translates stored lines after a names
-import or dictionary rebuild. Unchanged sentences come from the cache.
+- **Capitals only.** Gen 3 writes names in capitals, so *GLUT* is the move,
+  while *Glut* in normal text keeps its dictionary meaning (embers) with the
+  move as an alternative. A name in normal case that the dictionary doesn't
+  know (*Zigzachs*) still uses the name.
+- **Multi-word names** ("BLÜTENBURG CITY", "RECHTE HAND", "ROUTE 101") are
+  matched as one. The first word carries the reading (`phraseEnd`), and the
+  others point to it (`partOf`). The UI shows them as one word.
+- **ß = SS**, because capitals write *GROSSBRAND* for *Großbrand*.
+- **Item plurals**: *POKéBÄLLE* is a compound whose last part is a plural the
+  dictionary knows (*Bälle* → Ball), so it is the item Pokéball.
+- **Item genders**: PokéAPI has none, so an item takes the gender of the same
+  noun in the dictionary (*Trank*: der) or of its last part, which decides a
+  German compound's gender (*Supertrank* → *Trank*, *Pokéball* → *Ball*). That
+  gives items article cards in the word bank.
 
-To add a provider (DeepL, an LLM, …), implement `TranslationProvider` and
-select it in `index.ts` via `TRANSLATOR`. Give it its own `id` so its cache
-entries stay separate.
+Entries in `glossary/pokemon-de.json` override imported names. After an import
+or a dictionary rebuild, `npm run reprocess` re-analyses and re-translates
+stored lines; unchanged sentences come from the cache.
 
 ## Data files
 
@@ -103,5 +118,5 @@ entries stay separate.
 | `data/kaikki-german.jsonl.gz` | Downloaded Wiktionary extract | yes (re-downloaded by `dict:import`) |
 | `data/dictionary.db` | Built dictionary | yes (`npm run dict:import`) |
 | `data/models/` | Translation model | yes (re-downloaded on start) |
-| `data/pokemon-names.json` | Pokémon and move names | yes (`npm run names:import`) |
+| `data/pokemon-names.json` | Pokémon, move, ability, item and place names | yes (`npm run names:import`) |
 | `data/app.db` | **Your history, word bank and review history** | no: back it up |
