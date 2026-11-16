@@ -23,7 +23,8 @@ no accounts, no API keys, no cost.
 
 **Contents**
 
-1. [One-time setup](#1-one-time-setup)
+0. [Install the app](#0-install-the-app) (the easy way)
+1. [Setting up from source](#1-setting-up-from-source-for-developers) (for developers)
 2. [Every time you play](#2-every-time-you-play)
 3. [Using it](#3-using-it): panel, website, review, games, phone
 4. [Other games and emulators](#4-other-games-and-emulators)
@@ -33,7 +34,47 @@ no accounts, no API keys, no cost.
 
 ---
 
-## 1. One-time setup
+## 0. Install the app
+
+The easiest way: **Pokélearning.app** has everything built in, mGBA included.
+You need a Mac with Apple Silicon (M1 or newer) and macOS 14 or newer.
+
+1. Open `Pokélearning-<version>-arm64.dmg` and drag **Pokélearning** into
+   **Applications**.
+2. Open it from Applications. The app isn't signed with a paid Apple developer
+   account, so the first time macOS blocks it:
+   - Click **Done** in the message.
+   - Open **System Settings → Privacy & Security**, scroll down to
+     *"Pokélearning" was blocked…*, and click **Open Anyway**.
+   - Confirm with **Open Anyway** and your password.
+
+   You only do this once.
+3. **Choose your game**: the `.gba` file of your Pokémon game, dumped from your
+   own cartridge (e.g. Pokémon Smaragd). The app remembers it. No games are
+   included.
+4. **First-time setup** downloads the German dictionary, the game names and the
+   translation model (about 230 MB), with a progress window. It takes a few
+   minutes, once. After that, everything works offline.
+
+From then on, **open Pokélearning to play**. The game starts in mGBA with the
+companion already running, and the panel docks next to it. There's nothing else
+to load. Quitting mGBA quits the app.
+
+The app's menus:
+- **Go**: Live, Review, Words and Games, in your browser (⌘1–⌘4).
+- **Panel**: Show Panel (⌘P) and Dock Next to mGBA (⌘D).
+- **File**:
+  - Change ROM…
+  - Back Up Progress… and Restore Progress…
+  - Show Data Folder and Show Logs
+- **Phone**: Allow Phone Access shows the address to open on your phone.
+
+**Sharing it:** give someone the DMG. They need their own ROM dump, and their
+progress is their own. To move *your* progress to another Mac, use
+**File → Back Up Progress…** here and **File → Restore Progress…** there.
+Restore Progress also takes the `data/app.db` of a from-source setup.
+
+## 1. Setting up from source (for developers)
 
 You need Node 22.13 or newer, mGBA 0.10 or newer, and Xcode or Apple's command
 line tools (to build the side panel). In the project folder:
@@ -49,6 +90,9 @@ The first start also downloads the translation model (~110 MB) and builds the
 side panel. After that, everything works offline.
 
 ## 2. Every time you play
+
+**With the app:** open Pokélearning. That's all: the game, the companion and
+the panel start together. The rest of this section is for running from source.
 
 ```sh
 npm run play
@@ -176,6 +220,11 @@ protocol](adapter-protocol.md), [finding memory addresses](finding-addresses.md)
 
 ### Where your data lives
 
+With the app, these live in `~/Library/Application Support/Pokélearning/`
+(**File → Show Data Folder**). The app's log is in
+`~/Library/Logs/Pokélearning/server.log` (**File → Show Logs**). From source,
+they're in the repo's `data/` folder.
+
 | File | What | If you delete it |
 | --- | --- | --- |
 | `data/app.db` | **Your history, word bank, reviews and game results** | They're gone: back it up |
@@ -191,7 +240,21 @@ Your ROM, saves and save states are never copied or committed.
 Start with the two status lines: the panel's (or the website's top bar), and
 `pokelearning.status()`, which you can type into mGBA's scripting console.
 
-### Starting up
+### The app
+
+| What you see | Why | Fix |
+| --- | --- | --- |
+| *Apple could not verify "Pokélearning"…* | The app isn't notarized by Apple | System Settings → Privacy & Security → **Open Anyway** (section 0). Once only |
+| *"Pokélearning" is damaged and can't be opened* | Some ways of copying files (some browsers, AirDrop) mark unsigned apps like this | In Terminal: `xattr -dr com.apple.quarantine /Applications/Pokélearning.app`, then open it again |
+| *Port 8766 is already in use* | The companion is already running from a terminal (`npm run play`) | Stop that one (Ctrl+C), then open the app again |
+| Setup says *No internet connection* | A download failed | Connect, then **Try again**. Finished steps aren't downloaded again |
+| *mGBA didn't start* | The app is incomplete | Download the DMG again and replace the app |
+| *The companion server stopped* | It crashed | **Restart**. If it happens again, File → Show Logs and send the log |
+| The panel is gone | It was closed | **Panel → Show Panel** (⌘P) |
+| The wrong game starts | A different ROM was chosen | **File → Change ROM…** |
+| mGBA's keys or settings differ from your own mGBA | The app's mGBA shares settings with any mGBA you have installed (`~/.config/mGBA`) | Change them in mGBA's settings as usual |
+
+### Starting up (from source)
 
 | What you see | Why | Fix |
 | --- | --- | --- |
@@ -263,7 +326,8 @@ problems:
 
 ## 7. Updating, backing up and resetting
 
-- **Back up your progress**: copy `data/app.db` while the server isn't running.
+- **Back up your progress**: in the app, **File → Back Up Progress…**. From
+  source, copy `data/app.db` while the server isn't running.
 - **Update the dictionary or names**: `npm run dict:import` or
   `npm run names:import`, then `npm run reprocess` so old lines pick them up.
 - **Forget your history and word bank**: stop the server and delete

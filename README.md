@@ -35,13 +35,31 @@ game module, another emulator, or an OCR adapter. See
 | `apps/server/` | Node server: ingest → word-by-word analysis → translation → SQLite (see [docs/language-pipeline.md](docs/language-pipeline.md)) |
 | `apps/web/` | Browser UI: React + Vite, responsive, live over WebSocket; `#/panel` is the compact side-panel view |
 | `apps/panel-macos/` | Native side panel (Swift): docks next to mGBA and shows `#/panel` |
-| `scripts/play.mjs` | `npm run play`: server, mGBA and panel in one command |
+| `scripts/play.mjs` | `npm run play`: server, mGBA and panel in one command (from source) |
+| `apps/desktop-macos/` | `Pokélearning.app`: starts the server, mGBA (with `--script`) and the panel; menus, setup, backups |
+| `scripts/package-mac.mjs`, `packaging/` | `npm run package`: builds the app and the DMG |
 | `docs/` | [User guide](docs/GUIDE.md), roadmap, protocol, address-finding guide, language pipeline |
 
 ## Quick start
 
-**New here? Read the [user guide](docs/GUIDE.md):** setup, a typical session,
-and troubleshooting.
+**New here? Read the [user guide](docs/GUIDE.md):** installing, a typical
+session, and troubleshooting.
+
+### The app (easiest)
+
+`Pokélearning.app` has everything built in, mGBA included. Open the DMG, drag
+the app to Applications, and open it. The first time:
+1. Allow it once in System Settings → Privacy & Security → **Open Anyway**.
+2. Choose your own ROM.
+3. Let it download its data (about 230 MB).
+
+After that, opening the app starts your game with the companion running, and
+docks the panel next to it. Apple Silicon Macs with macOS 14 or newer.
+
+To build the app and its DMG yourself: `npm run package` → `dist/Pokélearning-<version>-arm64.dmg`.
+The package script pins and checksums its downloads (`packaging/manifest.json`).
+
+### From source
 
 Requirements: Node 22.13+ (tested on 26; uses the built-in `node:sqlite`),
 mGBA 0.10+ (tested on 0.10.5), and Xcode or the command line tools for the side

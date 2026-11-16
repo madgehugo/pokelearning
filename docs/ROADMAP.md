@@ -93,3 +93,15 @@ Built from your own material: saved words first, then the words and lines you pl
 ### Follow-ups
 - Load the script automatically once mGBA's scripting can do that (newer development builds have script autoloading).
 - An "Open panel" button in the website for when the panel was closed.
+
+## Pokélearning.app ✅
+- **One app with mGBA built in** (`apps/desktop-macos`, `npm run package`). It contains a pinned mGBA development build with `--script`, so the companion script runs with no manual step, plus Node, the server, the website and the panel.
+- **First launch:** asks for your own ROM (remembered), then downloads the dictionary, names and model with a progress page (`#/setup`, `/api/setup`). After that, opening the app starts the game with the companion running and docks the panel. Quitting mGBA quits the app.
+- **Menus:** Go (Live, Review, Words, Games), Panel, File (Change ROM, Back Up / Restore Progress, data and logs), Phone (allow LAN access).
+- **Distribution:** a DMG of about 130 MB (the app is about 360 MB), Apple Silicon, macOS 14+. Signed ad hoc, not notarized: recipients allow it once with Open Anyway.
+
+### Follow-ups
+- Sign with a Developer ID and notarize, so the app opens without the Open Anyway step.
+- A universal build (Intel Macs).
+- Update checks.
+- Move to the mGBA 0.11 release once it's out, instead of a development build.
