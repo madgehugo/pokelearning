@@ -5,20 +5,21 @@ import { GamesPage } from "./components/games/GamesPage.tsx";
 import { DialogueBox } from "./components/DialogueBox.tsx";
 import { History } from "./components/History.tsx";
 import { Panel } from "./components/Panel.tsx";
+import { Setup } from "./components/Setup.tsx";
 import { Review } from "./components/Review.tsx";
 import { StatusBar } from "./components/StatusBar.tsx";
 import { Words } from "./components/Words.tsx";
 import { useServer } from "./useServer.ts";
 import { wordsOf } from "./words.ts";
 
-export type Route = "live" | "review" | "words" | "games" | "panel";
+export type Route = "live" | "review" | "words" | "games" | "panel" | "setup";
 
 const GAMES: GameKind[] = ["articles", "cloze", "listening", "matching"];
 
 function routeFromHash(): { route: Route; game: GameKind | null } {
   const [h, sub] = location.hash.replace(/^#\/?/, "").split("/");
   if (h === "games") return { route: "games", game: GAMES.includes(sub as GameKind) ? (sub as GameKind) : null };
-  return { route: h === "review" || h === "words" || h === "panel" ? h : "live", game: null };
+  return { route: h === "review" || h === "words" || h === "panel" || h === "setup" ? h : "live", game: null };
 }
 
 function useRoute(): { route: Route; game: GameKind | null } {
@@ -42,6 +43,7 @@ export function App() {
   const due = wordbank?.stats.dueNow ?? 0;
   const top = <StatusBar connection={connection} status={status} route={route} due={due} />;
   if (route === "panel") return <Panel server={server} />;
+  if (route === "setup") return <Setup />;
 
   if (route !== "live") {
     return (

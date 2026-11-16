@@ -1179,3 +1179,90 @@ kbd {
   content: " ↗";
   font-weight: 400;
 }
+
+/* First-launch setup (#/setup) ------------------------------------------- */
+
+.setup {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 28px var(--gutter) 40px;
+}
+.setup h1 {
+  margin: 0 0 8px;
+  font-family: var(--font-text);
+  font-size: 1.6rem;
+  font-weight: 600;
+}
+.setup__intro {
+  margin: 0 0 22px;
+  color: var(--ink-soft);
+}
+.setup__steps {
+  list-style: none;
+  margin: 0 0 20px;
+  padding: 0;
+  display: grid;
+  gap: 16px;
+}
+.setup__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+.setup__title {
+  font-weight: 700;
+}
+.setup__state {
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+.setup__step[data-state="ready"] .setup__state {
+  color: var(--das);
+  font-weight: 700;
+}
+.setup__bar {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--rule);
+  overflow: hidden;
+}
+.setup__fill {
+  height: 100%;
+  background: var(--cursor);
+  transform-origin: left;
+  transition: transform 0.3s ease-out;
+}
+.setup__step[data-state="ready"] .setup__fill {
+  background: var(--das);
+}
+.setup__step[data-state="failed"] .setup__fill {
+  background: var(--die);
+}
+/* size unknown: a moving stripe instead of a fill */
+.setup__fill[data-indeterminate] {
+  width: 35%;
+  transform: none;
+  animation: setup-slide 1.2s ease-in-out infinite alternate;
+}
+@keyframes setup-slide {
+  from {
+    margin-left: 0;
+  }
+  to {
+    margin-left: 65%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .setup__fill {
+    transition: none;
+  }
+  .setup__fill[data-indeterminate] {
+    animation: none;
+    width: 100%;
+    opacity: 0.5;
+  }
+}
+.setup__step p {
+  margin: 6px 0 0;
+}
