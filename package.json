@@ -15,6 +15,8 @@
     "start": "npm run build:web && npm run start -w @pokelearning/server",
     "send-test": "npm run send-test -w @pokelearning/server",
     "dict:import": "npm run dict:import -w @pokelearning/server",
+    "names:import": "npm run names:import -w @pokelearning/server",
+    "reprocess": "npm run reprocess -w @pokelearning/server",
     "test": "npm test -w @pokelearning/server",
     "typecheck": "tsc -p packages/shared && tsc -p apps/server && tsc -p apps/web"
   },

@@ -15,20 +15,30 @@ export interface GlossaryEntry {
   glosses: string[];
   /** Replacement used in the text sent to the translator. */
   mt?: string;
+  /**
+   * Only take over words written in Gen 3 capitals ("GLUT" is the move Ember).
+   * Otherwise the dictionary reading wins and this one becomes an alternative.
+   */
+  capsOnly?: boolean;
 }
 
 export interface Glossary {
   get(word: string): GlossaryEntry | undefined;
 }
 
+/** Later entries win, so hand-written terms can override imported names. */
 export function createGlossary(entries: GlossaryEntry[]): Glossary {
   const byKey = new Map<string, GlossaryEntry>();
   for (const e of entries) for (const m of e.match) byKey.set(m.toLowerCase(), e);
   return { get: (word) => byKey.get(word.toLowerCase()) };
 }
 
-export function loadGlossary(file: URL | string): Glossary {
-  return createGlossary(JSON.parse(fs.readFileSync(file, "utf8")) as GlossaryEntry[]);
+export function readGlossaryFile(file: URL | string): GlossaryEntry[] {
+  return JSON.parse(fs.readFileSync(file, "utf8")) as GlossaryEntry[];
+}
+
+export function loadGlossary(file: URL | string, extra: GlossaryEntry[] = []): Glossary {
+  return createGlossary([...extra, ...readGlossaryFile(file)]);
 }
 
 export const defaultGlossaryFile = new URL("./glossary/pokemon-de.json", import.meta.url);

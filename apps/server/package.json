@@ -8,7 +8,9 @@
     "start": "tsx src/index.ts",
     "send-test": "tsx scripts/send-test.ts",
     "dict:import": "tsx scripts/import-dictionary.ts",
-    "test": "tsx --test \"src/**/*.test.ts\""
+    "test": "tsx --test \"src/**/*.test.ts\"",
+    "names:import": "tsx scripts/import-names.ts",
+    "reprocess": "tsx scripts/reprocess.ts"
   },
   "dependencies": {
     "@huggingface/transformers": "^4.3.2",

@@ -10,7 +10,7 @@ import { config } from "./config.ts";
 import { AppDb } from "./db/app-db.ts";
 import { openDictionary } from "./dictionary/db.ts";
 import { createIngestServer } from "./ingest/tcp.ts";
-import { defaultGlossaryFile, loadGlossary } from "./language/glossary.ts";
+import { loadGameGlossary } from "./language/load.ts";
 import { LinePipeline } from "./pipeline.ts";
 import { printLine, time } from "./print.ts";
 import { OpusMtProvider } from "./translate/opus-mt.ts";
@@ -23,7 +23,9 @@ const info = (text: string) => console.log(styleText("cyan", `[${time()}] ${text
 const warn = (text: string) => console.warn(styleText("yellow", `[${time()}] ${text}`));
 
 const db = new AppDb(config.appDbPath);
-const glossary = loadGlossary(defaultGlossaryFile);
+const { glossary, names } = loadGameGlossary();
+if (names !== null) info(`Pokémon names: ${names} species and moves up to generation ${config.namesMaxGeneration}`);
+else warn("no Pokémon names found: run `npm run names:import` to translate Pokémon and move names");
 const dictionary = openDictionary(config.dictionaryDbPath);
 if (dictionary) info(`dictionary ${dictionary.version}`);
 else warn("no dictionary found: run `npm run dict:import` for the word-by-word breakdown");

@@ -67,6 +67,7 @@ export const ENTRIES: KaikkiEntry[] = [
     forms: [{ form: "wartet auf", tags: ["present", "singular", "third-person"] }],
   },
   { word: "auf", pos: "prep", senses: [{ glosses: ["on, upon"] }] },
+  { word: "Glut", pos: "noun", senses: [{ glosses: ["embers"], tags: ["feminine"] }] },
   { word: "ich", pos: "pron", senses: [{ glosses: ["I"] }] },
   { word: "Ich", pos: "noun", senses: [{ glosses: ["ego"], tags: ["neuter"] }] },
   { word: "dich", pos: "pron", senses: [{ glosses: ["accusative of du"], tags: ["accusative", "form-of"], form_of: [{ word: "du" }] }] },

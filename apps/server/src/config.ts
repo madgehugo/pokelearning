@@ -21,6 +21,10 @@ export const config = {
   kaikkiPath: path.join(dataDir, "kaikki-german.jsonl.gz"),
   kaikkiUrl: "https://kaikki.org/dictionary/German/kaikki.org-dictionary-German.jsonl.gz",
   modelsDir: path.join(dataDir, "models"),
+  /** Pokémon and move names, from `npm run names:import`. */
+  namesPath: path.join(dataDir, "pokemon-names.json"),
+  /** Only names from these generations are used (Emerald: 3). */
+  namesMaxGeneration: Number(process.env.NAMES_MAX_GENERATION ?? 3),
   /** "opus-mt" (local, default) or "none". */
   translator: process.env.TRANSLATOR ?? "opus-mt",
   targetLang: "en",

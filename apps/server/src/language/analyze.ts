@@ -121,6 +121,8 @@ interface WordWork {
   index: number;
   analysis: TokenAnalysis;
   candidates: Candidate[];
+  /** A glossary reading offered first among the alternatives (capsOnly names in normal text). */
+  extra?: WordSense;
 }
 
 export function analyzeLine(text: string, deps: AnalyzerDeps): LineAnalysis {
@@ -155,7 +157,10 @@ export function analyzeLine(text: string, deps: AnalyzerDeps): LineAnalysis {
     if (ranked.length === 0) continue;
     const usesParticle = w.analysis.linkedTo !== undefined;
     w.analysis.best = toSense(ranked[0]!, usesParticle);
-    const alts = ranked.slice(1, 1 + MAX_ALTERNATIVES).map((c) => toSense(c, false));
+    const alts = [...(w.extra ? [w.extra] : []), ...ranked.slice(1).map((c) => toSense(c, false))].slice(
+      0,
+      MAX_ALTERNATIVES,
+    );
     if (alts.length) w.analysis.alternatives = alts;
   }
 
@@ -168,6 +173,10 @@ function analyzeWord(token: Token, index: number, ctx: WordContext, deps: Analyz
 
   const candidates = deps.dictionary ? candidatesFor(token.text, ctx, deps.dictionary) : [];
   const glossary = deps.glossary.get(spelling);
+  if (glossary?.capsOnly && !isAllCaps(token.text) && candidates.length > 0) {
+    // "Glut" in normal text: embers, not the move GLUT (Ember)
+    return { index, analysis, candidates, extra: glossarySense(glossary) };
+  }
   if (glossary) {
     analysis.best = glossarySense(glossary);
     const alts = rank(candidates).slice(0, MAX_ALTERNATIVES).map((c) => toSense(c, false));

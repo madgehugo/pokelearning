@@ -7,7 +7,7 @@ export const time = () => new Date().toLocaleTimeString("de-DE", { hour12: false
 const POS_LABEL: Record<string, string> = {
   noun: "noun", verb: "verb", adj: "adj.", adv: "adv.", pron: "pron.", det: "det.", article: "article",
   prep: "prep.", conj: "conj.", contraction: "contr.", intj: "interj.", name: "name", num: "num.",
-  abbrev: "abbr.", particle: "particle", phrase: "phrase",
+  abbrev: "abbr.", particle: "particle", phrase: "phrase", pokemon: "Pokémon", move: "move",
 };
 
 function describeSense(s: WordSense): string {
