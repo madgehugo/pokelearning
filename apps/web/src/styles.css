@@ -287,6 +287,10 @@ button {
   }
 }
 
+.line,
+.translation {
+  white-space: pre-line; /* menu screens: one label per line */
+}
 .translation {
   margin: 14px 4px 0;
   font-size: var(--step-1);

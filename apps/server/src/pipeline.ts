@@ -46,6 +46,15 @@ export class LinePipeline extends EventEmitter<PipelineEvents> {
     });
   }
 
+  /** A menu screen is a list of separate labels, one per line: translate each on its own. */
+  private async translateMenu(text: string, lang: string, glossary: AnalyzerDeps["glossary"]): Promise<Translation> {
+    const parts: Translation[] = [];
+    for (const item of text.split("\n").filter((l) => l.trim())) {
+      parts.push(await this.translator!.translateLine(item, lang, this.targetLang, glossary));
+    }
+    return { ...parts[0]!, text: parts.map((p) => p.text).join("\n"), cached: parts.every((p) => p.cached) };
+  }
+
   private async process(msg: LineMessage, receivedAt: number): Promise<ProcessedLine> {
     const id = this.db.insertLine(msg, receivedAt);
     const seenBefore = this.db.countEarlier(msg.game, msg.line, id);
@@ -58,7 +67,9 @@ export class LinePipeline extends EventEmitter<PipelineEvents> {
     let translation: Translation | null = null;
     if (this.translator?.supports(lang, this.targetLang)) {
       try {
-        translation = await this.translator.translateLine(msg.line, lang, this.targetLang, deps.glossary);
+        translation = msg.meta?.source === "menu"
+          ? await this.translateMenu(msg.line, lang, deps.glossary)
+          : await this.translator.translateLine(msg.line, lang, this.targetLang, deps.glossary);
         this.db.saveLineTranslation(id, translation.provider, translation.text);
       } catch (err) {
         // A failed translation shouldn't lose the line or its analysis.

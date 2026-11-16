@@ -44,7 +44,7 @@ One complete piece of dialogue (a whole message, which can span several text-box
 | `line` | yes (line) | Text with layout line breaks flattened to single spaces. A hyphen at a line break is kept (`POKéMON-Center`). |
 | `timestamp` | yes | Unix epoch **milliseconds**; `0` if unknown |
 | `lang` | no | Language of the text |
-| `meta` | no | Adapter-specific. Conventions: `source` (`field`, `battle`, `bag`…) and `pages`. |
+| `meta` | no | Adapter-specific. Conventions: `source` (`field`, `battle`, `bag`…) and `pages`. `source: "menu"` marks a screen of labels, one per line of `line`; the server translates each separately. |
 
 Send a line every time it appears on screen, including repeats (the same NPC
 twice). The server counts how often each line came up (`seenBefore`), so

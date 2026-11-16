@@ -39,6 +39,10 @@ M.versions = {
       { name = "battle", addr = 0x02022E2C, size = 300,  verified = true },
     },
     cursors = {},
+    -- AddTextPrinter (r0 = template, whose first word is the string pointer): everything the
+    -- game draws goes through it, menus included. Found by disassembling the ROM; `bytes`
+    -- is its first instructions, checked before hooking.
+    printer = { addr = 0x0800467C, bytes = "\xF0\xB5\x06\x1C\x94\x46" },
   },
 }
 

@@ -41,6 +41,7 @@ function M.config(gameCode)
     title = lang == "de" and title.de or title.name,
     buffers = known and known.buffers or {},
     cursors = known and known.cursors or {},
+    printer = known and known.printer,
     -- no known addresses: find the text buffers while playing
     discover = known == nil,
   }

@@ -55,9 +55,12 @@ end
 
 if _POKELEARNING and _POKELEARNING.callbacks then
   for _, id in ipairs(_POKELEARNING.callbacks) do callbacks:remove(id) end
+  if emu and emu.clearBreakpoint then
+    for _, id in ipairs(_POKELEARNING.breakpoints or {}) do pcall(emu.clearBreakpoint, emu, id) end
+  end
   if _POKELEARNING.transport then _POKELEARNING.transport:disconnect("script reloaded") end
 end
-_POKELEARNING = { callbacks = {} }
+_POKELEARNING = { callbacks = {}, breakpoints = {} }
 
 ---------------------------------------------------------------------------
 -- state
@@ -69,6 +72,7 @@ local state = {
   sources = {},  -- one per cursor source (text printed straight from ROM)
   discovery = nil, -- finds text buffers when the game's addresses aren't known
   frame = 0,
+  menu = nil, -- strings the game drew from ROM (menus), see setupMenuHook()
 }
 
 local function readGameCode()
@@ -122,6 +126,82 @@ local function setupWatchers()
   end
 end
 
+local function looksLikeText(stats)
+  return stats.letters >= 2 and stats.unknown * 5 <= stats.chars
+end
+
+---------------------------------------------------------------------------
+-- menus: text drawn straight from ROM
+--
+-- Menus aren't built in the dialogue buffers; the game draws their strings from
+-- ROM through AddTextPrinter. A breakpoint on it (address in the game's config)
+-- collects every ROM string drawn together, and they are sent as one "menu" line
+-- (one item per line) once the screen has stopped drawing.
+
+local MENU_QUIET_FRAMES = 15 -- ~0.25 s without a new string
+local MENU_MAX_ITEMS = 24
+
+local function onPrint()
+  local m = state.menu
+  if not m then return end
+  local template = emu:readRegister("r0")
+  if not textmem.isRam(template) then return end
+  local ptr = emu:read32(template)
+  if not textmem.isRom(ptr) or m.seen[ptr] or #m.items >= MENU_MAX_ITEMS then return end
+  m.seen[ptr] = true
+  local raw = textmem.readString(ptr, 200)
+  local text, stats = charmap.decode(raw, state.cfg.lang)
+  if not looksLikeText(stats) then return end
+  local flat = charmap.flatten(text)
+  if flat ~= "" then
+    m.items[#m.items + 1] = flat
+    m.address = m.address or ptr
+  end
+  m.lastFrame = state.frame
+end
+
+local function setupMenuHook()
+  state.menu = nil
+  local printer = state.cfg.printer
+  if not printer then return end
+  if not (emu.setBreakpoint and emu.readRegister) then
+    warn("[pokelearning] this mGBA can't watch menus (it needs scripting breakpoints: use the app's mGBA)")
+    return
+  end
+  if emu:readRange(printer.addr, #printer.bytes) ~= printer.bytes then
+    warn("[pokelearning] the text printer isn't at the expected address in this ROM, menus won't be translated")
+    return
+  end
+  state.menu = { items = {}, seen = {}, lastFrame = 0, lastSent = nil }
+  local ok, id = pcall(emu.setBreakpoint, emu, onPrint, printer.addr)
+  if ok then
+    table.insert(_POKELEARNING.breakpoints, id)
+  else
+    state.menu = nil
+    warn("[pokelearning] couldn't watch menus: " .. tostring(id))
+  end
+end
+
+local function flushMenu()
+  local m = state.menu
+  if not m or #m.items == 0 or state.frame - m.lastFrame < MENU_QUIET_FRAMES then return end
+  local text = table.concat(m.items, "\n")
+  local address = m.address
+  m.items, m.seen, m.address = {}, {}, nil
+  if text == m.lastSent then return end -- the same screen redrawn
+  m.lastSent = text
+  if CONFIG.echo then log("[menu] " .. text:gsub("\n", " | ")) end
+  transport:send({
+    type = "line",
+    adapter = ADAPTER,
+    game = state.cfg.game,
+    lang = state.cfg.lang,
+    line = text,
+    timestamp = now(),
+    meta = { source = "menu", gameCode = state.gameCode, address = string.format("0x%08X", address) },
+  })
+end
+
 local function initGame()
   if not emu then return end
   state.gameCode = readGameCode()
@@ -149,6 +229,7 @@ local function initGame()
     return
   end
   setupWatchers()
+  setupMenuHook()
 end
 
 ---------------------------------------------------------------------------
@@ -158,10 +239,6 @@ local function readBuffer(buf)
   local bytes = emu:readRange(buf.addr, buf.size)
   local stop = bytes:find("\255", 1, true)
   return stop and bytes:sub(1, stop - 1) or bytes
-end
-
-local function looksLikeText(stats)
-  return stats.letters >= 2 and stats.unknown * 5 <= stats.chars
 end
 
 -- Send one piece of text. `again` only labels the console echo (the server
@@ -336,6 +413,7 @@ local function onFrame()
   if state.frame % CONFIG.checkEveryFrames ~= 0 then return end
   for _, w in ipairs(state.watchers) do checkWatcher(w) end
   for _, s in ipairs(state.sources) do checkSource(s) end
+  flushMenu()
   if state.discovery and state.frame % DISCOVER_EVERY_FRAMES == 0 then
     local buf = state.discovery:step()
     if buf then

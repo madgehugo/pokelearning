@@ -59,6 +59,13 @@ describe("prepareForTranslation", () => {
 });
 
 describe("LinePipeline", () => {
+  it("translates a menu screen one label per line", async () => {
+    const { provider, pipeline } = setup();
+    const out = await pipeline.submit({ ...line("WEITER\nSPIELZEIT"), meta: { source: "menu" } });
+    assert.equal(out?.translation?.text, "EN(Weiter)\nEN(Spielzeit)");
+    assert.deepEqual(provider.calls, ["Weiter", "Spielzeit"]);
+  });
+
   it("stores, translates per sentence and emits the line", async () => {
     const { db, provider, pipeline } = setup();
     const emitted: unknown[] = [];
