@@ -2,7 +2,7 @@
 import type { Translation } from "@pokelearning/shared";
 import type { AppDb } from "../db/app-db.ts";
 import type { Glossary } from "../language/glossary.ts";
-import { prepareForTranslation, splitSentences } from "./prepare.ts";
+import { fillSlots, prepareSentences, restoreSlots } from "./prepare.ts";
 import type { TranslationProvider } from "./provider.ts";
 
 export class Translator {
@@ -20,16 +20,27 @@ export class Translator {
     return this.provider.warmUp();
   }
 
+  /** Cached translation of one sentence. */
+  private async cached(sentence: string, from: string, to: string): Promise<{ text: string; cached: boolean }> {
+    const hit = this.db.getCachedTranslation(this.provider.id, from, to, sentence);
+    if (hit !== undefined) return { text: hit, cached: true };
+    const text = await this.provider.translate(sentence, from, to);
+    this.db.cacheTranslation(this.provider.id, from, to, sentence, text);
+    return { text, cached: false };
+  }
+
   async translateLine(text: string, from: string, to: string): Promise<Translation> {
-    const sentences = splitSentences(prepareForTranslation(text, this.glossary));
     let allCached = true;
     const out: string[] = [];
-    for (const sentence of sentences) {
-      let translated = this.db.getCachedTranslation(this.provider.id, from, to, sentence);
-      if (translated === undefined) {
-        allCached = false;
-        translated = await this.provider.translate(sentence, from, to);
-        this.db.cacheTranslation(this.provider.id, from, to, sentence, translated);
+    for (const sentence of prepareSentences(text, this.glossary)) {
+      const first = await this.cached(sentence.text, from, to);
+      allCached &&= first.cached;
+      let translated = restoreSlots(first.text, sentence.slots);
+      if (translated === null) {
+        // The translator dropped a placeholder: translate with the English names written in.
+        const fallback = await this.cached(fillSlots(sentence), from, to);
+        allCached &&= fallback.cached;
+        translated = fallback.text;
       }
       out.push(translated);
     }

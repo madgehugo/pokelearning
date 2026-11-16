@@ -4,7 +4,7 @@ import type { LineMessage } from "@pokelearning/shared";
 import { AppDb } from "./db/app-db.ts";
 import { createGlossary } from "./language/glossary.ts";
 import { LinePipeline } from "./pipeline.ts";
-import { prepareForTranslation, splitSentences } from "./translate/prepare.ts";
+import { prepareForTranslation, restoreSlots, splitSentences } from "./translate/prepare.ts";
 import type { TranslationProvider } from "./translate/provider.ts";
 import { Translator } from "./translate/translator.ts";
 
@@ -36,11 +36,16 @@ function setup() {
 }
 
 describe("prepareForTranslation", () => {
-  it("normalises capitals, keeps acronyms, swaps glossary names", () => {
+  it("normalises capitals, keeps acronyms, protects glossary names", () => {
     assert.equal(
       prepareForTranslation("Ich bin PROF. BIRK. Dein POKéMON hat keine KP!", glossary),
-      "Ich bin Prof. Birch. Dein Pokémon hat keine KP!",
+      "Ich bin Prof. X1. Dein Pokémon hat keine KP!",
     );
+  });
+
+  it("restores placeholders, or reports one that went missing", () => {
+    assert.equal(restoreSlots("X2 uses X1!", ["Ember", "Zigzagoon"]), "Zigzagoon uses Ember!");
+    assert.equal(restoreSlots("Zigzagoon uses fire!", ["Zigzagoon"]), null);
   });
 
   it("splits sentences but not after abbreviations", () => {
@@ -59,12 +64,25 @@ describe("LinePipeline", () => {
     assert.equal(out?.translation?.cached, false);
     assert.equal(out?.source, "field");
     assert.ok(out?.analysis);
-    assert.deepEqual(provider.calls, ["Hallo!", "Ich bin Birch."]);
+    assert.deepEqual(provider.calls, ["Hallo!", "Ich bin X1."]);
     assert.equal(emitted.length, 1);
 
     const row = db.db.prepare("SELECT text, translation FROM lines WHERE id = ?").get(out!.id) as Record<string, string>;
     assert.equal(row.translation, "EN(Hallo!) EN(Ich bin Birch.)");
     assert.ok(db.db.prepare("SELECT 1 FROM line_analyses WHERE line_id = ?").get(out!.id));
+  });
+
+  it("falls back to written-in names if the translator drops a placeholder", async () => {
+    const db = new AppDb(":memory:");
+    const provider = new FakeProvider();
+    provider.translate = async (text: string) => {
+      provider.calls.push(text);
+      return text.includes("X1") ? "Hello there!" : `EN(${text})`;
+    };
+    const pipeline = new LinePipeline(db, { dictionary: null, glossary }, new Translator(provider, db, glossary), "en");
+    const out = await pipeline.submit(line("Ich bin BIRK."));
+    assert.equal(out?.translation?.text, "EN(Ich bin Birch.)");
+    assert.deepEqual(provider.calls, ["Ich bin X1.", "Ich bin Birch."]);
   });
 
   it("serves repeated sentences from the cache", async () => {
