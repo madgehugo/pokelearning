@@ -5,7 +5,8 @@
   "workspaces": [
     "packages/*",
     "apps/server",
-    "apps/web"
+    "apps/web",
+    "adapters/ocr-macos"
   ],
   "scripts": {
     "dev": "node scripts/dev.mjs",
@@ -17,8 +18,10 @@
     "dict:import": "npm run dict:import -w @pokelearning/server",
     "names:import": "npm run names:import -w @pokelearning/server",
     "reprocess": "npm run reprocess -w @pokelearning/server",
-    "test": "npm test -w @pokelearning/server",
-    "typecheck": "tsc -p packages/shared && tsc -p apps/server && tsc -p apps/web"
+    "test": "npm test -w @pokelearning/server && npm test -w @pokelearning/ocr-macos",
+    "typecheck": "tsc -p packages/shared && tsc -p apps/server && tsc -p apps/web && tsc -p adapters/ocr-macos",
+    "ocr": "npm start -w @pokelearning/ocr-macos --",
+    "ocr:build": "npm run build -w @pokelearning/ocr-macos"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

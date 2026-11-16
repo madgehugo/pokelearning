@@ -1,0 +1,14 @@
+{
+  "name": "@pokelearning/ocr-macos",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "mkdir -p bin && swiftc -O -parse-as-library -o bin/ocr-capture helper/OcrCapture.swift",
+    "start": "tsx src/index.ts",
+    "test": "tsx --test \"src/**/*.test.ts\""
+  },
+  "dependencies": {
+    "@pokelearning/shared": "*"
+  }
+}
