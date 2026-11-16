@@ -6,6 +6,8 @@ import path from "node:path";
 import { after, before, describe, it } from "node:test";
 import type { ProcessedLine, ServerMessage, ServerStatus } from "@pokelearning/shared";
 import { AppDb } from "../db/app-db.ts";
+import { Scheduler } from "../wordbank/scheduler.ts";
+import { WordBank } from "../wordbank/wordbank.ts";
 import { createUiServer, type UiServer } from "./server.ts";
 
 describe("UI server", () => {
@@ -24,7 +26,7 @@ describe("UI server", () => {
       );
       db.saveLineTranslation(id, "fake", `EN ${text}`);
     }
-    ui = createUiServer({ db, status: () => status, staticDir });
+    ui = createUiServer({ db, wordbank: new WordBank(db, new Scheduler()), status: () => status, staticDir });
     await new Promise<void>((r) => ui.http.listen(0, "127.0.0.1", r));
     base = `127.0.0.1:${(ui.http.address() as AddressInfo).port}`;
   });
@@ -48,6 +50,17 @@ describe("UI server", () => {
     assert.equal((await fetch(`http://${base}/api/nope`)).status, 404);
   });
 
+  it("rejects writes from other origins or without JSON", async () => {
+    const post = (headers: Record<string, string>) =>
+      fetch(`http://${base}/api/settings`, { method: "PUT", headers, body: JSON.stringify({ newPerDay: 5 }) });
+    assert.equal((await post({ "content-type": "application/json", origin: "https://evil.example" })).status, 403);
+    assert.equal((await post({ "content-type": "text/plain" })).status, 415);
+    const ok = await post({ "content-type": "application/json", origin: `http://${base}` });
+    assert.equal(ok.status, 200);
+    assert.equal(((await ok.json()) as { newPerDay: number }).newPerDay, 5);
+    assert.equal((await fetch(`http://${base}/api/words/1`, { method: "DELETE", headers: { origin: "https://evil.example" } })).status, 403);
+  });
+
   it("sends a snapshot on connect, then live lines", async () => {
     const ws = new WebSocket(`ws://${base}/ws`);
     const messages: ServerMessage[] = [];
@@ -60,6 +73,7 @@ describe("UI server", () => {
     assert.equal(snapshot.type, "snapshot");
     assert.equal(snapshot.type === "snapshot" && snapshot.lines[0]?.text, "drei");
     assert.equal(snapshot.type === "snapshot" && snapshot.status.game, "pokemon-emerald-de");
+    assert.deepEqual(snapshot.type === "snapshot" && snapshot.wordbank.saved, []);
 
     const live = next();
     ui.broadcastLine({ ...(snapshot.type === "snapshot" ? snapshot.lines[0]! : ({} as ProcessedLine)), id: 99, text: "vier" });

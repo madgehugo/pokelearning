@@ -3,6 +3,7 @@
  * The server sends a snapshot on connect, then one message per event.
  */
 import type { ProcessedLine } from "./analysis.ts";
+import type { WordBankStats } from "./wordbank.ts";
 
 export const UI_PORT = 8766;
 
@@ -17,8 +18,16 @@ export interface ServerStatus {
   dictionary: string | null;
 }
 
+/** Which words are saved (as wordKey strings) and the review counts. */
+export interface WordBankSummary {
+  saved: string[];
+  stats: WordBankStats;
+}
+
 export type ServerMessage =
   /** Sent on connect: recent lines, newest first. */
-  | { type: "snapshot"; lines: ProcessedLine[]; status: ServerStatus }
+  | { type: "snapshot"; lines: ProcessedLine[]; status: ServerStatus; wordbank: WordBankSummary }
   | { type: "line"; line: ProcessedLine }
-  | { type: "status"; status: ServerStatus };
+  | { type: "status"; status: ServerStatus }
+  /** After a word is saved or removed, a card is answered, or settings change. */
+  | { type: "wordbank"; wordbank: WordBankSummary };

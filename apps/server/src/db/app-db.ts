@@ -57,7 +57,92 @@ const MIGRATIONS = [
     PRIMARY KEY (provider, source_lang, target_lang, source_text)
   );
   `,
+  // 2: word bank and FSRS review
+  `
+  CREATE TABLE words (
+    id           INTEGER PRIMARY KEY,
+    lemma        TEXT NOT NULL,
+    pos          TEXT NOT NULL,
+    gender       TEXT,
+    plural       TEXT,
+    glosses      TEXT NOT NULL,   -- JSON string[]
+    source       TEXT NOT NULL,   -- dictionary | glossary
+    created_at   INTEGER NOT NULL,
+    encounters   INTEGER NOT NULL DEFAULT 0,
+    last_seen_at INTEGER,
+    UNIQUE (lemma, pos)
+  );
+
+  CREATE TABLE word_contexts (
+    id         INTEGER PRIMARY KEY,
+    word_id    INTEGER NOT NULL REFERENCES words(id) ON DELETE CASCADE,
+    line_id    INTEGER NOT NULL REFERENCES lines(id) ON DELETE CASCADE,
+    form       TEXT NOT NULL,
+    start      INTEGER NOT NULL,
+    end        INTEGER NOT NULL,
+    created_at INTEGER NOT NULL
+  );
+  CREATE INDEX word_contexts_word ON word_contexts(word_id);
+
+  CREATE TABLE cards (
+    id             INTEGER PRIMARY KEY,
+    word_id        INTEGER NOT NULL REFERENCES words(id) ON DELETE CASCADE,
+    kind           TEXT NOT NULL,      -- meaning | article | recall
+    due            INTEGER NOT NULL,   -- epoch ms
+    stability      REAL NOT NULL,
+    difficulty     REAL NOT NULL,
+    scheduled_days INTEGER NOT NULL,
+    learning_steps INTEGER NOT NULL,
+    reps           INTEGER NOT NULL,
+    lapses         INTEGER NOT NULL,
+    state          INTEGER NOT NULL,   -- ts-fsrs State: 0 new, 1 learning, 2 review, 3 relearning
+    last_review    INTEGER,
+    created_at     INTEGER NOT NULL,
+    UNIQUE (word_id, kind)
+  );
+  CREATE INDEX cards_due ON cards(due);
+
+  CREATE TABLE review_log (
+    id             INTEGER PRIMARY KEY,
+    card_id        INTEGER NOT NULL REFERENCES cards(id) ON DELETE CASCADE,
+    grade          INTEGER NOT NULL,
+    state          INTEGER NOT NULL,   -- state before the answer
+    due            INTEGER NOT NULL,
+    stability      REAL NOT NULL,
+    difficulty     REAL NOT NULL,
+    scheduled_days INTEGER NOT NULL,
+    learning_steps INTEGER NOT NULL,
+    review         INTEGER NOT NULL,   -- when it was answered, epoch ms
+    duration_ms    INTEGER
+  );
+  CREATE INDEX review_log_review ON review_log(review);
+
+  CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+  `,
 ];
+
+const LINE_SELECT = `
+  SELECT l.id, l.game, l.source, l.lang, l.text, l.received_at, l.translation, l.translation_provider,
+         a.analysis,
+         (SELECT count(*) FROM lines e WHERE e.game = l.game AND e.text = l.text AND e.id < l.id) AS seen_before
+  FROM lines l LEFT JOIN line_analyses a ON a.line_id = l.id`;
+
+function toProcessedLine(r: LineRow): ProcessedLine {
+  return {
+    id: r.id,
+    game: r.game,
+    ...(r.source ? { source: r.source } : {}),
+    ...(r.lang ? { lang: r.lang } : {}),
+    text: r.text,
+    receivedAt: r.received_at,
+    analysis: r.analysis ? (JSON.parse(r.analysis) as LineAnalysis) : null,
+    translation:
+      r.translation && r.translation_provider
+        ? { provider: r.translation_provider, from: r.lang ?? "de", to: "en", text: r.translation, cached: true }
+        : null,
+    seenBefore: r.seen_before,
+  };
+}
 
 export class AppDb {
   readonly db: DatabaseSync;
@@ -140,29 +225,14 @@ export class AppDb {
   /** Lines with their analysis and translation, newest first. */
   recentLines(limit: number, beforeId?: number): ProcessedLine[] {
     const rows = this.db
-      .prepare(
-        `SELECT l.id, l.game, l.source, l.lang, l.text, l.received_at, l.translation, l.translation_provider,
-                a.analysis,
-                (SELECT count(*) FROM lines e WHERE e.game = l.game AND e.text = l.text AND e.id < l.id) AS seen_before
-         FROM lines l LEFT JOIN line_analyses a ON a.line_id = l.id
-         WHERE (? IS NULL OR l.id < ?)
-         ORDER BY l.id DESC LIMIT ?`,
-      )
+      .prepare(`${LINE_SELECT} WHERE (? IS NULL OR l.id < ?) ORDER BY l.id DESC LIMIT ?`)
       .all(beforeId ?? null, beforeId ?? null, limit) as unknown as LineRow[];
-    return rows.map((r) => ({
-      id: r.id,
-      game: r.game,
-      ...(r.source ? { source: r.source } : {}),
-      ...(r.lang ? { lang: r.lang } : {}),
-      text: r.text,
-      receivedAt: r.received_at,
-      analysis: r.analysis ? (JSON.parse(r.analysis) as LineAnalysis) : null,
-      translation:
-        r.translation && r.translation_provider
-          ? { provider: r.translation_provider, from: r.lang ?? "de", to: "en", text: r.translation, cached: true }
-          : null,
-      seenBefore: r.seen_before,
-    }));
+    return rows.map(toProcessedLine);
+  }
+
+  getLine(id: number): ProcessedLine | undefined {
+    const row = this.db.prepare(`${LINE_SELECT} WHERE l.id = ?`).get(id) as unknown as LineRow | undefined;
+    return row ? toProcessedLine(row) : undefined;
   }
 
   close(): void {

@@ -98,3 +98,4 @@ export function parseAdapterMessage(raw: string): ParseResult {
 
 export * from "./analysis.ts";
 export * from "./ui.ts";
+export * from "./wordbank.ts";

@@ -16,6 +16,8 @@ import { printLine, time } from "./print.ts";
 import { OpusMtProvider } from "./translate/opus-mt.ts";
 import { Translator } from "./translate/translator.ts";
 import { createUiServer } from "./ui/server.ts";
+import { Scheduler } from "./wordbank/scheduler.ts";
+import { WordBank } from "./wordbank/wordbank.ts";
 
 const info = (text: string) => console.log(styleText("cyan", `[${time()}] ${text}`));
 const warn = (text: string) => console.warn(styleText("yellow", `[${time()}] ${text}`));
@@ -45,11 +47,16 @@ if (config.translator === "opus-mt") {
   warn(`unknown TRANSLATOR=${config.translator}; translation disabled`);
 }
 
-const ui = createUiServer({ db, status: () => ({ ...status }), staticDir: config.webDistDir });
+const wordbank = new WordBank(db, new Scheduler());
+const ui = createUiServer({ db, wordbank, status: () => ({ ...status }), staticDir: config.webDistDir });
 
 const pipeline = new LinePipeline(db, { dictionary, glossary }, translator, config.targetLang);
 pipeline.on("line", printLine);
 pipeline.on("line", ui.broadcastLine);
+pipeline.on("line", (line) => {
+  // a saved word came up again: new encounter, maybe a new example sentence
+  if (wordbank.recordLine(line)) ui.broadcastWordBank();
+});
 pipeline.on("error", (err, msg) => warn(`could not fully process "${msg.line.slice(0, 60)}": ${err.message}`));
 
 const ingest = createIngestServer({
