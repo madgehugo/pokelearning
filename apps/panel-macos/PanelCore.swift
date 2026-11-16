@@ -31,6 +31,23 @@ func emulatorWindowFrame(app: String) -> NSRect? {
   return NSRect(x: r.minX, y: mainHeight - r.maxY, width: r.width, height: r.height)
 }
 
+/// Whether the emulator's window is the topmost normal window on screen (our own panel doesn't
+/// count), or there is no emulator window at all yet.
+func emulatorIsTopmost(app: String) -> Bool {
+  guard let info = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID) as? [[String: Any]] else { return true }
+  let me = ProcessInfo.processInfo.processIdentifier
+  for w in info { // front to back
+    guard (w[kCGWindowLayer as String] as? Int) == 0,
+          let bounds = w[kCGWindowBounds as String] as? [String: CGFloat],
+          (bounds["Width"] ?? 0) > 100, (bounds["Height"] ?? 0) > 80 else { continue }
+    let owner = w[kCGWindowOwnerName as String] as? String ?? ""
+    if owner.localizedCaseInsensitiveContains(app) { return true }
+    if (w[kCGWindowOwnerPID as String] as? Int32) == me { continue } // our own other windows don't hide it
+    return false
+  }
+  return true // no emulator window on screen (yet)
+}
+
 /// Settings for the panel.
 struct PanelOptions {
   var url = URL(string: "http://localhost:8766/#/panel")!
@@ -86,14 +103,13 @@ final class PanelController: NSObject, NSWindowDelegate, WKNavigationDelegate, W
     follow()
   }
 
-  /// Show the panel only while the game (or this app) is in front, so it doesn't
-  /// stay on top of other apps. It comes back when you return to the game.
+  /// Show the panel only while the game is the topmost window, so it doesn't stay on top of
+  /// other apps. It comes back when you return to the game. This looks at the windows
+  /// themselves, front to back, rather than at the frontmost app: our own app is often
+  /// "frontmost" (after a dialog, or a click on its Dock icon) with another app's window above the game.
   private func updateVisibility() {
     guard !closedByUser else { return }
-    let front = NSWorkspace.shared.frontmostApplication
-    let gameInFront = front?.processIdentifier == ProcessInfo.processInfo.processIdentifier
-      || front?.localizedName?.localizedCaseInsensitiveContains(options.app) == true
-    let shouldShow = gameInFront || emulatorWindowFrame(app: options.app) == nil
+    let shouldShow = emulatorIsTopmost(app: options.app)
     if shouldShow && !panel.isVisible { panel.orderFrontRegardless() }
     if !shouldShow && panel.isVisible { panel.orderOut(nil) }
   }
