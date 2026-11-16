@@ -1,7 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 import { wordKey, type SaveWordRequest, type TokenAnalysis, type WordSense } from "@pokelearning/shared";
 import { api } from "../api.ts";
-import { describeForm, FORM_MATTERS, genderKey, headword, posLabel, shortGloss, wordsOf } from "../words.ts";
+import {
+  describeForm,
+  FORM_MATTERS,
+  GAME_NAME_POS,
+  genderKey,
+  headword,
+  posLabel,
+  shortGloss,
+  wordsOf,
+  wordText,
+} from "../words.ts";
 
 interface Props {
   lineId: number;
@@ -36,7 +46,7 @@ export function Breakdown({ lineId, tokens, selected, onSelect, saved }: Props) 
                 onClick={() => onSelect(isSelected ? null : index)}
               >
                 <span className="word-row__form" lang="de">
-                  {token.text}
+                  {wordText(tokens, index)}
                 </span>
                 <Summary token={token} />
               </button>
@@ -101,7 +111,7 @@ function Details({ token, tokens, lineId, index, saved }: DetailsProps) {
       )}
       {sense?.source === "glossary" && (
         <p className="note">
-          {sense.pos === "pokemon" || sense.pos === "move"
+          {GAME_NAME_POS.has(sense.pos)
             ? "German and English names from PokéAPI."
             : "From the game glossary."}
         </p>

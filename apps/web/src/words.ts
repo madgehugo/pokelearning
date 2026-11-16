@@ -18,7 +18,7 @@ const POS: Record<string, string> = {
   noun: "noun", name: "name", verb: "verb", adj: "adjective", adv: "adverb", pron: "pronoun",
   det: "determiner", article: "article", prep: "preposition", conj: "conjunction",
   contraction: "contraction", intj: "interjection", num: "number", abbrev: "abbreviation",
-  particle: "particle", phrase: "phrase", pokemon: "Pokémon", move: "move",
+  particle: "particle", phrase: "phrase", pokemon: "Pokémon", move: "move", ability: "ability", item: "item", place: "place",
 };
 export const posLabel = (pos: string) => POS[pos] ?? pos;
 
@@ -73,9 +73,22 @@ export interface WordEntry {
   token: TokenAnalysis;
 }
 
+/** The words of a line, with the later words of a multi-word name left out. */
 export function wordsOf(tokens: TokenAnalysis[]): WordEntry[] {
-  return tokens.flatMap((token, index) => (token.kind === "word" ? [{ index, token }] : []));
+  return tokens.flatMap((token, index) =>
+    token.kind === "word" && token.partOf === undefined ? [{ index, token }] : [],
+  );
 }
+
+/** The word as shown in the breakdown: the whole name for multi-word names ("BLÜTENBURG CITY"). */
+export function wordText(tokens: TokenAnalysis[], index: number): string {
+  const token = tokens[index]!;
+  if (token.phraseEnd === undefined) return token.text;
+  return [token, ...tokens.filter((t) => t.partOf === index)].map((t) => t.text).join(" ");
+}
+
+/** The saved names that come straight from PokéAPI (not dictionary words). */
+export const GAME_NAME_POS = new Set(["pokemon", "move", "ability", "item", "place"]);
 
 export const GAME_NAMES: Record<string, string> = {
   "pokemon-emerald-de": "Pokémon Smaragd",

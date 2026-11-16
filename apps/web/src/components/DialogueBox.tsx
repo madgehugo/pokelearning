@@ -45,6 +45,24 @@ export function DialogueBox({ line, selected, onSelect, print, saved }: Props) {
         );
         return;
       }
+      if (t.partOf !== undefined) {
+        // a later word of a multi-word name: opens the whole name
+        const head = tokens[t.partOf]!;
+        pieces.push(
+          <button
+            key={i}
+            type="button"
+            className="piece word"
+            data-gender={genderKey(head.best)}
+            aria-pressed={selected === t.partOf}
+            style={delay(t.start)}
+            onClick={() => onSelect(selected === t.partOf ? null : t.partOf!)}
+          >
+            {t.text}
+          </button>,
+        );
+        return;
+      }
       const known = !!t.best || !!t.parts?.some((p) => p.best);
       pieces.push(
         <button
