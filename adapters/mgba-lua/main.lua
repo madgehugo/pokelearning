@@ -31,6 +31,7 @@ end
 
 local charmap = require("lib.charmap")
 local Discovery = require("lib.discover")
+local Menu = require("lib.menu")
 local textmem = require("lib.textmem")
 local Transport = require("lib.transport")
 
@@ -72,7 +73,7 @@ local state = {
   sources = {},  -- one per cursor source (text printed straight from ROM)
   discovery = nil, -- finds text buffers when the game's addresses aren't known
   frame = 0,
-  menu = nil, -- strings the game drew from ROM (menus), see setupMenuHook()
+  menu = nil, -- collects strings the game drew from ROM (menus), see lib/menu.lua
 }
 
 local function readGameCode()
@@ -131,40 +132,7 @@ local function looksLikeText(stats)
 end
 
 ---------------------------------------------------------------------------
--- menus: text drawn straight from ROM
---
--- Menus aren't built in the dialogue buffers; the game draws their strings from
--- ROM through AddTextPrinter. A breakpoint on it (address in the game's config)
--- collects every ROM string drawn together, and they are sent as one "menu" line
--- (one item per line) once the screen has stopped drawing.
-
-local MENU_QUIET_FRAMES = 15 -- ~0.25 s without a new string
-local MENU_MAX_ITEMS = 24
-
-local function onPrint()
-  local m = state.menu
-  if not m or #m.items >= MENU_MAX_ITEMS then return end
-  local template = emu:readRegister("r0")
-  if not textmem.isRam(template) then return end
-  local ptr = emu:read32(template)
-  -- Dialogue is printed letter by letter (speed 1-3) and read from its buffer instead.
-  -- Labels print at once (speed 0 or 0xFF); some are built in RAM first (the Continue
-  -- screen's SPIELER, ORDEN…), so those are read at the moment they're drawn.
-  local speed = emu:readRegister("r1") & 0xFF
-  local instant = speed == 0 or speed == 0xFF
-  if not (textmem.isRom(ptr) or (instant and textmem.isRam(ptr))) then return end
-  local raw = textmem.readString(ptr, 200)
-  if m.seen[raw] then return end
-  m.seen[raw] = true
-  local text, stats = charmap.decode(raw, state.cfg.lang)
-  if not looksLikeText(stats) then return end
-  local flat = charmap.flatten(text)
-  if flat ~= "" then
-    m.items[#m.items + 1] = flat
-    m.address = m.address or ptr
-  end
-  m.lastFrame = state.frame
-end
+-- menus: text drawn straight from ROM (see lib/menu.lua)
 
 local function setupMenuHook()
   state.menu = nil
@@ -178,24 +146,20 @@ local function setupMenuHook()
     warn("[pokelearning] the text printer isn't at the expected address in this ROM, menus won't be translated")
     return
   end
-  state.menu = { items = {}, seen = {}, lastFrame = 0, lastSent = nil }
-  local ok, id = pcall(emu.setBreakpoint, emu, onPrint, printer.addr)
+  local menu = Menu.new(state.cfg.lang)
+  local ok, id = pcall(emu.setBreakpoint, emu, function() menu:onPrint(state.frame) end, printer.addr)
   if ok then
+    state.menu = menu
     table.insert(_POKELEARNING.breakpoints, id)
   else
-    state.menu = nil
     warn("[pokelearning] couldn't watch menus: " .. tostring(id))
   end
 end
 
 local function flushMenu()
-  local m = state.menu
-  if not m or #m.items == 0 or state.frame - m.lastFrame < MENU_QUIET_FRAMES then return end
-  local text = table.concat(m.items, "\n")
-  local address = m.address
-  m.items, m.seen, m.address = {}, {}, nil
-  if text == m.lastSent then return end -- the same screen redrawn
-  m.lastSent = text
+  if not state.menu then return end
+  local text, address = state.menu:flush(state.frame)
+  if not text then return end
   if CONFIG.echo then log("[menu] " .. text:gsub("\n", " | ")) end
   transport:send({
     type = "line",
