@@ -9,6 +9,7 @@
     "adapters/ocr-macos"
   ],
   "scripts": {
+    "play": "node scripts/play.mjs",
     "dev": "node scripts/dev.mjs",
     "dev:server": "npm run dev -w @pokelearning/server",
     "dev:web": "npm run dev -w @pokelearning/web",
@@ -21,7 +22,8 @@
     "test": "npm test -w @pokelearning/server && npm test -w @pokelearning/ocr-macos",
     "typecheck": "tsc -p packages/shared && tsc -p apps/server && tsc -p apps/web && tsc -p adapters/ocr-macos",
     "ocr": "npm start -w @pokelearning/ocr-macos --",
-    "ocr:build": "npm run build -w @pokelearning/ocr-macos"
+    "ocr:build": "npm run build -w @pokelearning/ocr-macos",
+    "panel:build": "mkdir -p apps/panel-macos/bin && swiftc -O -parse-as-library -o apps/panel-macos/bin/pokelearning-panel apps/panel-macos/Panel.swift"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
