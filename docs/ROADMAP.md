@@ -84,3 +84,12 @@ Built from your own material: saved words first, then the words and lines you pl
 - Pin the addresses that discovery finds for Ruby, Sapphire, FireRed and LeafGreen in `games/` files, once found on real ROMs.
 - An OCR adapter for Windows/Linux (e.g. Tesseract), or reading memory through RetroArch's network commands.
 - Gen 4 (DS) games: a different character set and emulators (melonDS, DeSmuME); OCR works today.
+
+## Playing with the companion ✅
+- `npm run play`: builds the website, starts the server (or reuses a running one), opens mGBA with your remembered ROM, and opens the side panel. The script path goes to the clipboard for the one manual step.
+- **Side panel** (`apps/panel-macos`): a native macOS window that stays on top, docks next to the mGBA window and follows it, and doesn't take keyboard focus from the game. It shows `#/panel`, a compact live view with saving; Review, Words and Games open on the website.
+- [User guide](GUIDE.md) with setup, everyday use and troubleshooting.
+
+### Follow-ups
+- Load the script automatically once mGBA's scripting can do that (newer development builds have script autoloading).
+- An "Open panel" button in the website for when the panel was closed.

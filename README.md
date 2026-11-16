@@ -33,27 +33,40 @@ game module, another emulator, or an OCR adapter. See
 | `adapters/ocr-macos/` | Screen-reading adapter for any game window (Apple Vision), see its [README](adapters/ocr-macos/README.md) |
 | `packages/shared/` | TypeScript types shared by adapters, server and UI: adapter protocol, line analysis |
 | `apps/server/` | Node server: ingest → word-by-word analysis → translation → SQLite (see [docs/language-pipeline.md](docs/language-pipeline.md)) |
-| `apps/web/` | Browser UI: React + Vite, responsive, live over WebSocket |
-| `docs/` | Roadmap, protocol, address-finding guide |
+| `apps/web/` | Browser UI: React + Vite, responsive, live over WebSocket; `#/panel` is the compact side-panel view |
+| `apps/panel-macos/` | Native side panel (Swift): docks next to mGBA and shows `#/panel` |
+| `scripts/play.mjs` | `npm run play`: server, mGBA and panel in one command |
+| `docs/` | [User guide](docs/GUIDE.md), roadmap, protocol, address-finding guide, language pipeline |
 
 ## Quick start
 
-Requirements: Node 22.13+ (tested on 26; uses the built-in `node:sqlite`), mGBA 0.10+ (tested on 0.10.5).
+**New here? Read the [user guide](docs/GUIDE.md):** setup, a typical session,
+and troubleshooting.
+
+Requirements: Node 22.13+ (tested on 26; uses the built-in `node:sqlite`),
+mGBA 0.10+ (tested on 0.10.5), and Xcode or the command line tools for the side
+panel.
 
 ```sh
 npm install
-npm run dict:import       # once: downloads the Wiktionary extract (~100 MB) and builds data/dictionary.db (~15 s)
-npm run names:import      # once: German ↔ English game names from PokéAPI (~25 MB download)
-npm start                 # builds the web app and starts the server; open http://localhost:8766
+npm run dict:import                       # once: German dictionary (~100 MB download, ~15 s)
+npm run names:import                      # once: Pokémon, move, item and place names
+npm run play -- ~/Games/smaragd.gba       # first time; afterwards just `npm run play`
 ```
 
-The first start downloads the translation model (~110 MB). Then load the Lua
-script in mGBA (below) and talk to someone. Each line shows up in the browser:
-the German text in a dialogue box, its English translation, and every word with
-its dictionary form, der/die/das (colour-coded: blue, rose, green) and meaning.
-Tap a word for its grammar ("feminine singular, nominative or accusative"),
-all its meanings, and the other readings it could have. ← and → move between
-words.
+`npm run play` starts the server, opens mGBA with your ROM, and opens a side
+panel that docks next to the mGBA window. The panel shows each German line, its
+translation and its words, and lets you save words. Then load the Lua script in
+mGBA (below; the path is on your clipboard). Review, your word bank and the
+games are on the website at http://localhost:8766.
+
+### What it does
+
+Each line from the game shows up with its English translation, and every word
+with its dictionary form, der/die/das (colour-coded: blue, rose, green) and
+meaning. Tap a word for its grammar ("feminine singular, nominative or
+accusative"), all its meanings, and the other readings it could have. ← and →
+move between words.
 
 **Word bank and review:** choose *Save word* in a word's details. The word keeps
 the sentence it came from, and every later line that uses it counts as an
@@ -96,12 +109,12 @@ Everything is local and free: no accounts or API keys. Downloaded data and your
 database live in `data/` (git-ignored). Set `TRANSLATOR=none` to turn off
 translation.
 
-**On your phone:** start with `UI_HOST=0.0.0.0 npm start` and open the address
-the server prints (`http://192.168.…:8766`) on a phone on the same Wi-Fi. On
-iOS, *Share → Add to Home Screen* gives it its own icon. Only the web UI is
-opened to the network; the adapter port stays local.
+**On your phone:** start with `npm run play -- --lan` and open the address the
+server prints (`http://192.168.…:8766`) on a phone on the same Wi-Fi. On iOS,
+*Share → Add to Home Screen* gives it its own icon. Only the web UI is opened
+to the network; the adapter port stays local.
 
-**Developing:**
+Developing:
 
 ```sh
 npm run dev               # server with reload + Vite dev server (http://localhost:5173)
