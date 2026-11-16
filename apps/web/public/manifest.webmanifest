@@ -1,0 +1,10 @@
+{
+  "name": "Pokélearning",
+  "short_name": "Pokélearning",
+  "description": "German words from the game you're playing, as you play.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#eef2f7",
+  "theme_color": "#eef2f7",
+  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

@@ -1,0 +1,510 @@
+/* Pokélearning: a cool, backlit-handheld palette. The dialogue box is the one
+   bold element; everything around it stays quiet. Gender colours carry meaning:
+   der = blue, die = rose, das = green. */
+
+:root {
+  --bg: #eef2f7;
+  --ink: #1e2433;
+  --ink-soft: #4b566e;
+  --ink-faint: #7a859c;
+  --box: #ffffff;
+  --frame: #2d3a55;
+  --frame-inner: #9fb0cf;
+  --rule: #d5dce8;
+  --cursor: #f2b233;
+  --cursor-wash: #fdf0cf;
+  --der: #2f6fd0;
+  --die: #d0435b;
+  --das: #2e9a6a;
+  --mixed: #7a6bb0;
+  --live: #2e9a6a;
+  --offline: #d0435b;
+
+  --font-text: "Literata Variable", Georgia, serif;
+  --font-ui: "Atkinson Hyperlegible", system-ui, sans-serif;
+
+  --step--1: 0.84rem;
+  --step-0: 1rem;
+  --step-1: 1.2rem;
+  --step-box: clamp(1.3rem, 1rem + 1.4vw, 1.75rem);
+
+  --gutter: 16px;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #141b2b;
+    --ink: #e6ebf4;
+    --ink-soft: #b3bdd1;
+    --ink-faint: #8591aa;
+    --box: #1d2639;
+    --frame: #8fa3c7;
+    --frame-inner: #3e4c6b;
+    --rule: #2c364c;
+    --cursor: #f2b233;
+    --cursor-wash: #3b3220;
+    --der: #79a8f0;
+    --die: #f08497;
+    --das: #6fcc9f;
+    --mixed: #b2a6e6;
+    --live: #6fcc9f;
+    --offline: #f08497;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #141b2b;
+  --ink: #e6ebf4;
+  --ink-soft: #b3bdd1;
+  --ink-faint: #8591aa;
+  --box: #1d2639;
+  --frame: #8fa3c7;
+  --frame-inner: #3e4c6b;
+  --rule: #2c364c;
+  --cursor-wash: #3b3220;
+  --der: #79a8f0;
+  --die: #f08497;
+  --das: #6fcc9f;
+  --mixed: #b2a6e6;
+  --live: #6fcc9f;
+  --offline: #f08497;
+  color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 400 17px/1.5 var(--font-ui);
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 3px solid var(--cursor);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Layout ---------------------------------------------------------------- */
+
+.app {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 12px var(--gutter) 48px;
+  padding-left: max(var(--gutter), env(safe-area-inset-left));
+  padding-right: max(var(--gutter), env(safe-area-inset-right));
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "top" "reader" "side";
+  gap: 20px 40px;
+}
+
+.topbar {
+  grid-area: top;
+}
+.reader {
+  grid-area: reader;
+  min-width: 0;
+  max-width: 720px;
+}
+.side {
+  grid-area: side;
+  min-width: 0;
+}
+
+@media (min-width: 1040px) {
+  .app {
+    grid-template-columns: minmax(0, 720px) minmax(0, 1fr);
+    grid-template-areas: "top top" "reader side";
+  }
+  .side {
+    border-left: 1px solid var(--rule);
+    padding-left: 28px;
+  }
+}
+
+/* Top bar ---------------------------------------------------------------- */
+
+.topbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 16px;
+}
+
+.brand {
+  font-family: var(--font-text);
+  font-weight: 650;
+  font-size: var(--step-1);
+  letter-spacing: -0.01em;
+}
+
+.status {
+  margin: 0;
+  font-size: var(--step--1);
+  color: var(--ink-soft);
+}
+
+.status__dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 7px;
+  border-radius: 50%;
+  background: var(--cursor);
+  vertical-align: 1px;
+}
+.status[data-state="live"] .status__dot {
+  background: var(--live);
+}
+.status[data-state="offline"] .status__dot {
+  background: var(--offline);
+}
+.status__extra {
+  color: var(--ink-faint);
+}
+
+/* The dialogue box ------------------------------------------------------- */
+
+.box {
+  position: relative;
+  background: var(--box);
+  border: 4px solid var(--frame);
+  border-radius: 14px;
+  /* inner hairline frame, like a handheld text window */
+  box-shadow: inset 0 0 0 4px var(--box), inset 0 0 0 6px var(--frame-inner);
+  padding: 22px 26px 26px;
+  min-height: 8.5em;
+}
+
+.box .line {
+  margin: 0;
+  font-family: var(--font-text);
+  font-size: var(--step-box);
+  line-height: 1.6;
+  font-weight: 430;
+  overflow-wrap: anywhere;
+  hyphens: manual;
+}
+
+.box--empty .line {
+  color: var(--ink-soft);
+}
+.box__hint {
+  margin: 0.6em 0 0;
+  color: var(--ink-faint);
+  font-size: var(--step-0);
+}
+
+/* the game's "next" arrow, at rest in the corner */
+.box::after {
+  content: "";
+  position: absolute;
+  right: 18px;
+  bottom: 14px;
+  border: 7px solid transparent;
+  border-top: 9px solid var(--cursor);
+  border-bottom: 0;
+}
+.box--empty::after {
+  display: none;
+}
+
+/* Words are buttons that read like text. */
+.word {
+  appearance: none;
+  background: none;
+  border: 0;
+  padding: 0 1px;
+  margin: 0 -1px;
+  font: inherit;
+  line-height: inherit;
+  cursor: pointer;
+  border-radius: 3px;
+  text-decoration: none;
+  box-shadow: inset 0 -2px 0 transparent;
+}
+.word[data-gender] {
+  box-shadow: inset 0 -3px 0 var(--g);
+}
+.word[data-unknown] {
+  text-decoration: underline dotted var(--ink-faint);
+  text-underline-offset: 0.22em;
+}
+.word:hover {
+  background: var(--cursor-wash);
+}
+.word[aria-pressed="true"] {
+  background: var(--cursor);
+  color: #1e2433;
+}
+
+[data-gender="der"] {
+  --g: var(--der);
+}
+[data-gender="die"] {
+  --g: var(--die);
+}
+[data-gender="das"] {
+  --g: var(--das);
+}
+[data-gender="mixed"] {
+  --g: var(--mixed);
+}
+
+/* Lines that just arrived print in piece by piece, like the game's text. */
+.line[data-print] .piece {
+  animation: print 1ms steps(1, end) both;
+  animation-delay: var(--delay);
+}
+@keyframes print {
+  from {
+    visibility: hidden;
+  }
+  to {
+    visibility: visible;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .line[data-print] .piece {
+    animation: none;
+  }
+}
+
+.translation {
+  margin: 14px 4px 0;
+  font-size: var(--step-1);
+  color: var(--ink-soft);
+  max-width: 62ch;
+}
+
+.live-button {
+  display: block;
+  margin: 0 0 12px auto;
+  padding: 6px 14px;
+  border: 2px solid var(--frame);
+  border-radius: 999px;
+  background: var(--box);
+  font-size: var(--step--1);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* Word breakdown --------------------------------------------------------- */
+
+.breakdown {
+  margin-top: 26px;
+}
+
+.words {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--rule);
+}
+
+.words > li {
+  position: relative;
+  border-bottom: 1px solid var(--rule);
+}
+
+/* the game's menu cursor marks the open word */
+.words > li[data-selected]::before {
+  content: "";
+  position: absolute;
+  left: -2px;
+  top: 17px;
+  border: 7px solid transparent;
+  border-left: 9px solid var(--cursor);
+  border-right: 0;
+}
+
+.word-row {
+  display: grid;
+  grid-template-columns: minmax(6.5em, 9.5em) minmax(0, 1fr);
+  gap: 2px 16px;
+  width: 100%;
+  padding: 11px 6px 11px 18px;
+  border: 0;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+.word-row:hover {
+  background: var(--cursor-wash);
+}
+
+.word-row__form {
+  font-family: var(--font-text);
+  font-size: var(--step-1);
+  font-weight: 560;
+  overflow-wrap: anywhere;
+}
+
+.word-row__summary {
+  align-self: center;
+  min-width: 0;
+}
+.word-row__summary--unknown {
+  color: var(--ink-faint);
+}
+
+.headword {
+  font-weight: 700;
+}
+.headword[data-gender] {
+  color: var(--g);
+}
+
+.pos {
+  font-style: italic;
+  color: var(--ink-faint);
+}
+
+.gloss {
+  color: var(--ink-soft);
+}
+.form-hint {
+  color: var(--ink-faint);
+}
+
+@media (max-width: 520px) {
+  .word-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.details {
+  padding: 2px 10px 16px 18px;
+  max-width: 64ch;
+}
+@media (min-width: 521px) {
+  .details {
+    margin-left: calc(min(9.5em, 40%) + 16px);
+    padding-left: 6px;
+  }
+}
+
+.details p {
+  margin: 0.4em 0;
+}
+
+.grammar {
+  color: var(--ink-soft);
+}
+
+ol.glosses {
+  margin: 0.4em 0;
+  padding-left: 1.4em;
+}
+ol.glosses li + li {
+  margin-top: 0.2em;
+}
+
+.note {
+  padding-left: 10px;
+  border-left: 3px solid var(--cursor);
+}
+
+.muted {
+  color: var(--ink-faint);
+}
+
+.alternatives ul {
+  margin: 0.2em 0 0;
+  padding-left: 1.1em;
+  color: var(--ink-soft);
+}
+
+.parts {
+  display: grid;
+  gap: 10px;
+  margin-top: 6px;
+}
+.part {
+  padding-left: 10px;
+  border-left: 2px solid var(--rule);
+}
+
+/* History ---------------------------------------------------------------- */
+
+.history h2 {
+  margin: 4px 0 10px;
+  font-family: var(--font-text);
+  font-size: var(--step-1);
+  font-weight: 600;
+}
+
+.history__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.history__item {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  padding: 10px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+.history__item:hover {
+  background: var(--cursor-wash);
+}
+.history__item[aria-current="true"] {
+  background: var(--box);
+  box-shadow: inset 0 0 0 2px var(--frame);
+}
+
+.history__text {
+  font-family: var(--font-text);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.history__translation {
+  color: var(--ink-soft);
+  font-size: var(--step--1);
+}
+.history__meta {
+  display: flex;
+  gap: 10px;
+  color: var(--ink-faint);
+  font-size: var(--step--1);
+}
+.history__source {
+  font-style: italic;
+}
+
+.quiet-button {
+  margin-top: 10px;
+  padding: 8px 12px;
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  background: none;
+  cursor: pointer;
+}
+.quiet-button:hover {
+  background: var(--cursor-wash);
+}
