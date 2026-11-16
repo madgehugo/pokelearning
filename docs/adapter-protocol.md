@@ -44,7 +44,11 @@ One complete piece of dialogue (a whole message, which can span several text-box
 | `line` | yes (line) | Text with layout line breaks flattened to single spaces. A hyphen at a line break is kept (`POKéMON-Center`). |
 | `timestamp` | yes | Unix epoch **milliseconds**; `0` if unknown |
 | `lang` | no | Language of the text |
-| `meta` | no | Adapter-specific. Conventions: `source` (`field`, `battle`, `bag`…), `pages`, and `repeated: true` when the adapter already sent this text in this session (including the same message shown twice in a row). |
+| `meta` | no | Adapter-specific. Conventions: `source` (`field`, `battle`, `bag`…) and `pages`. |
+
+Send a line every time it appears on screen, including repeats (the same NPC
+twice). The server counts how often each line came up (`seenBefore`), so
+adapters don't need to track that.
 
 ## Writing a new adapter
 

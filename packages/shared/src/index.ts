@@ -37,8 +37,6 @@ export interface LineMeta {
   source?: string;
   /** The text split into text-box pages, each with "\n" line breaks. */
   pages?: string[];
-  /** The adapter already sent this text in this session (e.g. the same NPC again). */
-  repeated?: boolean;
   [key: string]: unknown;
 }
 

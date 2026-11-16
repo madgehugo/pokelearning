@@ -41,7 +41,7 @@
 - Article sprint (der/die/das), cloze from your own game lines, listening (TTS), matching.
 
 ## Adapter gaps (from phase 1) ✅ (tested against a simulated printer; confirm in-game)
-- **The same message twice in a row**: the adapter finds the game's text printer cursor by itself (a RAM pointer that moves through the buffer while a message prints) and sends the message again, marked `repeated`, whenever that cursor jumps back into the buffer.
+- **The same message twice in a row**: the adapter finds the game's text printer cursor by itself (a RAM pointer that moves through the buffer while a message prints) and sends the message again whenever that cursor jumps back into the buffer. The server counts how often each line came up.
 - **Text printed straight from ROM** (item descriptions, Pokédex entries…): "cursor sources" in `games/emerald.lua` follow a printer's pointer into ROM and send the whole string once it has stayed on screen for about 0.5 s. Each one needs its address found once with `find(…, true)`, `findPointer` and `watchCursor` (docs/finding-addresses.md).
 - Still not covered: screens that draw text without a text printer (e.g. the naming screen). That would need the OCR adapter.
 

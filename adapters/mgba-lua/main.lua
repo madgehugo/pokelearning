@@ -152,13 +152,14 @@ local function looksLikeText(stats)
   return stats.letters >= 2 and stats.unknown * 5 <= stats.chars
 end
 
--- Send one piece of text. `repeated` marks a message shown again unchanged.
-local function emit(source, addr, raw, repeated)
+-- Send one piece of text. `again` only labels the console echo (the server
+-- counts repeats itself, across sessions).
+local function emit(source, addr, raw, again)
   local text, stats = charmap.decode(raw, state.cfg.lang)
   if not looksLikeText(stats) then return end
   local line = charmap.flatten(text)
   if line == "" then return end
-  if CONFIG.echo then log("[" .. source .. (repeated and ", again" or "") .. "] " .. line) end
+  if CONFIG.echo then log("[" .. source .. (again and ", again" or "") .. "] " .. line) end
   transport:send({
     type = "line",
     adapter = ADAPTER,
@@ -171,7 +172,6 @@ local function emit(source, addr, raw, repeated)
       gameCode = state.gameCode,
       address = string.format("0x%08X", addr),
       pages = charmap.pages(text),
-      repeated = repeated or nil,
     },
   })
 end
@@ -259,7 +259,7 @@ local function onNewContent(w)
   end
 end
 
--- Send buffer text, marking it "again" if it was already sent this session.
+-- Send buffer text; the console echo says "again" if it was already sent this session.
 local function emitBuffer(w, raw, shownAgain)
   local again = shownAgain or w.seen[raw] ~= nil
   emit(w.buf.name, w.buf.addr, raw, again)

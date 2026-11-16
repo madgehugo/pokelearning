@@ -85,8 +85,8 @@ messages. Then the console prints `field text printer found at 0x0300…`.
 Usually that takes two or three messages with normal text speed.
 
 From then on, a message shown twice in a row (the same NPC again, or the same
-battle message) is sent again. Anything already sent this session is marked
-"again" in the console. The web UI also tells you how often you've seen a line
+battle message) is sent again. The console marks anything already sent this
+session with "again". The web UI also tells you how often you've seen a line
 across all sessions.
 
 If the printer stops moving on new messages (three in a row), the adapter
