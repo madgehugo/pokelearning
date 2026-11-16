@@ -67,6 +67,14 @@ interface WordRow {
   last_seen_at: number | null;
 }
 
+/** Just the scheduling columns of a card row. */
+function schedulingFields(c: CardFields): CardFields {
+  return {
+    due: c.due, stability: c.stability, difficulty: c.difficulty, scheduled_days: c.scheduled_days,
+    learning_steps: c.learning_steps, reps: c.reps, lapses: c.lapses, state: c.state, last_review: c.last_review,
+  };
+}
+
 interface CardRow extends CardFields {
   id: number;
   word_id: number;
@@ -421,7 +429,7 @@ export class WordBank {
         nextDue = nextDue === null ? tomorrow : Math.min(nextDue, tomorrow);
       }
     }
-    return { items, due: dueCount, newAvailable: eligible.length, nextDue };
+    return { items, due: dueCount, newAvailable: eligible.length, nextDue, canUndo: this.canUndo() };
   }
 
   private item(c: CardRow, now: number): ReviewItem {
@@ -445,17 +453,50 @@ export class WordBank {
       this.db
         .prepare(
           `INSERT INTO review_log (card_id, grade, state, due, stability, difficulty, scheduled_days, learning_steps,
-                                   review, duration_ms)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                                   review, duration_ms, card_before)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         )
         .run(cardId, log.grade, log.state, log.due, log.stability, log.difficulty, log.scheduled_days,
-          log.learning_steps, log.review, durationMs ?? null);
+          log.learning_steps, log.review, durationMs ?? null, JSON.stringify(schedulingFields(card)));
       this.db.exec("COMMIT");
     } catch (err) {
       this.db.exec("ROLLBACK");
       throw err;
     }
     return summary({ ...card, ...next });
+  }
+
+  /** Whether there is an answer to take back (answers from before undo existed can't be). */
+  canUndo(): boolean {
+    const last = this.db.prepare("SELECT card_before AS before FROM review_log ORDER BY id DESC LIMIT 1").get() as
+      | { before: string | null }
+      | undefined;
+    return !!last?.before;
+  }
+
+  /** Take back the most recent answer: the card goes back as it was, and the answer leaves the log. */
+  undo(): CardSummary {
+    const last = this.db.prepare("SELECT id, card_id, card_before AS before FROM review_log ORDER BY id DESC LIMIT 1").get() as
+      | { id: number; card_id: number; before: string | null }
+      | undefined;
+    if (!last?.before) throw new WordBankError("Nothing to undo", 409);
+    const b = JSON.parse(last.before) as CardFields;
+    this.db.exec("BEGIN");
+    try {
+      this.db
+        .prepare(
+          `UPDATE cards SET due = ?, stability = ?, difficulty = ?, scheduled_days = ?, learning_steps = ?,
+                            reps = ?, lapses = ?, state = ?, last_review = ? WHERE id = ?`,
+        )
+        .run(b.due, b.stability, b.difficulty, b.scheduled_days, b.learning_steps, b.reps, b.lapses, b.state,
+          b.last_review, last.card_id);
+      this.db.prepare("DELETE FROM review_log WHERE id = ?").run(last.id);
+      this.db.exec("COMMIT");
+    } catch (err) {
+      this.db.exec("ROLLBACK");
+      throw err;
+    }
+    return summary(this.db.prepare("SELECT * FROM cards WHERE id = ?").get(last.card_id) as unknown as CardRow);
   }
 
   stats(now = Date.now()): WordBankStats {

@@ -154,6 +154,13 @@ export async function handleApi(
         sendJson(res, 200, wordbank.queue());
         break;
       }
+      case "POST /api/review/undo": {
+        checkSameOrigin(req);
+        wordbank.undo();
+        deps.onWordBankChange();
+        sendJson(res, 200, wordbank.queue());
+        break;
+      }
       case "GET /api/stats":
         sendJson(res, 200, wordbank.stats());
         break;

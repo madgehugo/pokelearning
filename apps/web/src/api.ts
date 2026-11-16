@@ -34,6 +34,7 @@ export const api = {
   removeWord: (id: number) => call<void>("DELETE", `/api/words/${id}`),
   words: () => call<SavedWord[]>("GET", "/api/words"),
   queue: () => call<ReviewQueue>("GET", "/api/review"),
+  undo: () => call<ReviewQueue>("POST", "/api/review/undo", {}),
   answer: (cardId: number, req: AnswerRequest) => call<ReviewQueue>("POST", `/api/review/${cardId}`, req),
   settings: () => call<Settings>("GET", "/api/settings"),
   updateSettings: (patch: Partial<Settings>) => call<Settings>("PUT", "/api/settings", patch),

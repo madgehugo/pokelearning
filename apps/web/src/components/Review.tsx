@@ -52,6 +52,19 @@ export function Review() {
     [item, busy],
   );
 
+  const undo = useCallback(async () => {
+    if (!queue?.canUndo || busy) return;
+    setBusy(true);
+    try {
+      setQueue(await api.undo());
+      setError(null);
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }, [queue?.canUndo, busy]);
+
   const isArticle = item?.card.kind === "article";
   const correctArticle = item?.word.articles?.[0];
   const pick = useCallback((a: Article) => {
@@ -62,7 +75,9 @@ export function Review() {
   // Space shows the answer (or continues after an article), 1–4 grade, 1–3 pick an article.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (!item || e.metaKey || e.ctrlKey || e.altKey || e.target instanceof HTMLInputElement) return;
+      if (e.metaKey || e.ctrlKey || e.altKey || e.target instanceof HTMLInputElement) return;
+      if (e.key === "z") return void undo();
+      if (!item) return;
       if (isArticle && !revealed && ["1", "2", "3"].includes(e.key)) return pick(ARTICLES[Number(e.key) - 1]!);
       if (e.key === " " || e.key === "Enter") {
         e.preventDefault();
@@ -75,21 +90,30 @@ export function Review() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [item, revealed, isArticle, picked, correctArticle, answer, pick]);
+  }, [item, revealed, isArticle, picked, correctArticle, answer, pick, undo]);
 
   if (error && !queue) return <p className="error">Couldn't load the reviews: {error}</p>;
   if (!queue) return <p className="muted">Loading reviews…</p>;
 
+  const undoButton = queue.canUndo && (
+    <button type="button" className="undo-button" disabled={busy} onClick={() => void undo()}>
+      Undo last answer <kbd>Z</kbd>
+    </button>
+  );
+
   if (!item) {
     return (
-      <section className="box box--empty review-done" aria-live="polite">
-        <p className="line">Nothing to review right now.</p>
-        <p className="box__hint">
-          {queue.nextDue
-            ? `The next card is due ${relativeTime(queue.nextDue)}.`
-            : "Save words from the game to review them here: open a word in the live view and choose Save word."}
-        </p>
-      </section>
+      <>
+        <section className="box box--empty review-done" aria-live="polite">
+          <p className="line">Nothing to review right now.</p>
+          <p className="box__hint">
+            {queue.nextDue
+              ? `The next card is due ${relativeTime(queue.nextDue)}.`
+              : "Save words from the game to review them here: open a word in the live view and choose Save word."}
+          </p>
+        </section>
+        {undoButton}
+      </>
     );
   }
 
@@ -151,7 +175,8 @@ export function Review() {
           </div>
         )}
       </div>
-      {error && <p className="error">Couldn't save that answer: {error}</p>}
+      {undoButton}
+      {error && <p className="error">{error}</p>}
     </div>
   );
 }

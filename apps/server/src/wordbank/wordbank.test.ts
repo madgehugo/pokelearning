@@ -132,6 +132,28 @@ describe("reviewing", () => {
     assert.equal(bank.stats(T0).dueNow, 2);
   });
 
+  it("undoes the last answer: the card and the log go back as they were", async () => {
+    save(await play("Ich bin gut."), "gut");
+    assert.equal(bank.queue(T0).canUndo, false);
+    assert.throws(() => bank.undo(), /Nothing to undo/);
+    const before = bank.queue(T0).items[0]!.card;
+    bank.answer(before.id, 3, undefined, T0);
+    const second = bank.answer(before.id, 1, undefined, T0 + 10 * MIN);
+    assert.equal(bank.queue(T0 + 10 * MIN).canUndo, true);
+    assert.equal(bank.stats(T0 + 10 * MIN).reviewedToday, 2);
+    // back one step: where it was after the first answer
+    const undone = bank.undo();
+    assert.equal(undone.due, T0 + 10 * MIN);
+    assert.equal(undone.state, "learning");
+    assert.equal(undone.reps, 1);
+    assert.equal(bank.stats(T0 + 10 * MIN).reviewedToday, 1);
+    assert.notEqual(second.reps, undone.reps);
+    // and back to the start: a new card again
+    const fresh = bank.undo();
+    assert.deepEqual({ ...fresh }, { ...before });
+    assert.equal(bank.queue(T0).canUndo, false);
+  });
+
   it("schedules answers with FSRS and brings learning cards back", async () => {
     save(await play("Ich bin gut."), "gut");
     const card = bank.queue(T0).items[0]!.card;

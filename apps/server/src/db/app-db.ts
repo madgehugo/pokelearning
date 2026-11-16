@@ -142,6 +142,10 @@ const MIGRATIONS = [
     PRIMARY KEY (lemma, pos)
   );
   `,
+  // 5: the card as it was before each answer, so the last answer can be undone
+  `
+  ALTER TABLE review_log ADD COLUMN card_before TEXT;
+  `,
 ];
 
 const LINE_SELECT = `

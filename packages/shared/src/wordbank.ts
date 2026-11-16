@@ -80,6 +80,8 @@ export interface ReviewQueue {
   newAvailable: number;
   /** When the next card becomes due, if nothing is due now. */
   nextDue: number | null;
+  /** The last answer can be taken back. */
+  canUndo: boolean;
 }
 
 export interface WordBankStats {
