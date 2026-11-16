@@ -5,7 +5,7 @@
  */
 import os from "node:os";
 import { styleText } from "node:util";
-import type { ServerStatus } from "@pokelearning/shared";
+import { adapterVersionProblem, type ServerStatus } from "@pokelearning/shared";
 import { config } from "./config.ts";
 import { AppDb } from "./db/app-db.ts";
 import { openDictionary } from "./dictionary/db.ts";
@@ -40,7 +40,7 @@ else warn("no game names found: run `npm run names:import` (the app's first-laun
 if (language.dictionary) info(`dictionary ${language.dictionary.version}`);
 else warn("no dictionary found: run `npm run dict:import` (the app's first-launch setup does this)");
 
-const status: ServerStatus = { adapters: 0, game: null, translator: null, dictionary: language.dictionary?.version ?? null };
+const status: ServerStatus = { adapters: 0, game: null, adapterWarning: null, translator: null, dictionary: language.dictionary?.version ?? null };
 
 let translator: Translator | null = null;
 if (config.translator === "opus-mt") {
@@ -123,6 +123,7 @@ const ingest = createIngestServer({
   onDisconnect: (client) => {
     info(`adapter disconnected (${client})`);
     status.adapters = Math.max(0, status.adapters - 1);
+    if (status.adapters === 0) status.adapterWarning = null;
     ui.broadcastStatus();
   },
   onWarning: warn,
@@ -133,6 +134,8 @@ const ingest = createIngestServer({
         `${msg.adapter} ${msg.version}, game ${styleText("bold", msg.game)}`,
       );
       status.game = msg.game;
+      status.adapterWarning = adapterVersionProblem(msg);
+      if (status.adapterWarning) warn(status.adapterWarning);
       ui.broadcastStatus();
     } else {
       void pipeline.submit(msg);

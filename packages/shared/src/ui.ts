@@ -13,6 +13,8 @@ export interface ServerStatus {
   adapters: number;
   /** Game id from the most recent adapter hello. */
   game: string | null;
+  /** Set when the connected adapter is too old for this server; says what to do. */
+  adapterWarning: string | null;
   /** Translation provider id, or null if translation is off or failed to load. */
   translator: string | null;
   /** Dictionary build, or null if none is installed. */

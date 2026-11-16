@@ -15,6 +15,11 @@ Sent once right after connecting.
 { "type": "hello", "adapter": "mgba-gen3", "version": "0.1.0", "game": "pokemon-emerald-de", "timestamp": 1731750000000 }
 ```
 
+The server compares `version` with the oldest one it supports for that `adapter`
+(`MIN_ADAPTER_VERSION` in `packages/shared/src/index.ts`) and, if the adapter is
+older, shows a warning in the UI. Adapters that aren't listed are not checked.
+Bump an adapter's version when you change what it sends.
+
 ## `line`
 
 One complete piece of dialogue (a whole message, which can span several text-box pages).

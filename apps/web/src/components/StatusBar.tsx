@@ -15,6 +15,7 @@ function describe({ connection, status }: Pick<Props, "connection" | "status">):
   if (connection === "offline") return { state: "offline", text: "Server not running. Start it with npm run play." };
   if (connection === "connecting" || !status) return { state: "waiting", text: "Connecting to the server…" };
   if (status.adapters === 0) return { state: "waiting", text: "Waiting for mGBA. Load adapters/mgba-lua/main.lua." };
+  if (status.adapterWarning) return { state: "waiting", text: status.adapterWarning };
   const game = status.game ? gameName(status.game) : "the game";
   return { state: "live", text: `Following ${game}` };
 }

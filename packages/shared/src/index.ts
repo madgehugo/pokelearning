@@ -42,6 +42,35 @@ export interface LineMeta {
 
 export type AdapterMessage = HelloMessage | LineMessage;
 
+/**
+ * Oldest version of each adapter this server works properly with. Raise an entry when
+ * the server starts relying on something an older adapter doesn't send. Adapters not
+ * listed here (third-party ones) aren't checked.
+ */
+export const MIN_ADAPTER_VERSION: Record<string, string> = {
+  "mgba-gen3": "0.1.0",
+};
+
+/** Compare "major.minor.patch" strings. Negative if a < b; NaN if either isn't a version. */
+export function compareVersions(a: string, b: string): number {
+  const parse = (v: string) => (/^\d+\.\d+\.\d+$/.test(v) ? v.split(".").map(Number) : null);
+  const pa = parse(a);
+  const pb = parse(b);
+  if (!pa || !pb) return NaN;
+  for (let i = 0; i < 3; i++) if (pa[i] !== pb[i]) return pa[i]! - pb[i]!;
+  return 0;
+}
+
+/** A sentence for the user if this adapter is too old (or doesn't say its version), else null. */
+export function adapterVersionProblem(hello: Pick<HelloMessage, "adapter" | "version">): string | null {
+  const min = MIN_ADAPTER_VERSION[hello.adapter];
+  if (!min) return null;
+  const cmp = compareVersions(hello.version, min);
+  if (cmp >= 0) return null;
+  const found = Number.isNaN(cmp) ? "an unknown version" : `version ${hello.version}`;
+  return `The script loaded in mGBA is ${found}; this app needs ${min} or newer. Reload main.lua from the app's folder (Tools → Scripting → File → Load script).`;
+}
+
 export type ParseResult =
   | { ok: true; message: AdapterMessage }
   | { ok: false; error: string };

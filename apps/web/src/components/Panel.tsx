@@ -23,6 +23,7 @@ function state(server: Server): { state: "live" | "waiting" | "offline"; text: s
   if (server.connection === "offline") return { state: "offline", text: "Server not running" };
   if (!server.status || server.connection === "connecting") return { state: "waiting", text: "Connecting…" };
   if (server.status.adapters === 0) return { state: "waiting", text: "Load the script in mGBA" };
+  if (server.status.adapterWarning) return { state: "waiting", text: "mGBA script out of date: reload it" };
   return { state: "live", text: "Live" };
 }
 

@@ -14,7 +14,7 @@ local CONFIG = {
 }
 
 local ADAPTER = "mgba-gen3"
-local VERSION = "0.1.0"
+local VERSION = "0.2.0"
 
 ---------------------------------------------------------------------------
 -- module loading (works from any folder, and survives reloading the script)
