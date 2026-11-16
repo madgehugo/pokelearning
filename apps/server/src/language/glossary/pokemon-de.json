@@ -1,0 +1,93 @@
+[
+  {
+    "match": ["Pokémon"],
+    "lemma": "Pokémon",
+    "pos": "noun",
+    "gender": "n",
+    "glosses": ["Pokémon (the creatures)"]
+  },
+  {
+    "match": ["Pokéball"],
+    "lemma": "Pokéball",
+    "pos": "noun",
+    "gender": "m",
+    "glosses": ["Poké Ball"],
+    "mt": "Poké Ball"
+  },
+  {
+    "match": ["Pokédex"],
+    "lemma": "Pokédex",
+    "pos": "noun",
+    "gender": "m",
+    "glosses": ["Pokédex"]
+  },
+  {
+    "match": ["Pokémon-Center"],
+    "lemma": "Pokémon-Center",
+    "pos": "noun",
+    "gender": "n",
+    "glosses": ["Pokémon Center (heals your Pokémon)"],
+    "mt": "Pokémon Center"
+  },
+  {
+    "match": ["KP"],
+    "lemma": "KP (Kraftpunkte)",
+    "pos": "abbrev",
+    "gender": "pl",
+    "glosses": ["HP, hit points"],
+    "mt": "HP"
+  },
+  {
+    "match": ["AP"],
+    "lemma": "AP (Angriffspunkte)",
+    "pos": "abbrev",
+    "gender": "pl",
+    "glosses": ["PP, power points"],
+    "mt": "PP"
+  },
+  {
+    "match": ["VM"],
+    "lemma": "VM (Versteckte Maschine)",
+    "pos": "abbrev",
+    "gender": "f",
+    "glosses": ["HM, hidden machine"],
+    "mt": "HM"
+  },
+  {
+    "match": ["TM"],
+    "lemma": "TM (Technische Maschine)",
+    "pos": "abbrev",
+    "gender": "f",
+    "glosses": ["TM, technical machine"],
+    "mt": "TM"
+  },
+  {
+    "match": ["Prof"],
+    "lemma": "Professor",
+    "pos": "noun",
+    "gender": "m",
+    "glosses": ["professor (abbreviated Prof.)"]
+  },
+  {
+    "match": ["Birk"],
+    "lemma": "Birk",
+    "pos": "name",
+    "glosses": ["Professor Birch (English name)"],
+    "mt": "Birch"
+  },
+  {
+    "match": ["Wurzelheim"],
+    "lemma": "Wurzelheim",
+    "pos": "name",
+    "glosses": ["Littleroot Town (your hometown)"],
+    "mt": "Littleroot"
+  },
+  {
+    "match": ["Trank"],
+    "lemma": "Trank",
+    "pos": "noun",
+    "gender": "m",
+    "glosses": ["Potion (item that restores HP)", "drink, potion"],
+    "mt": "Potion"
+  }
+]
