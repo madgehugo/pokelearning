@@ -18,7 +18,16 @@ const MAX_ACRONYM_LENGTH = 3;
 const ABBREVIATIONS = ["Prof.", "Dr.", "Nr.", "St.", "z.B.", "usw.", "bzw.", "ca."];
 
 /** Game phrases the tokenizer splits up, protected as a whole. */
-const PHRASES: [RegExp, string][] = [[/\bE\.-Punkte\b/g, "Exp. Points"]];
+const PHRASES: [RegExp, string][] = [
+  [/\bE\.-Punkte\b/g, "Exp. Points"],
+  // Stat names on the summary screen and in battle ("INIT. von X sinkt."). The full stops are part
+  // of the abbreviation, not sentence ends. Longest first: "SP. ANG." before "ANG.".
+  [/\bSP\.\s*ANG\./g, "Sp. Atk"],
+  [/\bSP\.\s*VER(?:T)?\./g, "Sp. Def"],
+  [/\bANG\./g, "Attack"],
+  [/\bVERT\./g, "Defense"],
+  [/\bINIT\./g, "Speed"],
+];
 
 const SLOT = /\bX(\d+)\b/g;
 

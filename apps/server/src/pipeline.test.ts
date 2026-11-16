@@ -4,7 +4,7 @@ import type { LineMessage } from "@pokelearning/shared";
 import { AppDb } from "./db/app-db.ts";
 import { createGlossary } from "./language/glossary.ts";
 import { LinePipeline } from "./pipeline.ts";
-import { prepareForTranslation, restoreSlots, splitSentences } from "./translate/prepare.ts";
+import { prepareForTranslation, prepareSentences, restoreSlots, splitSentences } from "./translate/prepare.ts";
 import type { TranslationProvider } from "./translate/provider.ts";
 import { Translator } from "./translate/translator.ts";
 
@@ -44,6 +44,16 @@ describe("prepareForTranslation", () => {
       prepareForTranslation("Ich bin PROF. BIRK. Dein POKéMON hat keine KP!", glossary),
       "Ich bin Prof. X1. Dein Pokémon hat keine KP!",
     );
+  });
+
+  it("keeps stat abbreviations whole, full stops included", () => {
+    assert.equal(prepareForTranslation("VERT.", glossary), "X1");
+    assert.equal(prepareForTranslation("SP. ANG.", glossary), "X1");
+    assert.equal(prepareForTranslation("SP. VER.", glossary), "X1");
+    assert.equal(prepareForTranslation("INIT. von BIRK sinkt.", glossary), "X1 von X2 sinkt.");
+    const sentences = prepareSentences("INIT. von BIRK sinkt.", glossary);
+    assert.equal(sentences.length, 1);
+    assert.deepEqual(sentences[0]!.slots, ["Speed", "Birch"]);
   });
 
   it("restores placeholders, or reports one that went missing", () => {

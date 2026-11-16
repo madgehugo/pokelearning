@@ -102,5 +102,60 @@
       "Professor Birch (English name)"
     ],
     "mt": "Birch"
+  },
+  {
+    "match": [
+      "Ang"
+    ],
+    "lemma": "ANG. (Angriff)",
+    "pos": "abbrev",
+    "glosses": [
+      "Atk, attack"
+    ],
+    "capsOnly": true
+  },
+  {
+    "match": [
+      "Vert"
+    ],
+    "lemma": "VERT. (Verteidigung)",
+    "pos": "abbrev",
+    "glosses": [
+      "Def, defense"
+    ],
+    "capsOnly": true
+  },
+  {
+    "match": [
+      "Ver"
+    ],
+    "lemma": "VER. (Verteidigung)",
+    "pos": "abbrev",
+    "glosses": [
+      "Def, defense (in SP. VER.)"
+    ],
+    "capsOnly": true
+  },
+  {
+    "match": [
+      "Init"
+    ],
+    "lemma": "INIT. (Initiative)",
+    "pos": "abbrev",
+    "glosses": [
+      "Speed (literally initiative)"
+    ],
+    "capsOnly": true
+  },
+  {
+    "match": [
+      "Sp"
+    ],
+    "lemma": "SP. (Spezial)",
+    "pos": "abbrev",
+    "glosses": [
+      "Sp., special"
+    ],
+    "capsOnly": true
   }
 ]
