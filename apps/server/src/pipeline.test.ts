@@ -45,6 +45,8 @@ describe("prepareForTranslation", () => {
 
   it("restores placeholders, or reports one that went missing", () => {
     assert.equal(restoreSlots("X2 uses X1!", ["Ember", "Zigzagoon"]), "Zigzagoon uses Ember!");
+    assert.equal(restoreSlots("You got an X1!", ["Super Potion"]), "You got a Super Potion!");
+    assert.equal(restoreSlots("A X1 hits.", ["Ember"]), "An Ember hits.");
     assert.equal(restoreSlots("Zigzagoon uses fire!", ["Zigzagoon"]), null);
   });
 
