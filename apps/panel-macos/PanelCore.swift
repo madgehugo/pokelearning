@@ -1,6 +1,6 @@
 // Shared by the standalone panel (apps/panel-macos, used by `npm run play`) and
-// the Pokélearning app (apps/desktop-macos): a small always-on-top window that
-// docks next to mGBA and shows the companion's live view (#/panel).
+// the Pokélearning app (apps/desktop-macos): a small window that stays on top
+// of the game and docks next to mGBA and shows the companion's live view (#/panel).
 //
 // It follows the mGBA window when you move or resize it. Drag the panel away
 // and it stays put; the panel's "Dock" link snaps it back. Clicking in the
@@ -38,20 +38,27 @@ struct PanelOptions {
   var app = "mGBA"
 }
 
+/// Never takes keyboard focus, so the game keeps getting the keys while you use the panel.
+final class FloatingPanel: NSPanel {
+  override var canBecomeKey: Bool { false }
+  override var canBecomeMain: Bool { false }
+}
+
 final class PanelController: NSObject, NSWindowDelegate, WKNavigationDelegate, WKUIDelegate, WKScriptMessageHandler {
   private let options: PanelOptions
   /// Called when the panel window is closed (the standalone panel quits; the app keeps running).
   var onClose: () -> Void = {}
-  private let panel: NSPanel
+  private let panel: FloatingPanel
   private let web: WKWebView
   private var following = true
   private var placing = false
   private var lastEmulator: NSRect?
   private var retry: Timer?
+  private var closedByUser = false
 
   init(options: PanelOptions) {
     self.options = options
-    panel = NSPanel(
+    panel = FloatingPanel(
       contentRect: NSRect(x: 200, y: 200, width: options.width, height: 600),
       styleMask: [.titled, .closable, .resizable, .utilityWindow, .nonactivatingPanel],
       backing: .buffered, defer: false)
@@ -72,8 +79,23 @@ final class PanelController: NSObject, NSWindowDelegate, WKNavigationDelegate, W
     panel.contentView = web
     panel.orderFrontRegardless()
     web.load(URLRequest(url: options.url))
-    Timer.scheduledTimer(withTimeInterval: 0.3, repeats: true) { [weak self] _ in self?.follow() }
+    Timer.scheduledTimer(withTimeInterval: 0.3, repeats: true) { [weak self] _ in
+      self?.updateVisibility()
+      self?.follow()
+    }
     follow()
+  }
+
+  /// Show the panel only while the game (or this app) is in front, so it doesn't
+  /// stay on top of other apps. It comes back when you return to the game.
+  private func updateVisibility() {
+    guard !closedByUser else { return }
+    let front = NSWorkspace.shared.frontmostApplication
+    let gameInFront = front?.processIdentifier == ProcessInfo.processInfo.processIdentifier
+      || front?.localizedName?.localizedCaseInsensitiveContains(options.app) == true
+    let shouldShow = gameInFront || emulatorWindowFrame(app: options.app) == nil
+    if shouldShow && !panel.isVisible { panel.orderFrontRegardless() }
+    if !shouldShow && panel.isVisible { panel.orderOut(nil) }
   }
 
   /// Keep the panel beside the emulator window, right if there's room, else left.
@@ -100,11 +122,13 @@ final class PanelController: NSObject, NSWindowDelegate, WKNavigationDelegate, W
   }
 
   func windowWillClose(_ notification: Notification) {
+    closedByUser = true
     onClose()
   }
 
   /// Bring the panel back (after it was closed) and reload its page.
   func show() {
+    closedByUser = false
     panel.orderFrontRegardless()
     web.reload()
   }

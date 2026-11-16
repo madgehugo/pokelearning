@@ -15,6 +15,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   private lazy var server = ServerProcess(paths: paths)
   private var emulator: Process?
   private var panel: PanelController?
+  private let scriptingWindow = ScriptingWindowHider()
   private var setupWindow: NSWindow?
   private var quitting = false
   private var lan = false
@@ -124,6 +125,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     do {
       try p.run()
       emulator = p
+      scriptingWindow.start(pid: p.processIdentifier)
     } catch {
       fatal("mGBA didn't start", "\(error.localizedDescription)\n\nThe app may be incomplete: download it again.")
     }
