@@ -197,6 +197,8 @@ adapters (all Gen 3 games, OCR).
 
 ## Credits and data licences
 
+The code is MIT-licensed ([LICENSE](LICENSE)). The data and tools below keep their own licences.
+
 - Character encoding and RAM symbols: the [pret/pokeemerald](https://github.com/pret/pokeemerald) decompilation.
 - Dictionary: [Wiktionary](https://en.wiktionary.org/) (CC BY-SA 4.0), via the
   [Kaikki.org](https://kaikki.org/) extract (wiktextract).
