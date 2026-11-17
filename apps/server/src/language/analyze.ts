@@ -8,8 +8,10 @@
  * and how many meanings a lexeme has (a rough proxy for how common it is).
  */
 import type { LineAnalysis, TokenAnalysis, WordSense } from "@pokelearning/shared";
-import type { Dictionary, FormMatch } from "../dictionary/db.ts";
+import type { Dictionary } from "../dictionary/db.ts";
+import { analyzeCompound } from "./compound.ts";
 import { articlesFor, glossarySense, type Glossary, type GlossaryEntry } from "./glossary.ts";
+import { candidatesFor, lookupSpelling, rank, toSense, type Candidate, type WordContext } from "./ranking.ts";
 import { isAllCaps, isClauseBoundary, isSentenceEnd, titleCase, tokenize, type Token } from "./tokenize.ts";
 
 export interface AnalyzerDeps {
@@ -18,109 +20,6 @@ export interface AnalyzerDeps {
 }
 
 const MAX_ALTERNATIVES = 3;
-const MAX_GLOSSES = 5;
-
-/** Small preference between parts of speech when everything else is equal. */
-const POS_WEIGHT: Record<string, number> = {
-  article: 1.5, pron: 0.6, det: 0.6, prep: 0.6, conj: 0.5, contraction: 0.5, verb: 0.5,
-  adj: 0.4, adv: 0.4, particle: 0.3, intj: 0.3, num: 0.3, noun: 0.3,
-  name: -0.5, abbrev: -0.5, phrase: -1, proverb: -1,
-};
-
-interface Candidate {
-  match: FormMatch;
-  score: number;
-}
-
-interface WordContext {
-  sentenceStart: boolean;
-  /** The token is followed directly by "." (abbreviations like "Prof."). */
-  dotFollows: boolean;
-}
-
-/** Spelling to look up: Gen 3 capitals become title case ("TRANK" → "Trank"). */
-function lookupSpelling(word: string): string {
-  return isAllCaps(word) ? titleCase(word) : word;
-}
-
-function scoreMatch(match: FormMatch, spelling: string, ctx: WordContext, allCaps: boolean): number {
-  const { lexeme } = match;
-  const nounLike = lexeme.pos === "noun" || lexeme.pos === "name";
-  let score = 0;
-
-  // At the start of a sentence "Ich" may be "ich" or the noun "das Ich": no preference.
-  const lowerFirst = spelling.charAt(0).toLowerCase() + spelling.slice(1);
-  if (ctx.sentenceStart && (match.form === spelling || match.form === lowerFirst)) score += 2.5;
-  else if (match.form === spelling) score += 3;
-  else if (allCaps) score += 2;
-  if (match.direct) score += 1;
-  if (match.formTags && /\b(archaic|obsolete|dated|dialectal)\b/.test(match.formTags)) score -= 1.5;
-  // A form that is only a subjunctive ("führt" as ihr-subjunctive of fahren) loses to a
-  // plain present-tense reading of another verb (führen); "möchtest" has no rival, so it stays.
-  if (match.formTags && /subjunctive/.test(match.formTags) && !/indicative|imperative|infinitive/.test(match.formTags)) {
-    score -= 0.6;
-  }
-
-  const capitalised = /^\p{Lu}/u.test(spelling);
-  if (!capitalised && nounLike) score -= 3;
-  if (capitalised && !ctx.sentenceStart && !allCaps) score += nounLike ? 2 : -1;
-  if (allCaps && nounLike) score += 1; // Gen 3 writes names and items in capitals
-
-  // The word is a headword itself ("Leute"), not just an inflection of one ("plural of Leut").
-  if (match.form === lexeme.lemma) score += 1.5;
-  const outdated = lexeme.senses.filter((s) => s.tags?.some((t) => t === "archaic" || t === "obsolete")).length;
-  if (outdated > 0 && outdated === lexeme.senses.length) score -= 1.5;
-  score += POS_WEIGHT[lexeme.pos] ?? 0;
-  score += Math.min(lexeme.senses.length, 8) * 0.1;
-  return score;
-}
-
-function toSense(c: Candidate, particleUsed: boolean): WordSense {
-  const { lexeme, formTags } = c.match;
-  const articles = articlesFor(lexeme.gender);
-  const isLemma = c.match.form.toLowerCase() === lexeme.lemma.toLowerCase();
-  return {
-    lemma: lexeme.lemma,
-    pos: lexeme.pos,
-    ...(lexeme.gender ? { gender: lexeme.gender } : {}),
-    ...(articles ? { articles } : {}),
-    ...(lexeme.plural && lexeme.plural !== lexeme.lemma ? { plural: lexeme.plural } : {}),
-    glosses:
-      lexeme.pos === "article" && lexeme.lemma === "der"
-        ? ["the (definite article)"] // Wiktionary's gloss describes only "der" itself; formTags has the case
-        : lexeme.senses.slice(0, MAX_GLOSSES).map((s) => (s.tags ? `${s.gloss} (${s.tags.join(", ")})` : s.gloss)),
-    ...(formTags && !isLemma ? { formTags } : {}),
-    ...(particleUsed && lexeme.particle ? { particle: lexeme.particle } : {}),
-    source: "dictionary",
-  };
-}
-
-/** Best candidate per lexeme, sorted by score. */
-function rank(candidates: Candidate[]): Candidate[] {
-  const best = new Map<number, Candidate>();
-  for (const c of candidates) {
-    const key = c.match.lexemeId;
-    const prev = best.get(key);
-    if (!prev || c.score > prev.score || (c.score === prev.score && !prev.match.formTags && c.match.formTags)) {
-      best.set(key, c);
-    }
-  }
-  return [...best.values()].sort((a, b) => b.score - a.score);
-}
-
-function candidatesFor(word: string, ctx: WordContext, dict: Dictionary): Candidate[] {
-  const spelling = lookupSpelling(word);
-  const allCaps = spelling !== word;
-  const out: Candidate[] = dict.lookup(spelling).map((match) => ({ match, score: scoreMatch(match, spelling, ctx, allCaps) }));
-  if (ctx.dotFollows) {
-    for (const match of dict.lookup(`${spelling}.`)) out.push({ match, score: scoreMatch(match, `${spelling}.`, ctx, allCaps) + 1 });
-  }
-  if (out.length === 0 && /['’]/.test(spelling)) {
-    // "hab'" → "hab", "geht’s" → "geht"
-    return candidatesFor(spelling.split(/['’]/)[0]!, ctx, dict);
-  }
-  return out;
-}
 
 interface WordWork {
   index: number;
@@ -279,86 +178,6 @@ function analyzeWord(token: Token, index: number, ctx: WordContext, deps: Analyz
   return { index, analysis, candidates };
 }
 
-/** Linking elements between the parts of a compound: Geburt-s-tag, Hund-e-hütte. */
-const LINKING = ["", "s", "es", "n", "en", "e", "er", "ens"];
-const MIN_HEAD = 4;
-const MIN_TAIL = 3; // "Tag", "Ort", "Weg"
-const PART_POS = new Set(["noun", "adj"]);
-
-interface Split {
-  /** [start, end) in the word, and the end of the part's own word without the linking element. */
-  start: number;
-  end: number;
-  stem: number;
-}
-
-/** The reading of one part of a compound, or undefined if it isn't a word the dictionary knows. */
-function partSense(text: string, dict: Dictionary, final: boolean): WordSense | undefined {
-  const ranked = rank(candidatesFor(text, { sentenceStart: false, dotFollows: false }, dict)).filter(
-    (c) => (final ? c.match.lexeme.pos === "noun" : PART_POS.has(c.match.lexeme.pos)) && c.match.form.toLowerCase() === text.toLowerCase(),
-  );
-  if (ranked[0]) return toSense(ranked[0], false);
-  // "Belegung" has no entry, but belegen does: a noun in -ung is always feminine and means the act or result.
-  const lower = text.toLowerCase();
-  if (final && lower.length >= 7 && lower.endsWith("ung")) {
-    const stem = lower.slice(0, -3);
-    for (const infinitive of [`${stem}en`, `${stem}n`]) {
-      const verb = dict.lookup(infinitive).find((m) => m.lexeme.pos === "verb" && m.form.toLowerCase() === infinitive);
-      if (!verb) continue;
-      const lemma = text.charAt(0).toUpperCase() + lower.slice(1);
-      return {
-        lemma,
-        pos: "noun",
-        gender: "f",
-        articles: ["die"],
-        glosses: [`the act or result of ${verb.lexeme.lemma} (${verb.lexeme.senses.slice(0, 2).map((s) => s.gloss).join("; ")})`],
-        source: "derived",
-      };
-    }
-  }
-  return undefined;
-}
-
-/**
- * Split an unknown word into dictionary words, last part a noun: the best split has the
- * longest shorter half. Parts may themselves be compounds ("Kampfstilwechsel").
- */
-function splitCompound(text: string, from: number, dict: Dictionary, depth = 0): { split: Split; sense: WordSense }[] | null {
-  const lower = text.toLowerCase();
-  let best: { parts: { split: Split; sense: WordSense }[]; quality: number } | null = null;
-  for (let i = MIN_HEAD; i <= lower.length - MIN_TAIL; i++) {
-    for (const link of LINKING) {
-      const stemEnd = i - link.length;
-      if (stemEnd < MIN_HEAD || lower.slice(stemEnd, i) !== link) continue;
-      const head = partSense(text.slice(0, stemEnd), dict, false);
-      if (!head) continue;
-      const tailText = text.slice(i);
-      const tail = partSense(tailText, dict, true);
-      const tailParts = tail
-        ? [{ split: { start: from + i, end: from + text.length, stem: from + text.length }, sense: tail }]
-        : depth < 2 ? splitCompound(tailText, from + i, dict, depth + 1) : null;
-      if (!tailParts) continue;
-      const quality = Math.min(stemEnd, lower.length - i) - (link ? 0.5 : 0) - tailParts.length * 0.1;
-      if (!best || quality > best.quality) {
-        best = { parts: [{ split: { start: from, end: from + i, stem: from + stemEnd }, sense: head }, ...tailParts], quality };
-      }
-    }
-  }
-  return best?.parts ?? null;
-}
-
-function analyzeCompound(token: Token, dict: Dictionary): TokenAnalysis[] | null {
-  if (token.text.length < MIN_HEAD + MIN_TAIL + 1 || /[^\p{L}]/u.test(token.text)) return null;
-  const parts = splitCompound(token.text, 0, dict);
-  if (!parts) return null;
-  return parts.map(({ split, sense }) => ({
-    text: token.text.slice(split.start, split.end),
-    start: token.start + split.start,
-    end: token.start + split.end,
-    kind: "word" as const,
-    best: sense,
-  }));
-}
 
 const RELATIVE_FORMS = new Set(["der", "die", "das", "dem", "den", "dessen", "deren", "denen"]);
 /** What follows a relative pronoun: a pronoun, verb, adverb… but not an adjective or noun ("der alte Mann"). */
