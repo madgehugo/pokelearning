@@ -21,7 +21,7 @@
 - NPC and trainer names (*MR. BRIGGS*) aren't in PokéAPI; add the ones you meet to `glossary/pokemon-de.json`.
 - Gen 3 sometimes shortened German names that later games spell in full. If one doesn't match, add it to `glossary/pokemon-de.json`, which overrides imported names.
 - Compounds with no hyphen and no entry are split into dictionary words (*Knopfbelegung* → Knopf + Belegung; a noun in -ung comes from its verb). Longer or irregular ones can still be missed.
-- Use syntax to rank function words. For example, the relative pronoun *das* after a comma is currently read as an article; the correct reading is listed as an alternative.
+- Syntax-aware ranking for function words is partial: der/die/das/den/dem after a comma and before a lowercase non-adjective (*das ich suche*) are read as relative pronouns. Other cases (a relative clause opening a sentence, *die* vs *sie*) still use the general ranking.
 - An optional DeepL or LLM translation provider behind the same interface.
 
 ## Phase 3: Web UI ✅

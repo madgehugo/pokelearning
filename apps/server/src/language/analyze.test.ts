@@ -159,3 +159,31 @@ describe("compounds without an entry", () => {
     assert.equal(analyse("AAa").parts, undefined);
   });
 });
+
+describe("relative pronouns", () => {
+  const entries = [
+    { word: "der", pos: "article", senses: [{ glosses: ["the"] }], forms: [{ form: "das", tags: ["definite", "neuter", "nominative", "singular"] }] },
+    { word: "der", pos: "pron", senses: [{ glosses: ["who, which (relative pronoun)"] }], forms: [{ form: "das", tags: ["neuter", "nominative", "relative", "singular"] }] },
+    { word: "ich", pos: "pron", senses: [{ glosses: ["I"] }] },
+    { word: "suche", pos: "verb", senses: [{ glosses: ["I search"] }] },
+    { word: "alte", pos: "adj", senses: [{ glosses: ["old"] }] },
+    { word: "Haus", pos: "noun", senses: [{ glosses: ["house"] }], head_templates: [{ args: { "1": "n,es,^er" } }] },
+    { word: "Kind", pos: "noun", senses: [{ glosses: ["child"] }], head_templates: [{ args: { "1": "n,es,-er" } }] },
+  ];
+  const relDeps = { dictionary: fixtureDictionary(entries), glossary: createGlossary([]) };
+  const pos = (line: string, nth: number) =>
+    analyzeLine(line, relDeps).tokens.filter((t) => t.text.toLowerCase() === "das")[nth]?.best?.pos;
+
+  it("reads das after a comma and before a pronoun as a relative pronoun", () => {
+    assert.equal(pos("Ein Kind, das ich suche.", 0), "pron");
+  });
+
+  it("keeps the article before a noun or an adjective", () => {
+    assert.equal(pos("Er kam, das Haus war leer.", 0), "article");
+    assert.equal(pos("Er sah, das alte Haus.", 0), "article");
+  });
+
+  it("only looks after a comma", () => {
+    assert.equal(pos("Das ich suche.", 0), "article");
+  });
+});

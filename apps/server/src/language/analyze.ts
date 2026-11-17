@@ -174,6 +174,7 @@ export function analyzeLine(text: string, deps: AnalyzerDeps): LineAnalysis {
   });
 
   linkSeparableVerbs(tokens, work, analyses);
+  preferRelativePronouns(tokens, work);
 
   for (const w of work) {
     if (!w || w.analysis.best) continue;
@@ -357,6 +358,32 @@ function analyzeCompound(token: Token, dict: Dictionary): TokenAnalysis[] | null
     kind: "word" as const,
     best: sense,
   }));
+}
+
+const RELATIVE_FORMS = new Set(["der", "die", "das", "dem", "den", "dessen", "deren", "denen"]);
+/** What follows a relative pronoun: a pronoun, verb, adverb… but not an adjective or noun ("der alte Mann"). */
+const AFTER_RELATIVE = new Set(["pron", "det", "prep", "adv", "verb", "conj", "particle", "num"]);
+
+/**
+ * "…das POKéMON, das ich suche": after a comma, der/die/das/den/dem followed by a lowercase
+ * word that isn't an adjective starts a relative clause, so the pronoun reading beats the article.
+ * "…, das Haus war leer" (a capitalised noun next) stays an article.
+ */
+function preferRelativePronouns(tokens: Token[], work: (WordWork | null)[]): void {
+  for (const w of work) {
+    if (!w || !RELATIVE_FORMS.has(tokens[w.index]!.text.toLowerCase())) continue;
+    const before = tokens[w.index - 1];
+    const next = work[w.index + 1];
+    const nextToken = tokens[w.index + 1];
+    if (before?.kind !== "punct" || before.text !== "," || !next || nextToken?.kind !== "word") continue;
+    if (/^\p{Lu}/u.test(nextToken.text)) continue;
+    const nextPos = rank(next.candidates)[0]?.match.lexeme.pos;
+    if (!nextPos || !AFTER_RELATIVE.has(nextPos)) continue;
+    for (const c of w.candidates) {
+      if (c.match.lexeme.pos === "pron") c.score += 4;
+      else if (c.match.lexeme.pos === "article") c.score -= 2;
+    }
+  }
 }
 
 /**
