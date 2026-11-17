@@ -2,10 +2,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ProcessedLine, ServerMessage, ServerStatus, SetupStatus, WordBankSummary } from "@pokelearning/shared";
 
-/** What setup is downloading right now, in a few words, or null. Shown while a new language is set up during play. */
+/** What setup is doing right now, in a few words, or null. Shown while a new language is set up during play. */
 export function setupNote(setup: SetupStatus | null): string | null {
-  const step = setup?.steps.find((s) => s.state === "running");
-  if (!setup || setup.ready || !step) return null;
+  if (!setup || setup.ready) return null;
+  const failed = setup.steps.find((s) => s.state === "failed");
+  if (failed) return `Setup failed: ${failed.detail}. Restart the app to try again.`;
+  const step = setup.steps.find((s) => s.state === "running");
+  if (!step) return setup.steps.some((s) => s.state === "waiting") ? "Getting ready…" : null;
   return `Getting ready: ${step.detail}${step.progress !== null ? ` ${Math.round(step.progress * 100)}%` : ""}`;
 }
 
