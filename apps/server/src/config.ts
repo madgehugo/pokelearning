@@ -4,6 +4,14 @@ import { fileURLToPath } from "node:url";
 import { PROTOCOL_PORT, UI_PORT } from "@pokelearning/shared";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
+/** The root package.json's version; "0.0.0" (never reports an update) where there is none, as in the app bundle. */
+function rootVersion(): string {
+  try {
+    return JSON.parse(fs.readFileSync(path.join(repoRoot, "package.json"), "utf8")).version ?? "0.0.0";
+  } catch {
+    return "0.0.0";
+  }
+}
 const dataDir = path.resolve(process.env.DATA_DIR ?? path.join(repoRoot, "data"));
 
 export const config = {
@@ -42,7 +50,7 @@ export const config = {
     regions: (process.env.NAMES_REGIONS ?? "3").split(",").map(Number),
   },
   /** This build's version: the app sets APP_VERSION; from source it is the root package.json's. */
-  version: process.env.APP_VERSION ?? (JSON.parse(fs.readFileSync(path.join(repoRoot, "package.json"), "utf8")).version as string),
+  version: process.env.APP_VERSION ?? rootVersion(),
   /** Where releases are published, for the update check. UPDATE_CHECK=0 turns the check off. */
   repo: "madgehugo/pokelearning",
   updateCheck: process.env.UPDATE_CHECK !== "0",

@@ -229,7 +229,7 @@ async function smokeTest() {
     const src = path.join(root, "data", f);
     if (fs.existsSync(src)) fs.symlinkSync(src, path.join(data, f));
   }
-  const env = { ...process.env, DATA_DIR: data, WEB_DIST_DIR: path.join(resources, "web"), PORT: "18765", UI_PORT: "18766", NO_COLOR: "1" };
+  const env = { ...process.env, APP_VERSION: version, DATA_DIR: data, WEB_DIST_DIR: path.join(resources, "web"), PORT: "18765", UI_PORT: "18766", NO_COLOR: "1" };
   const server = spawn(path.join(resources, "node"), [path.join(serverDir, "server.mjs")], { env, stdio: ["ignore", "pipe", "pipe"] });
   let log = "";
   server.stdout.on("data", (d) => (log += d));
