@@ -15,7 +15,7 @@ import { isAllCaps, titleCase, tokenize } from "../language/tokenize.ts";
 /** Acronyms Gen 3 uses that must stay in capitals: KP, AP, VM, TM, PC… */
 const MAX_ACRONYM_LENGTH = 3;
 
-const ABBREVIATIONS = ["Prof.", "Dr.", "Nr.", "St.", "z.B.", "usw.", "bzw.", "ca."];
+const ABBREVIATIONS = ["Prof.", "Dr.", "Nr.", "St.", "z.B.", "usw.", "bzw.", "ca.", "Sr.", "Sra.", "Srta.", "Dra."];
 
 /** Game phrases the tokenizer splits up, protected as a whole. */
 const PHRASES: [RegExp, string][] = [

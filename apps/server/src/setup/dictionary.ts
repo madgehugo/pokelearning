@@ -1,6 +1,6 @@
 /**
- * Build data/dictionary.db from the Kaikki.org German extract of English
- * Wiktionary (CC BY-SA). Downloads the extract (~100 MB) if it isn't there.
+ * Build a dictionary database (data/dictionary.db, or dictionary-es.db) from the
+ * Kaikki.org extract of English Wiktionary (CC BY-SA). Downloads the extract (~100 MB) if it isn't there.
  */
 import fs from "node:fs";
 import readline from "node:readline";
@@ -14,6 +14,8 @@ export interface DictionaryPaths {
   kaikkiPath: string;
   kaikkiUrl: string;
   dictionaryDbPath: string;
+  /** Which language's extract this is; names the version ("kaikki-es@…"). German when omitted. */
+  language?: string;
 }
 
 export interface DictionaryResult {
@@ -53,7 +55,7 @@ export async function importDictionary(paths: DictionaryPaths, onProgress: Progr
   }
 
   onProgress(0.97, "Building the dictionary: indexing words");
-  const version = `kaikki-de@${fs.statSync(paths.kaikkiPath).mtime.toISOString().slice(0, 10)}`;
+  const version = `kaikki-${paths.language ?? "de"}@${fs.statSync(paths.kaikkiPath).mtime.toISOString().slice(0, 10)}`;
   const counts = builder.finish(version);
   fs.renameSync(tmp, paths.dictionaryDbPath);
   if (deleteDownload) fs.rmSync(paths.kaikkiPath, { force: true });

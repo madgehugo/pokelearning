@@ -49,4 +49,4 @@ export function titleCase(word: string): string {
 export const isClauseBoundary = (t: Token) => t.kind === "punct" && /[.!?;:,…]/.test(t.text);
 
 /** True for tokens after which a new sentence starts. */
-export const isSentenceEnd = (t: Token) => t.kind === "punct" && /[.!?…:]/.test(t.text);
+export const isSentenceEnd = (t: Token) => t.kind === "punct" && /[.!?…:¿¡]/.test(t.text);

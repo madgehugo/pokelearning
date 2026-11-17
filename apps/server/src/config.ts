@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { PROTOCOL_PORT, UI_PORT } from "@pokelearning/shared";
+import { PROTOCOL_PORT, UI_PORT, type Language } from "@pokelearning/shared";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 /** The root package.json's version; "0.0.0" (never reports an update) where there is none, as in the app bundle. */
@@ -30,6 +30,23 @@ export const config = {
   dictionaryDbPath: path.join(dataDir, "dictionary.db"),
   kaikkiPath: path.join(dataDir, "kaikki-german.jsonl.gz"),
   kaikkiUrl: "https://kaikki.org/dictionary/German/kaikki.org-dictionary-German.jsonl.gz",
+  /** Everything that differs per game language: dictionary files and their Wiktionary extract. */
+  languages: {
+    de: {
+      language: "de" as Language,
+      dataDir,
+      dictionaryDbPath: path.join(dataDir, "dictionary.db"),
+      kaikkiPath: path.join(dataDir, "kaikki-german.jsonl.gz"),
+      kaikkiUrl: "https://kaikki.org/dictionary/German/kaikki.org-dictionary-German.jsonl.gz",
+    },
+    es: {
+      language: "es" as Language,
+      dataDir,
+      dictionaryDbPath: path.join(dataDir, "dictionary-es.db"),
+      kaikkiPath: path.join(dataDir, "kaikki-spanish.jsonl.gz"),
+      kaikkiUrl: "https://kaikki.org/dictionary/Spanish/kaikki.org-dictionary-Spanish.jsonl.gz",
+    },
+  } satisfies Record<Language, unknown>,
   modelsDir: path.join(dataDir, "models"),
   /** Game names (Pokémon, moves, abilities, items, places), from `npm run names:import`. */
   namesPath: path.join(dataDir, "pokemon-names.json"),

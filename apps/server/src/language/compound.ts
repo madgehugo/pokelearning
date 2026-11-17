@@ -19,7 +19,7 @@ interface Split {
 
 /** The reading of one part of a compound, or undefined if it isn't a word the dictionary knows. */
 function partSense(text: string, dict: Dictionary, final: boolean): WordSense | undefined {
-  const ranked = rank(candidatesFor(text, { sentenceStart: false, dotFollows: false }, dict)).filter(
+  const ranked = rank(candidatesFor(text, { lang: "de", sentenceStart: false, dotFollows: false }, dict)).filter(
     (c) => (final ? c.match.lexeme.pos === "noun" : PART_POS.has(c.match.lexeme.pos)) && c.match.form.toLowerCase() === text.toLowerCase(),
   );
   if (ranked[0]) return toSense(ranked[0], false);

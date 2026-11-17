@@ -3,7 +3,7 @@
  * abbreviations, items). Entries win over dictionary readings, and `mt`
  * replaces the term before machine translation so "BIRK" comes out as "Birch".
  */
-import type { Article, WordSense } from "@pokelearning/shared";
+import type { Article, Language, WordSense } from "@pokelearning/shared";
 import curated from "./glossary/pokemon-de.json" with { type: "json" };
 import { isAllCaps, type Token } from "./tokenize.ts";
 
@@ -87,20 +87,24 @@ export function createGlossary(entries: GlossaryEntry[]): Glossary {
 export const curatedEntries = curated as GlossaryEntry[];
 
 /** Imported names (`extra`) plus the hand-written terms, which win. */
-export function loadGlossary(extra: GlossaryEntry[] = []): Glossary {
-  return createGlossary([...extra, ...curatedEntries]);
+export function loadGlossary(extra: GlossaryEntry[] = [], lang: Language = "de"): Glossary {
+  // the hand-written terms are German; Spanish games get only the imported names
+  return createGlossary(lang === "de" ? [...extra, ...curatedEntries] : extra);
 }
 
-const ARTICLE: Record<string, Article> = { m: "der", f: "die", n: "das", pl: "die" };
+const ARTICLES: Record<Language, Record<string, Article>> = {
+  de: { m: "der", f: "die", n: "das", pl: "die" },
+  es: { m: "el", f: "la" },
+};
 
-export function articlesFor(gender: string | null | undefined): Article[] | undefined {
+export function articlesFor(gender: string | null | undefined, lang: Language = "de"): Article[] | undefined {
   if (!gender) return undefined;
-  const list = [...new Set(gender.split(",").map((g) => ARTICLE[g]).filter((a): a is Article => !!a))];
+  const list = [...new Set(gender.split(",").map((g) => ARTICLES[lang][g]).filter((a): a is Article => !!a))];
   return list.length ? list : undefined;
 }
 
-export function glossarySense(e: GlossaryEntry): WordSense {
-  const articles = articlesFor(e.gender);
+export function glossarySense(e: GlossaryEntry, lang: Language = "de"): WordSense {
+  const articles = articlesFor(e.gender, lang);
   return {
     lemma: e.lemma,
     pos: e.pos,

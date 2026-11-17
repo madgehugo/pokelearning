@@ -10,11 +10,11 @@ import { config } from "./config.ts";
 import { AppDb } from "./db/app-db.ts";
 import { openDictionary } from "./dictionary/db.ts";
 import { createIngestServer } from "./ingest/tcp.ts";
-import { loadGameGlossaries } from "./language/load.ts";
+import { languageOf, loadGameGlossaries } from "./language/load.ts";
 import { LinePipeline } from "./pipeline.ts";
 import { printLine, time } from "./print.ts";
 import { OpusMtProvider } from "./translate/opus-mt.ts";
-import { Translator } from "./translate/translator.ts";
+import { Translator, TranslatorSet } from "./translate/translator.ts";
 import { Games } from "./games/games.ts";
 import { createUiServer } from "./ui/server.ts";
 import { Scheduler } from "./wordbank/scheduler.ts";
@@ -33,6 +33,8 @@ const db = new AppDb(config.appDbPath);
 /** Dictionary and glossaries, reloaded when setup finishes importing them. */
 const language = {
   dictionary: openDictionary(config.dictionaryDbPath),
+  /** Spanish, for Spanish games: built with `npm run dict:import -- es`. */
+  dictionaryEs: openDictionary(config.languages.es.dictionaryDbPath),
   glossaries: loadGameGlossaries(),
 };
 const names = language.glossaries.nameCount("pokemon-emerald-de");
@@ -40,15 +42,23 @@ if (names !== null) info(`game names: ${names} Pokémon, moves, abilities, items
 else warn("no game names found: run `npm run names:import` (the app's first-launch setup does this)");
 if (language.dictionary) info(`dictionary ${language.dictionary.version}`);
 else warn("no dictionary found: run `npm run dict:import` (the app's first-launch setup does this)");
+if (language.dictionaryEs) info(`Spanish dictionary ${language.dictionaryEs.version}`);
 
 const status: ServerStatus = { adapters: 0, game: null, adapterWarning: null, translator: null, dictionary: language.dictionary?.version ?? null, update: null };
 
 let translator: Translator | null = null;
+/** Spanish translator, loaded when a Spanish game connects. */
+let translatorEs: Translator | null = null;
 if (config.translator === "opus-mt") {
   translator = new Translator(
     new OpusMtProvider(config.modelsDir, "de", config.targetLang),
     db,
     language.glossaries.forGame("pokemon-emerald-de"),
+  );
+  translatorEs = new Translator(
+    new OpusMtProvider(config.modelsDir, "es", config.targetLang),
+    db,
+    language.glossaries.forGame("pokemon-emerald-es"),
   );
   info(`loading translation model ${translator.providerId} (first run downloads ~110 MB)…`);
   void warmUpModel();
@@ -103,8 +113,12 @@ const ui = createUiServer({ db, wordbank, games, setup, status: () => ({ ...stat
 
 const pipeline = new LinePipeline(
   db,
-  (game) => ({ dictionary: language.dictionary, glossary: language.glossaries.forGame(game) }),
-  translator,
+  (game, lang) => ({
+    lang,
+    dictionary: lang === "es" ? language.dictionaryEs : language.dictionary,
+    glossary: language.glossaries.forGame(game),
+  }),
+  translator && new TranslatorSet(new Map([["de", translator], ...(translatorEs ? [["es", translatorEs] as const] : [])])),
   config.targetLang,
 );
 pipeline.on("line", printLine);
@@ -135,6 +149,7 @@ const ingest = createIngestServer({
         `${msg.adapter} ${msg.version}, game ${styleText("bold", msg.game)}`,
       );
       status.game = msg.game;
+      if (languageOf(msg.game) === "es") void translatorEs?.warmUp().catch((err) => warn(`Spanish translation model failed to load: ${(err as Error).message}`));
       status.adapterWarning = adapterVersionProblem(msg);
       if (status.adapterWarning) warn(status.adapterWarning);
       ui.broadcastStatus();
@@ -190,6 +205,7 @@ const shutdown = () => {
   ingest.close();
   ui.close();
   language.dictionary?.close();
+  language.dictionaryEs?.close();
   db.close();
   process.exit(0);
 };

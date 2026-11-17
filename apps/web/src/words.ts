@@ -6,7 +6,9 @@ export type GenderKey = "der" | "die" | "das" | "mixed";
 /** Colour key for a reading: one article → its colour; several (der/das) → neutral. */
 export function genderKey(sense: Pick<WordSense, "articles" | "pos"> | undefined): GenderKey | undefined {
   if (!sense?.articles || (sense.pos !== "noun" && sense.pos !== "name")) return undefined;
-  return sense.articles.length === 1 ? sense.articles[0] : "mixed";
+  // Spanish el/la share the colours of masculine (blue) and feminine (rose)
+  const key = { der: "der", die: "die", das: "das", el: "der", la: "die" } as const;
+  return sense.articles.length === 1 ? key[sense.articles[0]!] : "mixed";
 }
 
 /** "die Leute", "der/das Leut", "ausruhen". */

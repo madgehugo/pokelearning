@@ -3,9 +3,15 @@
  * game terms. Each game gets the names of its own generation and regions
  * (FireRed: Kanto, Emerald: Hoenn); glossaries are built once per scope.
  */
+import type { Language } from "@pokelearning/shared";
 import { config } from "../config.ts";
 import { loadGlossary, type Glossary } from "./glossary.ts";
 import { loadNames, nameEntries, type GameScope, type NamesFile } from "./names.ts";
+
+/** "pokemon-emerald-es" → "es". Anything unrecognised is German, the original language. */
+export function languageOf(game: string): Language {
+  return game.endsWith("-es") ? "es" : "de";
+}
 
 /** "pokemon-firered-de" → FireRed's scope; anything else → the default scope. */
 export function scopeFor(game: string): GameScope {
@@ -24,11 +30,12 @@ export function loadGameGlossaries(names: NamesFile | null = loadNames(config.na
   const cache = new Map<string, { glossary: Glossary; count: number }>();
   const build = (game: string) => {
     const scope = scopeFor(game);
-    const key = `${scope.generation}:${scope.regions.join(",")}`;
+    const lang = languageOf(game);
+    const key = `${lang}:${scope.generation}:${scope.regions.join(",")}`;
     let hit = cache.get(key);
     if (!hit) {
-      const entries = names ? nameEntries(names, scope) : [];
-      hit = { glossary: loadGlossary(entries), count: entries.length };
+      const entries = names ? nameEntries(names, scope, lang) : [];
+      hit = { glossary: loadGlossary(entries, lang), count: entries.length };
       cache.set(key, hit);
     }
     return hit;

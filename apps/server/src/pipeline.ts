@@ -4,13 +4,13 @@
  * finished line is emitted as a "line" event (the phase 3 WebSocket listens here).
  */
 import { EventEmitter } from "node:events";
-import type { LineMessage, ProcessedLine, Translation } from "@pokelearning/shared";
+import type { Language, LineMessage, ProcessedLine, Translation } from "@pokelearning/shared";
 import type { AppDb } from "./db/app-db.ts";
 import { analyzeLine, type AnalyzerDeps } from "./language/analyze.ts";
+import type { LineTranslator } from "./translate/translator.ts";
 
 /** Analyzer dependencies, or a function that picks them by game id (names differ per game). */
-export type AnalyzerFor = AnalyzerDeps | ((game: string) => AnalyzerDeps);
-import type { Translator } from "./translate/translator.ts";
+export type AnalyzerFor = AnalyzerDeps | ((game: string, lang: Language) => AnalyzerDeps);
 
 export interface PipelineEvents {
   line: [ProcessedLine];
@@ -18,7 +18,7 @@ export interface PipelineEvents {
 }
 
 /** Languages the analyser and dictionary support. */
-const ANALYSED_LANGS = new Set(["de"]);
+const ANALYSED_LANGS = new Set<string>(["de", "es"]);
 
 export class LinePipeline extends EventEmitter<PipelineEvents> {
   private queue: Promise<void> = Promise.resolve();
@@ -26,7 +26,7 @@ export class LinePipeline extends EventEmitter<PipelineEvents> {
   constructor(
     private readonly db: AppDb,
     private readonly analyzer: AnalyzerFor,
-    private readonly translator: Translator | null,
+    private readonly translator: LineTranslator | null,
     private readonly targetLang: string,
   ) {
     super();
@@ -60,8 +60,9 @@ export class LinePipeline extends EventEmitter<PipelineEvents> {
     const seenBefore = this.db.countEarlier(msg.game, msg.line, id);
     const lang = msg.lang ?? "de";
 
-    const deps = typeof this.analyzer === "function" ? this.analyzer(msg.game) : this.analyzer;
-    const analysis = ANALYSED_LANGS.has(lang) ? analyzeLine(msg.line, deps) : null;
+    const analysed = ANALYSED_LANGS.has(lang) ? (lang as Language) : null;
+    const deps = typeof this.analyzer === "function" ? this.analyzer(msg.game, analysed ?? "de") : this.analyzer;
+    const analysis = analysed ? analyzeLine(msg.line, { ...deps, lang: analysed }) : null;
     if (analysis) this.db.saveAnalysis(id, analysis);
 
     let translation: Translation | null = null;

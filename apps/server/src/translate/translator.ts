@@ -56,3 +56,24 @@ export class Translator {
     return { provider: this.provider.id, from, to, text: out.join(" "), cached: allCached };
   }
 }
+
+/** What the pipeline needs from a translator: Translator, or a TranslatorSet that picks one by language. */
+export interface LineTranslator {
+  supports(from: string, to: string): boolean;
+  translateLine(text: string, from: string, to: string, glossary?: Glossary): Promise<Translation>;
+}
+
+/** One translator per source language ("de", "es"). */
+export class TranslatorSet implements LineTranslator {
+  constructor(private readonly byLanguage: Map<string, Translator>) {}
+
+  supports(from: string, to: string): boolean {
+    return this.byLanguage.get(from)?.supports(from, to) ?? false;
+  }
+
+  translateLine(text: string, from: string, to: string, glossary?: Glossary): Promise<Translation> {
+    const translator = this.byLanguage.get(from);
+    if (!translator) return Promise.reject(new Error(`no translator for ${from}`));
+    return translator.translateLine(text, from, to, glossary);
+  }
+}

@@ -7,7 +7,7 @@
  * lowercase word mid-sentence is not a noun), exact spelling, part of speech
  * and how many meanings a lexeme has (a rough proxy for how common it is).
  */
-import type { LineAnalysis, TokenAnalysis, WordSense } from "@pokelearning/shared";
+import type { Language, LineAnalysis, TokenAnalysis, WordSense } from "@pokelearning/shared";
 import type { Dictionary } from "../dictionary/db.ts";
 import { analyzeCompound } from "./compound.ts";
 import { articlesFor, glossarySense, type Glossary, type GlossaryEntry } from "./glossary.ts";
@@ -15,6 +15,8 @@ import { candidatesFor, lookupSpelling, rank, toSense, type Candidate, type Word
 import { isAllCaps, isClauseBoundary, isSentenceEnd, titleCase, tokenize, type Token } from "./tokenize.ts";
 
 export interface AnalyzerDeps {
+  /** The text's language; German when omitted. */
+  lang?: Language;
   dictionary: Dictionary | null;
   glossary: Glossary;
 }
@@ -30,6 +32,7 @@ interface WordWork {
 }
 
 export function analyzeLine(text: string, deps: AnalyzerDeps): LineAnalysis {
+  const lang = deps.lang ?? "de";
   const tokens = tokenize(text);
   const work: (WordWork | null)[] = [];
   const analyses: TokenAnalysis[] = [];
@@ -49,7 +52,7 @@ export function analyzeLine(text: string, deps: AnalyzerDeps): LineAnalysis {
     }
     const phrase = deps.glossary.phraseAt(tokens, index, text);
     if (phrase) {
-      analysis.best = glossarySense(phrase.entry);
+      analysis.best = glossarySense(phrase.entry, lang);
       analysis.phraseEnd = tokens[phrase.last]!.end;
       [phraseHead, phraseLast] = [index, phrase.last];
       sentenceStart = false;
@@ -65,6 +68,7 @@ export function analyzeLine(text: string, deps: AnalyzerDeps): LineAnalysis {
     }
     const next = tokens[index + 1];
     const ctx: WordContext = {
+      lang,
       sentenceStart,
       dotFollows: next?.kind === "punct" && next.text === "." && next.start === token.end,
     };
@@ -72,8 +76,10 @@ export function analyzeLine(text: string, deps: AnalyzerDeps): LineAnalysis {
     work.push(analyzeWord(token, index, ctx, deps, analysis));
   });
 
-  linkSeparableVerbs(tokens, work, analyses);
-  preferRelativePronouns(tokens, work);
+  if (lang === "de") {
+    linkSeparableVerbs(tokens, work, analyses);
+    preferRelativePronouns(tokens, work);
+  }
 
   for (const w of work) {
     if (!w || w.analysis.best) continue;
@@ -88,7 +94,7 @@ export function analyzeLine(text: string, deps: AnalyzerDeps): LineAnalysis {
     if (alts.length) w.analysis.alternatives = alts;
   }
 
-  return { lang: "de", tokens: analyses, dictionaryVersion: deps.dictionary?.version ?? null };
+  return { lang, tokens: analyses, dictionaryVersion: deps.dictionary?.version ?? null };
 }
 
 /**
@@ -136,10 +142,10 @@ function analyzeWord(token: Token, index: number, ctx: WordContext, deps: Analyz
   const glossary = deps.glossary.get(spelling) ?? (isAllCaps(token.text) ? itemPlural(spelling, deps) : undefined);
   if (glossary?.capsOnly && !isAllCaps(token.text) && candidates.length > 0) {
     // "Glut" in normal text: embers, not the move GLUT (Ember)
-    return { index, analysis, candidates, extra: glossarySense(glossary) };
+    return { index, analysis, candidates, extra: glossarySense(glossary, ctx.lang) };
   }
   if (glossary) {
-    analysis.best = withItemGender(glossarySense(glossary), candidates, deps.dictionary);
+    analysis.best = withItemGender(glossarySense(glossary, ctx.lang), candidates, deps.dictionary);
     const alts = rank(candidates).slice(0, MAX_ALTERNATIVES).map((c) => toSense(c, false));
     if (alts.length) analysis.alternatives = alts;
     return { index, analysis, candidates: [] };
@@ -168,7 +174,7 @@ function analyzeWord(token: Token, index: number, ctx: WordContext, deps: Analyz
 
   // Compound without its own entry ("Knopfbelegung" → Knopf + Belegung).
   if (deps.dictionary && !candidates.some((c) => c.score > 0)) {
-    const parts = analyzeCompound(token, deps.dictionary);
+    const parts = ctx.lang === "de" ? analyzeCompound(token, deps.dictionary) : null;
     if (parts) {
       analysis.parts = parts;
       return { index, analysis, candidates: [] };

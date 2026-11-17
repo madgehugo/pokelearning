@@ -1,5 +1,5 @@
 /**
- * Game names, German ↔ English, from PokéAPI's CSV data
+ * Game names, German and Spanish ↔ English, from PokéAPI's CSV data
  * (https://github.com/PokeAPI/pokeapi/tree/master/data/v2/csv): Pokémon
  * species, moves, abilities, items and places. `npm run names:import` writes
  * data/pokemon-names.json; the server turns it into glossary entries.
@@ -9,7 +9,9 @@ import type { GlossaryEntry } from "./glossary.ts";
 
 export const POKEAPI_CSV = "https://raw.githubusercontent.com/PokeAPI/pokeapi/master/data/v2/csv";
 const DE = "6";
+const ES = "7";
 const EN = "9";
+const LANGUAGE_BY_ID: Record<string, "de" | "es" | "en"> = { [DE]: "de", [ES]: "es", [EN]: "en" };
 
 /** The PokéAPI tables the import downloads. */
 export const NAME_TABLES = [
@@ -25,8 +27,11 @@ export interface SpeciesName {
   id: number;
   generation: number;
   de: string;
+  /** Spanish (names files imported before Spanish support lack the es fields). */
+  es?: string;
   en: string;
   genusDe: string;
+  genusEs?: string;
   genusEn: string;
 }
 
@@ -34,8 +39,10 @@ export interface MoveName {
   id: number;
   generation: number;
   de: string;
+  es?: string;
   en: string;
   typeDe: string;
+  typeEs?: string;
   typeEn: string;
 }
 
@@ -43,6 +50,7 @@ export interface AbilityName {
   id: number;
   generation: number;
   de: string;
+  es?: string;
   en: string;
 }
 
@@ -51,8 +59,10 @@ export interface ItemName {
   /** Generations whose games have this item. */
   generations: number[];
   de: string;
+  es?: string;
   en: string;
   categoryDe: string;
+  categoryEs?: string;
   categoryEn: string;
   /** The English bag description in the chosen game (Emerald), if any. */
   descriptionEn: string;
@@ -62,6 +72,7 @@ export interface PlaceName {
   id: number;
   region: number;
   de: string;
+  es?: string;
   en: string;
 }
 
@@ -117,9 +128,9 @@ export function parseCsv(text: string): Record<string, string>[] {
 
 /** Name rows → Map<id, { de, en }> rows for the two languages. */
 function byLanguage(rows: Record<string, string>[], idColumn: string, langColumn = "local_language_id") {
-  const out = new Map<string, { de?: Record<string, string>; en?: Record<string, string> }>();
+  const out = new Map<string, { de?: Record<string, string>; es?: Record<string, string>; en?: Record<string, string> }>();
   for (const r of rows) {
-    const lang = r[langColumn] === DE ? "de" : r[langColumn] === EN ? "en" : null;
+    const lang = LANGUAGE_BY_ID[r[langColumn]!] ?? null;
     if (!lang) continue;
     const id = r[idColumn]!;
     const entry = out.get(id) ?? {};
@@ -139,13 +150,15 @@ export function buildNames(csv: NameTables, versionGroup = 6): Omit<NamesFile, "
   const speciesGen = new Map(parseCsv(csv.pokemon_species).map((r) => [r.id!, Number(r.generation_id)]));
   const species: SpeciesName[] = [];
   for (const [id, n] of byLanguage(parseCsv(csv.pokemon_species_names), "pokemon_species_id")) {
-    if (!n.de?.name || !n.en?.name) continue;
+    if (!n.en?.name || !(n.de?.name || n.es?.name)) continue;
     species.push({
       id: Number(id),
       generation: speciesGen.get(id) ?? 0,
-      de: n.de.name,
+      de: n.de?.name ?? "",
+      ...(n.es?.name ? { es: n.es.name } : {}),
       en: n.en.name,
-      genusDe: n.de.genus ?? "",
+      genusDe: n.de?.genus ?? "",
+      ...(n.es?.genus ? { genusEs: n.es.genus } : {}),
       genusEn: n.en.genus ?? "",
     });
   }
@@ -155,14 +168,16 @@ export function buildNames(csv: NameTables, versionGroup = 6): Omit<NamesFile, "
   const moves: MoveName[] = [];
   for (const [id, n] of byLanguage(parseCsv(csv.move_names), "move_id")) {
     const info = moveInfo.get(id);
-    if (!n.de?.name || !n.en?.name || !info) continue;
+    if (!n.en?.name || !(n.de?.name || n.es?.name) || !info) continue;
     const type = types.get(info.type_id!);
     moves.push({
       id: Number(id),
       generation: Number(info.generation_id),
-      de: n.de.name,
+      de: n.de?.name ?? "",
+      ...(n.es?.name ? { es: n.es.name } : {}),
       en: n.en.name,
       typeDe: type?.de?.name ?? "",
+      ...(type?.es?.name ? { typeEs: type.es.name } : {}),
       typeEn: type?.en?.name ?? "",
     });
   }
@@ -170,8 +185,8 @@ export function buildNames(csv: NameTables, versionGroup = 6): Omit<NamesFile, "
   const abilityGen = new Map(parseCsv(csv.abilities).map((r) => [r.id!, Number(r.generation_id)]));
   const abilities: AbilityName[] = [];
   for (const [id, n] of byLanguage(parseCsv(csv.ability_names), "ability_id")) {
-    if (!n.de?.name || !n.en?.name) continue;
-    abilities.push({ id: Number(id), generation: abilityGen.get(id) ?? 0, de: n.de.name, en: n.en.name });
+    if (!n.en?.name || !(n.de?.name || n.es?.name)) continue;
+    abilities.push({ id: Number(id), generation: abilityGen.get(id) ?? 0, de: n.de?.name ?? "", ...(n.es?.name ? { es: n.es.name } : {}), en: n.en.name });
   }
 
   const itemInfo = new Map(parseCsv(csv.items).map((r) => [r.id!, r]));
@@ -191,14 +206,16 @@ export function buildNames(csv: NameTables, versionGroup = 6): Omit<NamesFile, "
   const items: ItemName[] = [];
   for (const [id, n] of byLanguage(parseCsv(csv.item_names), "item_id")) {
     const info = itemInfo.get(id);
-    if (!n.de?.name || !n.en?.name || !info) continue;
+    if (!n.en?.name || !(n.de?.name || n.es?.name) || !info) continue;
     const category = categories.get(info.category_id!);
     items.push({
       id: Number(id),
       generations: [...new Set(itemGens.get(id) ?? [])].sort((a, b) => a - b),
-      de: n.de.name,
+      de: n.de?.name ?? "",
+      ...(n.es?.name ? { es: n.es.name } : {}),
       en: n.en.name,
       categoryDe: category?.de?.name ?? "",
+      ...(category?.es?.name ? { categoryEs: category.es.name } : {}),
       categoryEn: category?.en?.name ?? "",
       descriptionEn: descriptions.get(id) ?? "",
     });
@@ -207,8 +224,8 @@ export function buildNames(csv: NameTables, versionGroup = 6): Omit<NamesFile, "
   const region = new Map(parseCsv(csv.locations).map((r) => [r.id!, Number(r.region_id) || 0]));
   const places: PlaceName[] = [];
   for (const [id, n] of byLanguage(parseCsv(csv.location_names), "location_id")) {
-    if (!n.de?.name || !n.en?.name) continue;
-    places.push({ id: Number(id), region: region.get(id) ?? 0, de: n.de.name, en: n.en.name });
+    if (!n.en?.name || !(n.de?.name || n.es?.name)) continue;
+    places.push({ id: Number(id), region: region.get(id) ?? 0, de: n.de?.name ?? "", ...(n.es?.name ? { es: n.es.name } : {}), en: n.en.name });
   }
 
   return {
@@ -220,6 +237,12 @@ export function buildNames(csv: NameTables, versionGroup = 6): Omit<NamesFile, "
   };
 }
 
+/** The few native words in a name's description. */
+const LABELS = {
+  de: { the: "the", type: "Typ", ability: "Fähigkeit" },
+  es: { the: "el", type: "tipo", ability: "habilidad" },
+} as const;
+
 const REGION_NAMES: Record<number, string> = { 1: "Kanto", 2: "Johto", 3: "Hoenn", 4: "Sinnoh", 5: "Unova" };
 
 /**
@@ -228,31 +251,41 @@ const REGION_NAMES: Record<number, string> = { 1: "Kanto", 2: "Johto", 3: "Hoenn
  * dictionary meaning (embers) with the move as an alternative. Later lists win
  * when two names are spelled the same.
  */
-export function nameEntries(names: Partial<Omit<NamesFile, "source" | "importedAt">>, scope: GameScope): GlossaryEntry[] {
+export function nameEntries(
+  names: Partial<Omit<NamesFile, "source" | "importedAt">>,
+  scope: GameScope,
+  lang: "de" | "es" = "de",
+): GlossaryEntry[] {
   const entries: GlossaryEntry[] = [];
-  const add = (de: string, pos: string, glosses: string[], en: string) =>
-    entries.push({ match: [de], lemma: de, pos, glosses: glosses.filter(Boolean), mt: en, capsOnly: true });
+  const L = LABELS[lang];
+  const add = (native: string | undefined, pos: string, glosses: string[], en: string) => {
+    if (native) entries.push({ match: [native], lemma: native, pos, glosses: glosses.filter(Boolean), mt: en, capsOnly: true });
+  };
+  const pick = <T extends { de: string; es?: string }>(n: T) => (lang === "es" ? n.es : n.de);
 
   for (const s of names.species ?? []) {
     if (s.generation > scope.generation) continue;
-    add(s.de, "pokemon", [s.en, `No. ${s.id}, the ${s.genusDe}${s.genusEn ? ` (${s.genusEn})` : ""}`], s.en);
+    const genus = lang === "es" ? s.genusEs : s.genusDe;
+    add(pick(s), "pokemon", [s.en, `No. ${s.id}, ${L.the} ${genus}${s.genusEn ? ` (${s.genusEn})` : ""}`], s.en);
   }
   for (const m of names.moves ?? []) {
     if (m.generation > scope.generation) continue;
-    add(m.de, "move", [m.en, m.typeEn ? `${m.typeEn}-type move (Typ ${m.typeDe})` : "move"], m.en);
+    const type = lang === "es" ? m.typeEs : m.typeDe;
+    add(pick(m), "move", [m.en, m.typeEn ? `${m.typeEn}-type move (${L.type} ${type})` : "move"], m.en);
   }
   for (const a of names.abilities ?? []) {
     if (a.generation > scope.generation) continue;
-    add(a.de, "ability", [a.en, "Pokémon ability (Fähigkeit)"], a.en);
+    add(pick(a), "ability", [a.en, `Pokémon ability (${L.ability})`], a.en);
   }
   for (const i of names.items ?? []) {
     if (!i.generations.includes(scope.generation)) continue;
-    const category = i.categoryEn ? `${i.categoryEn} item${i.categoryDe ? ` (${i.categoryDe})` : ""}` : "item";
-    add(i.de, "item", [i.en, category, i.descriptionEn], i.en);
+    const native = lang === "es" ? i.categoryEs : i.categoryDe;
+    const category = i.categoryEn ? `${i.categoryEn} item${native ? ` (${native})` : ""}` : "item";
+    add(pick(i), "item", [i.en, category, i.descriptionEn], i.en);
   }
   for (const p of names.places ?? []) {
     if (!scope.regions.includes(p.region)) continue;
-    add(p.de, "place", [p.en, `Place in ${REGION_NAMES[p.region] ?? "the game"}`], p.en);
+    add(pick(p), "place", [p.en, `Place in ${REGION_NAMES[p.region] ?? "the game"}`], p.en);
   }
   return entries;
 }

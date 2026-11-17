@@ -1,5 +1,5 @@
 /** Ranking of the dictionary readings of one word: scoring, best-per-lexeme, conversion to a WordSense. */
-import type { WordSense } from "@pokelearning/shared";
+import type { Language, WordSense } from "@pokelearning/shared";
 import type { Dictionary, FormMatch } from "../dictionary/db.ts";
 import { articlesFor } from "./glossary.ts";
 import { isAllCaps, titleCase } from "./tokenize.ts";
@@ -17,9 +17,11 @@ const POS_WEIGHT: Record<string, number> = {
 export interface Candidate {
   match: FormMatch;
   score: number;
+  lang: Language;
 }
 
 export interface WordContext {
+  lang: Language;
   sentenceStart: boolean;
   /** The token is followed directly by "." (abbreviations like "Prof."). */
   dotFollows: boolean;
@@ -48,9 +50,14 @@ export function scoreMatch(match: FormMatch, spelling: string, ctx: WordContext,
     score -= 0.6;
   }
 
+  // German capitalises every noun, so a lowercase word is not one (Spanish has no such rule).
   const capitalised = /^\p{Lu}/u.test(spelling);
-  if (!capitalised && nounLike) score -= 3;
-  if (capitalised && !ctx.sentenceStart && !allCaps) score += nounLike ? 2 : -1;
+  if (ctx.lang === "de") {
+    if (!capitalised && nounLike) score -= 3;
+    if (capitalised && !ctx.sentenceStart && !allCaps) score += nounLike ? 2 : -1;
+  } else if (capitalised && !ctx.sentenceStart && !allCaps && lexeme.pos === "name") {
+    score += 2;
+  }
   if (allCaps && nounLike) score += 1; // Gen 3 writes names and items in capitals
 
   // The word is a headword itself ("Leute"), not just an inflection of one ("plural of Leut").
@@ -64,7 +71,7 @@ export function scoreMatch(match: FormMatch, spelling: string, ctx: WordContext,
 
 export function toSense(c: Candidate, particleUsed: boolean): WordSense {
   const { lexeme, formTags } = c.match;
-  const articles = articlesFor(lexeme.gender);
+  const articles = articlesFor(lexeme.gender, c.lang);
   const isLemma = c.match.form.toLowerCase() === lexeme.lemma.toLowerCase();
   return {
     lemma: lexeme.lemma,
@@ -98,9 +105,9 @@ export function rank(candidates: Candidate[]): Candidate[] {
 export function candidatesFor(word: string, ctx: WordContext, dict: Dictionary): Candidate[] {
   const spelling = lookupSpelling(word);
   const allCaps = spelling !== word;
-  const out: Candidate[] = dict.lookup(spelling).map((match) => ({ match, score: scoreMatch(match, spelling, ctx, allCaps) }));
+  const out: Candidate[] = dict.lookup(spelling).map((match) => ({ match, score: scoreMatch(match, spelling, ctx, allCaps), lang: ctx.lang }));
   if (ctx.dotFollows) {
-    for (const match of dict.lookup(`${spelling}.`)) out.push({ match, score: scoreMatch(match, `${spelling}.`, ctx, allCaps) + 1 });
+    for (const match of dict.lookup(`${spelling}.`)) out.push({ match, score: scoreMatch(match, `${spelling}.`, ctx, allCaps) + 1, lang: ctx.lang });
   }
   if (out.length === 0 && /['’]/.test(spelling)) {
     // "hab'" → "hab", "geht’s" → "geht"

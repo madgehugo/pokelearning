@@ -3,7 +3,11 @@
  * Produced in phase 2, consumed by the web UI in phase 3.
  */
 
-export type Article = "der" | "die" | "das";
+/** Definite articles: German der/die/das, Spanish el/la. */
+export type Article = "der" | "die" | "das" | "el" | "la";
+
+/** Languages the app can analyse (the game text's language). */
+export type Language = "de" | "es";
 
 /** One dictionary reading of a word. */
 export interface WordSense {
