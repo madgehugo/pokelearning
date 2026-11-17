@@ -85,3 +85,10 @@ h.test("charmap: Spanish ¿ ¡ ñ and accents", function()
   h.eq(charmap.decode(bytes(0x52, 0xCD, 0x6F, 0xAB, 0xFF), "es"), "¡Sí!")
   h.eq(charmap.decode(bytes(0xE2, 0xDD, 0x29, 0xE3, 0xFF), "es"), "niño")
 end)
+
+h.test("charmap: column codes separate menu labels", function()
+  -- "A" FC 13 (CLEAR_TO) 56 "B" NEWLINE "C" FC 13 56 "D"
+  local text = charmap.decode(bytes(0xBB, 0xFC, 0x13, 56, 0xBC, 0xFE, 0xBD, 0xFC, 0x13, 56, 0xBE, 0xFF))
+  h.eq(charmap.flatten(text), "A B C D")
+  h.eq(text, "A\nB\nC\nD")
+end)

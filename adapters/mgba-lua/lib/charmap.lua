@@ -97,6 +97,9 @@ function M.decode(bytes, lang)
       i = i + 1
     elseif b == M.EXT_CTRL then
       local sub = bytes:byte(i + 1) or 0
+      -- Layout codes (SHIFT_TEXT, CLEAR, SKIP, CLEAR_TO) place the next label in another
+      -- column: "LUCHA{CLEAR_TO 56}MOCHILA" is two labels, not one word.
+      if sub == 0x0D or sub == 0x11 or sub == 0x12 or sub == 0x13 then out[#out + 1] = "\n" end
       i = i + 1 + (extCtrlLength[sub] or 1)
     elseif b == M.PLACEHOLDER then
       local sub = bytes:byte(i + 1) or 0

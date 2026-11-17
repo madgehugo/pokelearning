@@ -27,6 +27,10 @@ const PHRASES_DE: [RegExp, string][] = [
   [/\bANG\./g, "Attack"],
   [/\bVERT\./g, "Defense"],
   [/\bINIT\./g, "Speed"],
+  // Battle menu labels, which are only ever written in capitals
+  [/\bKAMPF\b/g, "Fight"],
+  [/\bBEUTEL\b/g, "Bag"],
+  [/\bFLUCHT\b/g, "Run"],
 ];
 
 /** The same for Spanish games (the labels found in the Esmeralda ROM). */
@@ -35,6 +39,9 @@ const PHRASES_ES: [RegExp, string][] = [
   [/\bDEF\.\s*ESP\./g, "Sp. Def"],
   [/\bVELOC\./g, "Speed"],
   [/\bPS\b/g, "HP"],
+  [/\bLUCHA\b/g, "Fight"],
+  [/\bMOCHILA\b/g, "Bag"],
+  [/\bHUIDA\b/g, "Run"],
 ];
 
 const PHRASES: Record<string, [RegExp, string][]> = { de: PHRASES_DE, es: PHRASES_ES };

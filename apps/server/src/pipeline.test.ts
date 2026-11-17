@@ -64,6 +64,13 @@ describe("prepareForTranslation", () => {
     assert.equal(prepareForTranslation("PS", glossary), "PS", "and Spanish labels not to German");
   });
 
+  it("gives the battle menu labels their English names", () => {
+    assert.deepEqual(prepareSentences("HUIDA", glossary, "es")[0]!.slots, ["Run"]);
+    assert.deepEqual(prepareSentences("MOCHILA", glossary, "es")[0]!.slots, ["Bag"]);
+    assert.deepEqual(prepareSentences("FLUCHT", glossary)[0]!.slots, ["Run"]);
+    assert.equal(prepareForTranslation("Die Flucht gelingt.", glossary), "Die Flucht gelingt.", "only in capitals");
+  });
+
   it("restores placeholders, or reports one that went missing", () => {
     assert.equal(restoreSlots("X2 uses X1!", ["Ember", "Zigzagoon"]), "Zigzagoon uses Ember!");
     assert.equal(restoreSlots("You got an X1!", ["Super Potion"]), "You got a Super Potion!");
