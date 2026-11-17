@@ -49,10 +49,9 @@ M.versions = {
     game = "pokemon-emerald-es",
     lang = "es",
     buffers = {
-      -- field confirmed in-game (Edición Esmeralda, Spain): the same address as the other releases
+      -- both confirmed in-game (Edición Esmeralda, Spain): the same addresses as the other releases
       { name = "field",  addr = 0x02021FC4, size = 1000, verified = true },
-      -- battle: the same as the other releases, not yet confirmed
-      { name = "battle", addr = 0x02022E2C, size = 300,  verified = false },
+      { name = "battle", addr = 0x02022E2C, size = 300,  verified = true },
     },
     cursors = {},
   },

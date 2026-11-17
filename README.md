@@ -185,8 +185,9 @@ downloads what it needs (about 160 MB) and shows the progress in the top bar.
 From source: `npm run dict:import -- es` and `npm run names:import`.
 Saved words, review (el/la article cards) and the games work for Spanish too:
 each word keeps its language, and the Games page has a German/Spanish switch.
-The Listening game uses a Spain Spanish voice (`es-ES`). Only the Smaragd ROM
-has been tested in-game; Esmeralda's menus and text buffers haven't.
+The Listening game uses a Spain Spanish voice (`es-ES`). Tested in-game
+with Smaragd (German) and Esmeralda (Spain): dialogue, battle text and menus, including the bag.
+Other Gen 3 games find their text buffers while you play and haven't been tested.
 
 ### Games without a RAM adapter
 
