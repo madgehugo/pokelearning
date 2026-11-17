@@ -12,7 +12,7 @@ local textmem = require("lib.textmem")
 local M = {}
 M.__index = M
 
-M.QUIET_FRAMES = 15 -- ~0.25 s without a new string
+M.QUIET_FRAMES = 30 -- ~0.5 s without a new string (the bag draws its pocket name ~18 frames before the rest)
 M.MAX_ITEMS = 24
 
 -- Finding AddTextPrinter. Games list its address in their config when it is known (checked

@@ -225,7 +225,7 @@ async function smokeTest() {
   step("smoke test: starting the bundled server");
   const data = fs.mkdtempSync(path.join(os.tmpdir(), "pokelearning-smoke-"));
   // reuse this checkout's downloaded data, so the test needs no downloads
-  for (const f of ["dictionary.db", "pokemon-names.json", "models"]) {
+  for (const f of ["dictionary.db", "dictionary-es.db", "pokemon-names.json", "models"]) {
     const src = path.join(root, "data", f);
     if (fs.existsSync(src)) fs.symlinkSync(src, path.join(data, f));
   }
@@ -260,8 +260,26 @@ async function smokeTest() {
     return line && (!hasModel || line.translation) && line.analysis;
   }, 60);
   const [line] = await get("/api/lines?limit=1");
+
+  // With the Spanish dictionary present the server sets Spanish up at startup: a Spanish line must work too.
+  const hasEs = fs.existsSync(path.join(root, "data/dictionary-es.db"));
+  let spanish = "";
+  if (hasEs) {
+    const hasModelEs = fs.existsSync(path.join(root, "data/models/Xenova/opus-mt-es-en"));
+    const send = net.connect(18765, "127.0.0.1");
+    await new Promise((r) => send.on("connect", r));
+    const base = { adapter: "smoke", game: "pokemon-emerald-es", lang: "es", timestamp: Date.now() };
+    send.end(JSON.stringify({ type: "hello", ...base, version: "0.0.0" }) + "\n" + JSON.stringify({ type: "line", ...base, line: "¿Qué deberia hacer TORCHIC?" }) + "\n");
+    await wait("Spanish line processing", async () => {
+      const [l] = await get("/api/lines?limit=1");
+      return l && l.game === "pokemon-emerald-es" && l.analysis && (!hasModelEs || l.translation);
+    }, 120);
+    const [es] = await get("/api/lines?limit=1");
+    if (es.analysis.lang !== "es") stop(`smoke test: a Spanish line was analysed as ${es.analysis.lang}`);
+    spanish = `; "${es.text}" → "${es.translation?.text ?? "(no model)"}"`;
+  }
   const html = await (await fetch("http://127.0.0.1:18766/")).text();
   if (!html.includes("<title>Pokélearning</title>")) stop("smoke test: the website isn't served");
-  step(`smoke test passed: "${line.text}" → "${line.translation?.text ?? "(no model in data/, not translated)"}"`);
+  step(`smoke test passed: "${line.text}" → "${line.translation?.text ?? "(no model in data/, not translated)"}"${spanish}`);
   stop();
 }

@@ -42,6 +42,19 @@ h.test("menu: collects ROM strings and flushes them once drawing stops", functio
   h.eq(menu:flush(500), nil, "nothing left to send")
 end)
 
+h.test("menu: a label drawn well before the rest of the screen still belongs to it", function()
+  -- the bag draws its pocket name about 18 frames before the item list
+  local e = setup()
+  e.poke(ROM_STR, enc("OBJETOS"))
+  e.poke(ROM_STR + 0x20, enc("Volver al juego"))
+  local menu = Menu.new("de")
+  draw(e, menu, 100, ROM_STR, 0xFF)
+  draw(e, menu, 118, ROM_STR + 0x20, 0xFF)
+  h.eq(menu:flush(118), nil)
+  h.eq(menu:flush(117), nil, "not flushed between the two")
+  h.eq((menu:flush(118 + Menu.QUIET_FRAMES)), "OBJETOS\nVolver al juego")
+end)
+
 h.test("menu: the same screen redrawn is only sent once", function()
   local e = setup()
   e.poke(ROM_STR, enc("Neues Spiel"))
