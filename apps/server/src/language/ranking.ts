@@ -86,6 +86,7 @@ export function toSense(c: Candidate, particleUsed: boolean): WordSense {
     ...(formTags && !isLemma ? { formTags } : {}),
     ...(particleUsed && lexeme.particle ? { particle: lexeme.particle } : {}),
     source: "dictionary",
+    ...(c.lang !== "de" ? { lang: c.lang } : {}),
   };
 }
 

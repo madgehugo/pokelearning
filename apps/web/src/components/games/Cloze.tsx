@@ -68,7 +68,7 @@ export function Cloze() {
         <span>{right} right</span>
       </div>
       <section className="box review__card">
-        <p className="example example--big" lang="de">
+        <p className="example example--big" lang={material.lang}>
           <Highlighted
             example={{ text: r!.text, translation: r!.translation, start: r!.start, end: r!.end }}
             replace={answered ? r!.answer : "______"}
@@ -80,7 +80,7 @@ export function Cloze() {
           <p className="verdict" data-right={ok ? "" : undefined}>
             {ok ? "Right." : `It's “${r!.answer}”, not “${picked}”.`}{" "}
             <span className="muted">
-              <span lang="de">{r!.lemma}</span>: {r!.gloss}
+              <span lang={material.lang}>{r!.lemma}</span>: {r!.gloss}
             </span>
           </p>
         )}
@@ -90,7 +90,7 @@ export function Cloze() {
           <>
             <div className="options" role="group" aria-label="Which word fits?">
               {r!.options.map((o, i) => (
-                <button key={o} type="button" className="option-button" lang="de" onClick={() => pick(o)}>
+                <button key={o} type="button" className="option-button" lang={material.lang} onClick={() => pick(o)}>
                   {o} <kbd>{i + 1}</kbd>
                 </button>
               ))}

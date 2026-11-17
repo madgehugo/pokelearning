@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import type { GameAvailability, GameKind, GameRecord } from "@pokelearning/shared";
 import { api } from "../../api.ts";
+import { LANGUAGES } from "../../language.ts";
+import { setPrefs, usePrefs } from "../../prefs.ts";
 import { ArticleSprint } from "./ArticleSprint.tsx";
 import { Cloze } from "./Cloze.tsx";
 import { GAME_INFO, seconds } from "./common.tsx";
@@ -28,13 +30,22 @@ export function GamesPage({ game }: { game: GameKind | null }) {
 function GameList() {
   const [data, setData] = useState<{ availability: GameAvailability[]; records: GameRecord[] } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { gameLanguage } = usePrefs();
   useEffect(() => {
-    api.games().then(setData, (err: Error) => setError(err.message));
-  }, []);
+    setData(null);
+    api.games(gameLanguage).then(setData, (err: Error) => setError(err.message));
+  }, [gameLanguage]);
   if (error) return <p className="error">Couldn't load the games: {error}</p>;
   if (!data) return <p className="muted">Loading games…</p>;
   return (
     <div className="games">
+      <div className="choice" role="group" aria-label="Language">
+        {(Object.keys(LANGUAGES) as (keyof typeof LANGUAGES)[]).map((l) => (
+          <button key={l} type="button" className="choice__button" aria-pressed={gameLanguage === l} onClick={() => setPrefs({ gameLanguage: l })}>
+            {LANGUAGES[l].name}
+          </button>
+        ))}
+      </div>
       <p className="stats">Practice with words and lines from your own game. Games don't change your review schedule.</p>
       <ul className="game-list">
         {ORDER.map((kind) => {

@@ -24,7 +24,7 @@
  * the same browser can't change your word bank (the UI may be on the LAN).
  */
 import type http from "node:http";
-import type { AnswerRequest, GameKind, GameResultRequest, HideWordRequest, SaveWordRequest, ServerStatus, Settings } from "@pokelearning/shared";
+import type { AnswerRequest, GameKind, GameResultRequest, HideWordRequest, Language, SaveWordRequest, ServerStatus, Settings } from "@pokelearning/shared";
 import type { AppDb } from "../db/app-db.ts";
 import path from "node:path";
 import { GAME_KINDS, GameError, type Games } from "../games/games.ts";
@@ -81,6 +81,9 @@ async function readJson<T>(req: http.IncomingMessage): Promise<T> {
     throw new HttpError(400, "invalid JSON");
   }
 }
+
+/** ?lang=es picks Spanish; anything else is German. */
+const languageParam = (url: URL): Language => (url.searchParams.get("lang") === "es" ? "es" : "de");
 
 const id = (s: string | undefined) => {
   const n = Number(s);
@@ -195,10 +198,10 @@ export async function handleApi(
         break;
       }
       case "GET /api/games":
-        sendJson(res, 200, { availability: deps.games.availability(), records: deps.games.records() });
+        sendJson(res, 200, { availability: deps.games.availability(languageParam(url)), records: deps.games.records() });
         break;
       case "GET /api/games/:kind":
-        sendJson(res, 200, deps.games.material(gameKind as GameKind));
+        sendJson(res, 200, deps.games.material(gameKind as GameKind, languageParam(url)));
         break;
       case "POST /api/games/results": {
         const body = await readJson<GameResultRequest>(req);

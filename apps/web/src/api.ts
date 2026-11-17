@@ -7,6 +7,7 @@ import type {
   GameRecord,
   GameResultRequest,
   GameResultResponse,
+  Language,
   ReviewQueue,
   SavedWord,
   HiddenWord,
@@ -38,7 +39,7 @@ export const api = {
   answer: (cardId: number, req: AnswerRequest) => call<ReviewQueue>("POST", `/api/review/${cardId}`, req),
   settings: () => call<Settings>("GET", "/api/settings"),
   updateSettings: (patch: Partial<Settings>) => call<Settings>("PUT", "/api/settings", patch),
-  games: () => call<{ availability: GameAvailability[]; records: GameRecord[] }>("GET", "/api/games"),
-  gameMaterial: <K extends GameKind>(kind: K) => call<Extract<GameMaterial, { kind: K }>>("GET", `/api/games/${kind}`),
+  games: (lang: Language) => call<{ availability: GameAvailability[]; records: GameRecord[] }>("GET", `/api/games?lang=${lang}`),
+  gameMaterial: <K extends GameKind>(kind: K, lang: Language) => call<Extract<GameMaterial, { kind: K }>>("GET", `/api/games/${kind}?lang=${lang}`),
   saveGameResult: (result: GameResultRequest) => call<GameResultResponse>("POST", "/api/games/results", result),
 };

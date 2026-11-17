@@ -21,8 +21,11 @@ interface LineRow {
   seen_before: number;
 }
 
+/** Migrations that rebuild a table: foreign keys must be off outside the transaction, and the file is copied first. */
+const REBUILDS = new Set([6]);
+
 /** Each entry upgrades the schema by one version (PRAGMA user_version). Never edit old entries. */
-const MIGRATIONS = [
+export const MIGRATIONS = [
   `
   CREATE TABLE lines (
     id                   INTEGER PRIMARY KEY,
@@ -146,6 +149,40 @@ const MIGRATIONS = [
   `
   ALTER TABLE review_log ADD COLUMN card_before TEXT;
   `,
+  // 6: a language on saved and hidden words, so German and Spanish words can share a lemma.
+  // The words table is rebuilt (its UNIQUE constraint changes). Rows keep their ids; foreign keys
+  // are off meanwhile (see REBUILDS), because dropping the old table would delete its cards.
+  `
+  CREATE TABLE words_new (
+    id           INTEGER PRIMARY KEY,
+    lemma        TEXT NOT NULL,
+    pos          TEXT NOT NULL,
+    gender       TEXT,
+    plural       TEXT,
+    glosses      TEXT NOT NULL,
+    source       TEXT NOT NULL,
+    created_at   INTEGER NOT NULL,
+    encounters   INTEGER NOT NULL DEFAULT 0,
+    last_seen_at INTEGER,
+    lang         TEXT NOT NULL DEFAULT 'de',
+    UNIQUE (lemma, pos, lang)
+  );
+  INSERT INTO words_new (id, lemma, pos, gender, plural, glosses, source, created_at, encounters, last_seen_at)
+    SELECT id, lemma, pos, gender, plural, glosses, source, created_at, encounters, last_seen_at FROM words;
+  DROP TABLE words;
+  ALTER TABLE words_new RENAME TO words;
+  CREATE TABLE hidden_words_new (
+    lemma     TEXT NOT NULL,
+    pos       TEXT NOT NULL,
+    lang      TEXT NOT NULL DEFAULT 'de',
+    gloss     TEXT NOT NULL,
+    hidden_at INTEGER NOT NULL,
+    PRIMARY KEY (lemma, pos, lang)
+  );
+  INSERT INTO hidden_words_new (lemma, pos, gloss, hidden_at) SELECT lemma, pos, gloss, hidden_at FROM hidden_words;
+  DROP TABLE hidden_words;
+  ALTER TABLE hidden_words_new RENAME TO hidden_words;
+  `,
 ];
 
 const LINE_SELECT = `
@@ -174,7 +211,7 @@ function toProcessedLine(r: LineRow): ProcessedLine {
 export class AppDb {
   readonly db: DatabaseSync;
 
-  constructor(file: string) {
+  constructor(private readonly file: string) {
     if (file !== ":memory:") fs.mkdirSync(path.dirname(file), { recursive: true });
     this.db = new DatabaseSync(file);
     this.db.exec("PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON;");
@@ -184,10 +221,24 @@ export class AppDb {
   private migrate(): void {
     const { user_version: current } = this.db.prepare("PRAGMA user_version").get() as { user_version: number };
     for (let v = current; v < MIGRATIONS.length; v++) {
+      const rebuild = REBUILDS.has(v + 1);
+      if (rebuild) {
+        this.db.exec("PRAGMA foreign_keys = OFF");
+        if (this.file !== ":memory:" && current > 0) {
+          const copy = `${this.file}.before-v${v + 1}`;
+          fs.rmSync(copy, { force: true });
+          this.db.exec(`VACUUM INTO '${copy.replace(/'/g, "''")}'`);
+        }
+      }
       this.db.exec("BEGIN");
       this.db.exec(MIGRATIONS[v]!);
       this.db.exec(`PRAGMA user_version = ${v + 1}`);
+      if (rebuild && this.db.prepare("PRAGMA foreign_key_check").all().length > 0) {
+        this.db.exec("ROLLBACK");
+        throw new Error(`migration ${v + 1} would break references; the database is unchanged`);
+      }
       this.db.exec("COMMIT");
+      if (rebuild) this.db.exec("PRAGMA foreign_keys = ON");
     }
   }
 

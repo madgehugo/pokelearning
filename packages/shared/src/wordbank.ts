@@ -1,5 +1,5 @@
 /** Word bank and review: saved words, their FSRS cards, review queue, stats. */
-import type { Article } from "./analysis.ts";
+import type { Article, Language } from "./analysis.ts";
 
 /**
  * What a card asks:
@@ -38,6 +38,8 @@ export interface WordContext {
 
 export interface SavedWord {
   id: number;
+  /** Language of the word; German when absent. */
+  lang?: Language;
   lemma: string;
   pos: string;
   gender?: string;
@@ -52,26 +54,28 @@ export interface SavedWord {
   cards: CardSummary[];
 }
 
-/** Identifies a word across the app: `${lemma}|${pos}`. */
-export const wordKey = (lemma: string, pos: string) => `${lemma}|${pos}`;
+/** Identifies a word across the app: `${lemma}|${pos}`, with `|es` after it for Spanish (German keys are unchanged). */
+export const wordKey = (lemma: string, pos: string, lang?: Language) =>
+  lang && lang !== "de" ? `${lemma}|${pos}|${lang}` : `${lemma}|${pos}`;
 
 /** `pos` of a hidden word that has no dictionary entry (a player's name, say): it is hidden by its spelling. */
 export const UNKNOWN_POS = "unknown";
 
 /** What a hidden word is called in the list of hidden words: its lemma and part of speech, or its spelling if the dictionary doesn't know it. */
-export function hiddenWordOf(token: { text: string; kind: string; best?: { lemma: string; pos: string; glosses: string[] } }): { lemma: string; pos: string } | null {
-  if (token.best) return { lemma: token.best.lemma, pos: token.best.pos };
+export function hiddenWordOf(token: { text: string; kind: string; best?: { lemma: string; pos: string; glosses: string[]; lang?: Language } }): { lemma: string; pos: string; lang?: Language } | null {
+  if (token.best) return { lemma: token.best.lemma, pos: token.best.pos, ...(token.best.lang ? { lang: token.best.lang } : {}) };
   return token.kind === "word" ? { lemma: token.text.toLowerCase(), pos: UNKNOWN_POS } : null;
 }
 
 /** The wordKey() a token is hidden under, if it can be hidden. */
 export function hiddenKeyOf(token: Parameters<typeof hiddenWordOf>[0]): string | null {
   const w = hiddenWordOf(token);
-  return w ? wordKey(w.lemma, w.pos) : null;
+  return w ? wordKey(w.lemma, w.pos, w.lang) : null;
 }
 
 /** A word hidden from the breakdown, with enough to recognise it in the list of hidden words. */
 export interface HiddenWord {
+  lang?: Language;
   lemma: string;
   pos: string;
   gloss: string;

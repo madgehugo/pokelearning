@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { hiddenKeyOf, hiddenWordOf, wordKey, type HiddenWord, type SaveWordRequest, type TokenAnalysis, type WordSense } from "@pokelearning/shared";
+import { LANGUAGES, languageOf, pluralArticle } from "../language.ts";
 import { api } from "../api.ts";
 import {
   describeForm,
@@ -47,7 +48,7 @@ export function Breakdown({ lineId, tokens, selected, onSelect, saved, hidden }:
                 aria-expanded={isSelected}
                 onClick={() => onSelect(isSelected ? null : index)}
               >
-                <span className="word-row__form" lang="de">
+                <span className="word-row__form" lang={languageOf(token.best)}>
                   {wordText(tokens, index)}
                 </span>
                 <Summary token={token} />
@@ -74,7 +75,7 @@ function Summary({ token }: { token: TokenAnalysis }) {
   }
   return (
     <span className="word-row__summary">
-      <span className="headword" lang="de" data-gender={genderKey(sense)}>
+      <span className="headword" lang={languageOf(sense)} data-gender={genderKey(sense)}>
         {headword(sense)}
       </span>{" "}
       <span className="pos">{posLabel(sense.pos)}</span>{" "}
@@ -118,7 +119,7 @@ function Details({ token, tokens, lineId, index, saved, onHidden }: DetailsProps
       {sense?.source === "glossary" && (
         <p className="note">
           {GAME_NAME_POS.has(sense.pos)
-            ? "German and English names from PokéAPI."
+            ? `${LANGUAGES[languageOf(sense)].name} and English names from PokéAPI.`
             : "From the game glossary."}
         </p>
       )}
@@ -126,7 +127,7 @@ function Details({ token, tokens, lineId, index, saved, onHidden }: DetailsProps
         <div className="parts">
           {token.parts.map((p, i) => (
             <div key={i} className="part">
-              <span className="word-row__form" lang="de">
+              <span className="word-row__form" lang={languageOf(p.best)}>
                 {p.text}
               </span>
               {p.best ? (
@@ -147,7 +148,7 @@ function Details({ token, tokens, lineId, index, saved, onHidden }: DetailsProps
           <ul>
             {token.alternatives.map((alt, i) => (
               <li key={i}>
-                <span className="headword" lang="de" data-gender={genderKey(alt)}>
+                <span className="headword" lang={languageOf(alt)} data-gender={genderKey(alt)}>
                   {headword(alt)}
                 </span>{" "}
                 <span className="pos">{posLabel(alt.pos)}</span> {shortGloss(alt.glosses[0])}{" "}
@@ -171,7 +172,7 @@ function SenseDetails({ sense, compact = false }: { sense: WordSense; compact?: 
     <>
       {compact && (
         <p>
-          <span className="headword" lang="de" data-gender={genderKey(sense)}>
+          <span className="headword" lang={languageOf(sense)} data-gender={genderKey(sense)}>
             {headword(sense)}
           </span>{" "}
           <span className="pos">{posLabel(sense.pos)}</span>
@@ -182,7 +183,7 @@ function SenseDetails({ sense, compact = false }: { sense: WordSense; compact?: 
           {form && form !== "separated prefix" && <>Here: {form}. </>}
           {sense.plural && (
             <>
-              Plural: <span lang="de">die {sense.plural}</span>.
+              Plural: <span lang={languageOf(sense)}>{pluralArticle(languageOf(sense), sense.articles)} {sense.plural}</span>.
             </>
           )}
         </p>

@@ -18,7 +18,7 @@ const MAX_ACRONYM_LENGTH = 3;
 const ABBREVIATIONS = ["Prof.", "Dr.", "Nr.", "St.", "z.B.", "usw.", "bzw.", "ca.", "Sr.", "Sra.", "Srta.", "Dra."];
 
 /** Game phrases the tokenizer splits up, protected as a whole. */
-const PHRASES: [RegExp, string][] = [
+const PHRASES_DE: [RegExp, string][] = [
   [/\bE\.-Punkte\b/g, "Exp. Points"],
   // Stat names on the summary screen and in battle ("INIT. von X sinkt."). The full stops are part
   // of the abbreviation, not sentence ends. Longest first: "SP. ANG." before "ANG.".
@@ -28,6 +28,16 @@ const PHRASES: [RegExp, string][] = [
   [/\bVERT\./g, "Defense"],
   [/\bINIT\./g, "Speed"],
 ];
+
+/** The same for Spanish games (the labels found in the Esmeralda ROM). */
+const PHRASES_ES: [RegExp, string][] = [
+  [/\bAT\.\s*ESP\./g, "Sp. Atk"],
+  [/\bDEF\.\s*ESP\./g, "Sp. Def"],
+  [/\bVELOC\./g, "Speed"],
+  [/\bPS\b/g, "HP"],
+];
+
+const PHRASES: Record<string, [RegExp, string][]> = { de: PHRASES_DE, es: PHRASES_ES };
 
 const SLOT = /\bX(\d+)\b/g;
 
@@ -40,7 +50,7 @@ export interface PreparedSentence {
 }
 
 /** The whole line with placeholders numbered across the line. */
-function protect(text: string, glossary: Glossary): { text: string; slots: string[] } {
+function protect(text: string, glossary: Glossary, lang: string): { text: string; slots: string[] } {
   // Text that already contains X1-like words can't use placeholders safely.
   const useSlots = !SLOT.test(text);
   SLOT.lastIndex = 0;
@@ -51,7 +61,7 @@ function protect(text: string, glossary: Glossary): { text: string; slots: strin
     return `X${slots.length}`;
   };
 
-  for (const [re, english] of PHRASES) text = text.replace(re, () => slot(english));
+  for (const [re, english] of PHRASES[lang] ?? []) text = text.replace(re, () => slot(english));
 
   let out = "";
   let last = 0;
@@ -80,8 +90,8 @@ function protect(text: string, glossary: Glossary): { text: string; slots: strin
 }
 
 /** Split a line into sentences ready for the translator, placeholders numbered per sentence. */
-export function prepareSentences(text: string, glossary: Glossary): PreparedSentence[] {
-  const line = protect(text, glossary);
+export function prepareSentences(text: string, glossary: Glossary, lang = "de"): PreparedSentence[] {
+  const line = protect(text, glossary, lang);
   if (line.slots.length === 0) return splitSentences(line.text).map((s) => ({ text: s, slots: [] }));
   return splitSentences(line.text).map((sentence) => {
     const slots: string[] = [];
@@ -117,8 +127,8 @@ export function fillSlots(sentence: PreparedSentence): string {
 }
 
 /** The text the translator sees for a whole line, for display and tests. */
-export function prepareForTranslation(text: string, glossary: Glossary): string {
-  return prepareSentences(text, glossary)
+export function prepareForTranslation(text: string, glossary: Glossary, lang = "de"): string {
+  return prepareSentences(text, glossary, lang)
     .map((s) => s.text)
     .join(" ");
 }

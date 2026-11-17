@@ -1,5 +1,5 @@
 /** Mini-games built from your own game lines and word bank. */
-import type { Article } from "./analysis.ts";
+import type { Article, Language } from "./analysis.ts";
 
 export type GameKind = "articles" | "cloze" | "listening" | "matching";
 
@@ -45,19 +45,21 @@ export interface ListeningRound {
   options: string[];
 }
 
-/** Matching: German word ↔ English meaning. */
+/** Matching: word in the game's language ↔ English meaning. */
 export interface MatchingPair {
   id: number;
-  german: string;
+  word: string;
   english: string;
   gender?: Article;
 }
 
-export type GameMaterial =
+/** A fresh game, made from one language's words and lines. */
+export type GameMaterial = { lang: Language } & (
   | { kind: "articles"; items: ArticleItem[] }
   | { kind: "cloze"; rounds: ClozeRound[] }
   | { kind: "listening"; rounds: ListeningRound[] }
-  | { kind: "matching"; pairs: MatchingPair[] };
+  | { kind: "matching"; pairs: MatchingPair[] }
+);
 
 /** How much material there is, so the UI can say what's missing. */
 export interface GameAvailability {

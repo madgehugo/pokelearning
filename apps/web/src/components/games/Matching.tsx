@@ -73,7 +73,7 @@ export function Matching() {
         key={`${side}-${p.id}`}
         type="button"
         className="match-cell"
-        lang={side === "left" ? "de" : "en"}
+        lang={side === "left" ? material.lang : "en"}
         data-gender={side === "left" ? p.gender : undefined}
         aria-pressed={selected}
         data-wrong={isWrong ? "" : undefined}
@@ -88,7 +88,7 @@ export function Matching() {
           }
         }}
       >
-        {side === "left" ? p.german : p.english}
+        {side === "left" ? p.word : p.english}
       </button>
     );
   };
@@ -104,7 +104,7 @@ export function Matching() {
           {mistakes > 0 && ` + ${mistakes} × 3 s`}
         </span>
       </div>
-      <div className="match-grid" role="group" aria-label="Match the German words with their meanings">
+      <div className="match-grid" role="group" aria-label="Match the words with their meanings">
         <div className="match-column">{columns.left.map((p) => cell(p, "left"))}</div>
         <div className="match-column">{columns.right.map((p) => cell(p, "right"))}</div>
       </div>

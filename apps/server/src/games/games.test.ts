@@ -111,8 +111,8 @@ describe("game material", () => {
     if (m.kind !== "matching") return;
     assert.equal(m.pairs.length, 6);
     assert.equal(new Set(m.pairs.map((p) => p.english)).size, 6);
-    assert.ok(m.pairs.some((p) => p.german === "das Haus" && p.english === "house"));
-    assert.ok(!m.pairs.some((p) => p.german.toLowerCase().endsWith(p.english.toLowerCase())), "no word paired with itself");
+    assert.ok(m.pairs.some((p) => p.word === "das Haus" && p.english === "house"));
+    assert.ok(!m.pairs.some((p) => p.word.toLowerCase().endsWith(p.english.toLowerCase())), "no word paired with itself");
   });
 
   it("says how much material there is", async () => {

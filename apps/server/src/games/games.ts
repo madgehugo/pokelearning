@@ -10,6 +10,7 @@ import {
   type ArticleItem,
   type ClozeRound,
   type GameAvailability,
+  type Language,
   type GameExample,
   type GameKind,
   type GameMaterial,
@@ -98,17 +99,17 @@ export class Games {
     this.db = app.db;
   }
 
-  private corpus(): ProcessedLine[] {
+  private corpus(lang: Language): ProcessedLine[] {
     const seen = new Set<string>();
     return this.app.recentLines(CORPUS_LINES).filter((l) => {
-      if (!l.analysis || seen.has(l.text)) return false;
+      if (!l.analysis || (l.analysis.lang ?? "de") !== lang || seen.has(l.text)) return false;
       seen.add(l.text);
       return true;
     });
   }
 
   /** Every dictionary or game word seen, keyed by lemma + part of speech. */
-  private seenWords(lines: ProcessedLine[]): Map<string, SeenWord> {
+  private seenWords(lines: ProcessedLine[], lang: Language): Map<string, SeenWord> {
     const saved = new Set(this.wordbank.savedKeys());
     const words = new Map<string, SeenWord>();
     for (const line of lines) {
@@ -116,7 +117,7 @@ export class Games {
       for (const t of line.analysis!.tokens) {
         const s = t.best;
         if (t.kind !== "word" || t.partOf !== undefined || !s || s.formTags === "separated prefix") continue;
-        const key = wordKey(s.lemma, s.pos);
+        const key = wordKey(s.lemma, s.pos, s.lang);
         const normalCase = t.normalized === undefined;
         const w = words.get(key);
         if (!w) {
@@ -130,11 +131,12 @@ export class Games {
     }
     // saved words the recent lines don't contain still belong in the games
     for (const word of this.wordbank.list()) {
-      const key = wordKey(word.lemma, word.pos);
+      if ((word.lang ?? "de") !== lang) continue;
+      const key = wordKey(word.lemma, word.pos, word.lang);
       if (words.has(key)) continue;
       const c = word.contexts[0];
       words.set(key, {
-        sense: { lemma: word.lemma, pos: word.pos, glosses: word.glosses, source: "dictionary", ...(word.articles ? { articles: word.articles } : {}), ...(word.plural ? { plural: word.plural } : {}) },
+        sense: { lemma: word.lemma, pos: word.pos, glosses: word.glosses, source: "dictionary", ...(word.lang ? { lang: word.lang } : {}), ...(word.articles ? { articles: word.articles } : {}), ...(word.plural ? { plural: word.plural } : {}) },
         count: word.encounters,
         example: c ? { text: c.text, translation: c.translation, start: c.start, end: c.end } : { text: "", translation: null, start: 0, end: 0 },
         saved: true,
@@ -190,8 +192,8 @@ export class Games {
       if (targets.length === 0) continue;
       // blank a saved word if the line has one, else the most frequent content word
       const target = targets.sort((a, b) => {
-        const wa = words.get(wordKey(a.best!.lemma, a.best!.pos));
-        const wb = words.get(wordKey(b.best!.lemma, b.best!.pos));
+        const wa = words.get(wordKey(a.best!.lemma, a.best!.pos, a.best!.lang));
+        const wb = words.get(wordKey(b.best!.lemma, b.best!.pos, b.best!.lang));
         return Number(wb?.saved) - Number(wa?.saved) || (wb?.count ?? 0) - (wa?.count ?? 0);
       })[0]!;
       const pool = [...(forms.get(target.best!.pos) ?? [])].filter((f) => f.toLowerCase() !== target.text.toLowerCase());
@@ -245,7 +247,7 @@ export class Games {
       const gender = singleArticle(w.sense);
       pairs.push({
         id: pairs.length + 1,
-        german: gender && w.sense.pos === "noun" ? `${gender} ${w.sense.lemma}` : w.sense.lemma,
+        word: gender && w.sense.pos === "noun" ? `${gender} ${w.sense.lemma}` : w.sense.lemma,
         english,
         ...(gender ? { gender } : {}),
       });
@@ -254,26 +256,26 @@ export class Games {
     return pairs;
   }
 
-  material(kind: GameKind): GameMaterial {
-    const lines = this.corpus();
-    const words = this.seenWords(lines);
+  material(kind: GameKind, lang: Language = "de"): GameMaterial {
+    const lines = this.corpus(lang);
+    const words = this.seenWords(lines, lang);
     switch (kind) {
       case "articles":
-        return { kind, items: this.articles(words) };
+        return { lang, kind, items: this.articles(words) };
       case "cloze":
-        return { kind, rounds: this.cloze(lines, words) };
+        return { lang, kind, rounds: this.cloze(lines, words) };
       case "listening":
-        return { kind, rounds: this.listening(lines) };
+        return { lang, kind, rounds: this.listening(lines) };
       case "matching":
-        return { kind, pairs: this.matching(words) };
+        return { lang, kind, pairs: this.matching(words) };
       default:
         throw new GameError(`unknown game ${JSON.stringify(kind)}`, 404);
     }
   }
 
-  availability(): GameAvailability[] {
+  availability(lang: Language = "de"): GameAvailability[] {
     return GAME_KINDS.map((kind) => {
-      const m = this.material(kind);
+      const m = this.material(kind, lang);
       const available = m.kind === "articles" ? m.items.length : m.kind === "matching" ? m.pairs.length : m.rounds.length;
       return { kind, available, needed: SIZES[kind].min };
     });

@@ -215,8 +215,30 @@ describe("formatInterval", () => {
       ["1 min", "10 min", "3 h", "1 day", "4 days", "2 mo", "1.1 yr"]);
   });
 
-  it("doesn't save words from Spanish games yet", async () => {
-    const line = (await pipeline.submit({ ...msg("Das Haus"), game: "pokemon-emerald-es", lang: "es" }))!;
-    assert.throws(() => bank.save({ lineId: line.id, tokenIndex: 0 }, T0), /Spanish/);
+  it("keeps Spanish words apart from German ones, with el/la", async () => {
+    const es = fixtureDictionary([
+      { word: "casa", pos: "noun", senses: [{ glosses: ["house"], tags: ["feminine"] }] },
+      { word: "Haus", pos: "noun", senses: [{ glosses: ["house, building"], tags: ["neuter"] }] },
+    ]);
+    const spanish = new LinePipeline(db, (_game, lang) => ({ lang, dictionary: es, glossary }), null, "en");
+    const line = (await spanish.submit({ ...msg("La casa"), game: "pokemon-emerald-es", lang: "es" }))!;
+    const word = bank.save({ lineId: line.id, tokenIndex: line.analysis!.tokens.findIndex((t) => t.text === "casa") }, T0);
+    assert.equal(word.lang, "es");
+    assert.deepEqual(word.articles, ["la"]);
+    assert.deepEqual(word.cards.map((c) => c.kind).sort(), ["article", "meaning"]);
+    assert.ok(bank.savedKeys().includes("casa|noun|es"));
+    // the same spelling in German is another word
+    const german = await play("Das Haus");
+    save(german, "Haus");
+    assert.equal(bank.list().length, 2);
+  });
+
+  it("hides a word in one language only", () => {
+    bank.hide({ lemma: "casa", pos: "noun", lang: "es", gloss: "house" });
+    assert.deepEqual(bank.hiddenWords(), [{ lemma: "casa", pos: "noun", lang: "es", gloss: "house" }]);
+    bank.unhide("casa", "noun"); // German: not this one
+    assert.equal(bank.hiddenWords().length, 1);
+    bank.unhide("casa", "noun", "es");
+    assert.equal(bank.hiddenWords().length, 0);
   });
 });

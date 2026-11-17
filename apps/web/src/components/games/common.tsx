@@ -2,21 +2,23 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { GameExample, GameKind, GameMaterial, GameResultRequest, GameResultResponse } from "@pokelearning/shared";
 import { api } from "../../api.ts";
+import { usePrefs } from "../../prefs.ts";
 
 export const GAME_INFO: Record<GameKind, { title: string; blurb: string; unit: string }> = {
-  articles: { title: "Article sprint", blurb: "60 seconds. Pick der, die or das for as many nouns as you can.", unit: "nouns" },
+  articles: { title: "Article sprint", blurb: "60 seconds. Pick the right article for as many nouns as you can.", unit: "nouns" },
   cloze: { title: "Fill the gap", blurb: "A line from your game with one word missing. Pick the word that fits.", unit: "lines" },
   listening: { title: "Listening", blurb: "Hear a line from your game, then pick what it means.", unit: "lines with translations" },
-  matching: { title: "Matching", blurb: "Pair six German words with their meanings, as fast as you can.", unit: "words" },
+  matching: { title: "Matching", blurb: "Pair six words with their meanings, as fast as you can.", unit: "words" },
 };
 
 export function useMaterial<K extends GameKind>(kind: K, round: number) {
   const [material, setMaterial] = useState<Extract<GameMaterial, { kind: K }> | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { gameLanguage } = usePrefs();
   useEffect(() => {
     setMaterial(null);
-    api.gameMaterial(kind).then(setMaterial, (err: Error) => setError(err.message));
-  }, [kind, round]);
+    api.gameMaterial(kind, gameLanguage).then(setMaterial, (err: Error) => setError(err.message));
+  }, [kind, round, gameLanguage]);
   return { material, error };
 }
 

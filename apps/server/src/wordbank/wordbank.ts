@@ -14,6 +14,7 @@ import {
   type CardSummary,
   type Grade,
   type HiddenWord,
+  type Language,
   type ProcessedLine,
   type ReviewItem,
   type ReviewQueue,
@@ -57,6 +58,7 @@ export function dayStart(now: number): number {
 
 interface WordRow {
   id: number;
+  lang: Language;
   lemma: string;
   pos: string;
   gender: string | null;
@@ -94,12 +96,12 @@ interface ContextRow {
 }
 
 /** The token (or compound part) in a line whose best reading is this word. */
-function findWord(tokens: TokenAnalysis[], lemma: string, pos: string): TokenAnalysis | undefined {
+function findWord(tokens: TokenAnalysis[], lemma: string, pos: string, lang: Language): TokenAnalysis | undefined {
   let particle: TokenAnalysis | undefined;
   for (const t of tokens) {
     for (const candidate of [t, ...(t.parts ?? [])]) {
       const b = candidate.best;
-      if (!b || b.lemma !== lemma || b.pos !== pos) continue;
+      if (!b || b.lemma !== lemma || b.pos !== pos || (b.lang ?? "de") !== lang) continue;
       // prefer the verb itself over its separated prefix ("Ruh" over "aus")
       if (b.formTags === "separated prefix") particle ??= candidate;
       else return candidate;
@@ -197,29 +199,28 @@ export class WordBank {
     const line = this.app.getLine(req.lineId);
     const tokens = line?.analysis?.tokens;
     if (!line || !tokens) throw new WordBankError("That line isn't stored or has no word breakdown", 404);
-    // Cards, articles and example words are German-only for now.
-    if (line.analysis?.lang !== "de") throw new WordBankError("Saving words from Spanish games isn't supported yet", 400);
     let token = tokens[req.tokenIndex];
     if (token && req.part !== undefined) token = token.parts?.[req.part];
     const sense = token && (req.alternative !== undefined ? token.alternatives?.[req.alternative] : token.best);
     if (!token || !sense) throw new WordBankError("There is no such word reading in that line", 404);
+    const lang = sense.lang ?? "de";
 
     this.db.exec("BEGIN");
     try {
       const { changes } = this.db
         .prepare(
-          `INSERT INTO words (lemma, pos, gender, plural, glosses, source, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)
-           ON CONFLICT (lemma, pos) DO NOTHING`,
+          `INSERT INTO words (lemma, pos, lang, gender, plural, glosses, source, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+           ON CONFLICT (lemma, pos, lang) DO NOTHING`,
         )
-        .run(sense.lemma, sense.pos, sense.gender ?? null, sense.plural ?? null, JSON.stringify(sense.glosses),
+        .run(sense.lemma, sense.pos, lang, sense.gender ?? null, sense.plural ?? null, JSON.stringify(sense.glosses),
           sense.source, now);
       const isNew = changes > 0;
       const { id } = this.db
-        .prepare("SELECT id FROM words WHERE lemma = ? AND pos = ?")
-        .get(sense.lemma, sense.pos) as { id: number };
-      this.unhide(sense.lemma, sense.pos); // saving a word means you want to see it
+        .prepare("SELECT id FROM words WHERE lemma = ? AND pos = ? AND lang = ?")
+        .get(sense.lemma, sense.pos, lang) as { id: number };
+      this.unhide(sense.lemma, sense.pos, lang); // saving a word means you want to see it
       for (const kind of cardKinds(sense, this.settings())) this.createCard(id, kind, now);
-      if (isNew) this.backfill(id, sense.lemma, sense.pos, now);
+      if (isNew) this.backfill(id, sense.lemma, sense.pos, lang, now);
       this.addContext(id, line, token, now);
       this.db.exec("COMMIT");
       return this.get(id)!;
@@ -230,7 +231,7 @@ export class WordBank {
   }
 
   /** Count earlier lines that used the word, and take the latest as examples. */
-  private backfill(wordId: number, lemma: string, pos: string, now: number): void {
+  private backfill(wordId: number, lemma: string, pos: string, lang: Language, now: number): void {
     const like = `%"lemma":${JSON.stringify(lemma).replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
     const rows = this.db
       .prepare(
@@ -242,7 +243,7 @@ export class WordBank {
     const examples: { line: ProcessedLine; token: TokenAnalysis }[] = [];
     for (const { line_id } of rows) {
       const line = this.app.getLine(line_id);
-      const token = line?.analysis && findWord(line.analysis.tokens, lemma, pos);
+      const token = line?.analysis && findWord(line.analysis.tokens, lemma, pos, lang);
       if (!line || !token) continue;
       encounters++;
       lastSeen ??= line.receivedAt;
@@ -257,16 +258,16 @@ export class WordBank {
   /** A new line from the game: count encounters of saved words and keep examples. */
   recordLine(line: ProcessedLine): boolean {
     if (!line.analysis) return false;
-    const find = this.db.prepare("SELECT id FROM words WHERE lemma = ? AND pos = ?");
+    const find = this.db.prepare("SELECT id FROM words WHERE lemma = ? AND pos = ? AND lang = ?");
     const seen = new Set<number>();
     for (const t of line.analysis.tokens) {
       for (const candidate of [t, ...(t.parts ?? [])]) {
         const b = candidate.best;
         if (!b) continue;
-        const row = find.get(b.lemma, b.pos) as { id: number } | undefined;
+        const row = find.get(b.lemma, b.pos, b.lang ?? "de") as { id: number } | undefined;
         if (!row || seen.has(row.id)) continue;
         seen.add(row.id);
-        const token = findWord(line.analysis.tokens, b.lemma, b.pos) ?? candidate;
+        const token = findWord(line.analysis.tokens, b.lemma, b.pos, b.lang ?? "de") ?? candidate;
         this.db
           .prepare("UPDATE words SET encounters = encounters + 1, last_seen_at = ? WHERE id = ?")
           .run(line.receivedAt, row.id);
@@ -308,9 +309,10 @@ export class WordBank {
       .all(...ids) as unknown as CardRow[];
     const kinds = new Set(this.enabledKinds());
     return words.map((w) => {
-      const articles = articlesFor(w.gender);
+      const articles = articlesFor(w.gender, w.lang);
       return {
         id: w.id,
+        ...(w.lang !== "de" ? { lang: w.lang } : {}),
         lemma: w.lemma,
         pos: w.pos,
         ...(w.gender ? { gender: w.gender } : {}),
@@ -341,24 +343,24 @@ export class WordBank {
   // Hidden words ------------------------------------------------------------
 
   hiddenWords(): HiddenWord[] {
-    const rows = this.db.prepare("SELECT lemma, pos, gloss FROM hidden_words ORDER BY hidden_at DESC").all() as unknown as HiddenWord[];
-    return rows.map(({ lemma, pos, gloss }) => ({ lemma, pos, gloss }));
+    const rows = this.db.prepare("SELECT lemma, pos, lang, gloss FROM hidden_words ORDER BY hidden_at DESC").all() as unknown as (HiddenWord & { lang: Language })[];
+    return rows.map(({ lemma, pos, lang, gloss }) => ({ lemma, pos, ...(lang !== "de" ? { lang } : {}), gloss }));
   }
 
   hide(word: HiddenWord, now = Date.now()): void {
     if (!word.lemma || !word.pos) throw new WordBankError("lemma and pos are required");
     this.db
-      .prepare("INSERT OR REPLACE INTO hidden_words (lemma, pos, gloss, hidden_at) VALUES (?, ?, ?, ?)")
-      .run(word.lemma, word.pos, String(word.gloss ?? "").slice(0, 200), now);
+      .prepare("INSERT OR REPLACE INTO hidden_words (lemma, pos, lang, gloss, hidden_at) VALUES (?, ?, ?, ?, ?)")
+      .run(word.lemma, word.pos, word.lang ?? "de", String(word.gloss ?? "").slice(0, 200), now);
   }
 
-  unhide(lemma: string, pos: string): void {
-    this.db.prepare("DELETE FROM hidden_words WHERE lemma = ? AND pos = ?").run(lemma, pos);
+  unhide(lemma: string, pos: string, lang: Language = "de"): void {
+    this.db.prepare("DELETE FROM hidden_words WHERE lemma = ? AND pos = ? AND lang = ?").run(lemma, pos, lang);
   }
 
   savedKeys(): string[] {
-    return (this.db.prepare("SELECT lemma, pos FROM words").all() as { lemma: string; pos: string }[]).map((r) =>
-      wordKey(r.lemma, r.pos),
+    return (this.db.prepare("SELECT lemma, pos, lang FROM words").all() as { lemma: string; pos: string; lang: Language }[]).map((r) =>
+      wordKey(r.lemma, r.pos, r.lang),
     );
   }
 

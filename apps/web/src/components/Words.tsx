@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { HiddenWord, SavedWord, Settings, WordBankStats } from "@pokelearning/shared";
 import { api } from "../api.ts";
 import { HiddenList } from "./HiddenList.tsx";
+import { languageOf, pluralArticle } from "../language.ts";
 import { genderKey, headword, posLabel, relativeTime, shortGloss } from "../words.ts";
 
 interface Props {
@@ -11,7 +12,7 @@ interface Props {
   version: unknown;
 }
 
-const KIND_LABEL = { meaning: "meaning", article: "article", recall: "English → German" } as const;
+const KIND_LABEL = { meaning: "meaning", article: "article", recall: "English → word" } as const;
 
 function statsSentence(s: WordBankStats): string {
   if (s.words === 0) return "Your word bank is empty.";
@@ -59,7 +60,7 @@ export function Words({ stats, hidden, version }: Props) {
             <span className="visually-hidden">Search your words</span>
             <input
               type="search"
-              placeholder="Search German or English"
+              placeholder="Search by word or meaning"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
@@ -105,7 +106,7 @@ function WordItem({ word, open, onToggle, onRemoved }: { word: SavedWord; open: 
     <li className="bank__item" data-open={open ? "" : undefined}>
       <button type="button" className="bank__row" aria-expanded={open} onClick={onToggle}>
         <span className="bank__head">
-          <span className="headword" lang="de" data-gender={genderKey(word)}>
+          <span className="headword" lang={languageOf(word)} data-gender={genderKey(word)}>
             {headword(word)}
           </span>{" "}
           <span className="pos">{posLabel(word.pos)}</span> <span className="gloss">{shortGloss(word.glosses[0])}</span>
@@ -128,14 +129,14 @@ function WordItem({ word, open, onToggle, onRemoved }: { word: SavedWord; open: 
           )}
           {word.plural && (
             <p className="grammar">
-              Plural: <span lang="de">die {word.plural}</span>.
+              Plural: <span lang={languageOf(word)}>{pluralArticle(languageOf(word), word.articles)} {word.plural}</span>.
             </p>
           )}
           {word.contexts.length > 0 && (
             <ul className="examples">
               {word.contexts.map((c) => (
                 <li key={c.lineId}>
-                  <p className="example" lang="de">
+                  <p className="example" lang={languageOf(word)}>
                     {c.text.slice(0, c.start)}
                     <mark>{c.text.slice(c.start, c.end)}</mark>
                     {c.text.slice(c.end)}
@@ -151,7 +152,7 @@ function WordItem({ word, open, onToggle, onRemoved }: { word: SavedWord; open: 
           </p>
           {confirming ? (
             <p>
-              Remove <b lang="de">{headword(word)}</b> and its review history?{" "}
+              Remove <b lang={languageOf(word)}>{headword(word)}</b> and its review history?{" "}
               <button type="button" className="danger-button" onClick={() => void remove()}>
                 Remove
               </button>{" "}
@@ -208,7 +209,7 @@ function SettingsForm() {
           checked={settings.recallCards}
           onChange={(e) => void update({ recallCards: e.target.checked })}
         />
-        <span>Also practise English → German (a recall card for every word)</span>
+        <span>Also practise English → the game's language (a recall card for every word)</span>
       </label>
       {error && <p className="error">Couldn't save the setting: {error}</p>}
     </section>

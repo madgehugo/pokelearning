@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { Article, Grade, ReviewItem, ReviewQueue, SavedWord, WordContext } from "@pokelearning/shared";
+import type { Article, Grade, Language, ReviewItem, ReviewQueue, SavedWord, WordContext } from "@pokelearning/shared";
 import { api } from "../api.ts";
+import { articleColour, LANGUAGES, languageOf, pluralArticle } from "../language.ts";
 import { genderKey, headword, posLabel, relativeTime, shortGloss } from "../words.ts";
 
 const GRADES: { grade: Grade; label: string }[] = [
@@ -9,7 +10,6 @@ const GRADES: { grade: Grade; label: string }[] = [
   { grade: 3, label: "Good" },
   { grade: 4, label: "Easy" },
 ];
-const ARTICLES: Article[] = ["der", "die", "das"];
 
 export function Review() {
   const [queue, setQueue] = useState<ReviewQueue | null>(null);
@@ -65,6 +65,8 @@ export function Review() {
     }
   }, [queue?.canUndo, busy]);
 
+  const lang = languageOf(item?.word);
+  const ARTICLES = LANGUAGES[lang].articles;
   const isArticle = item?.card.kind === "article";
   const correctArticle = item?.word.articles?.[0];
   const pick = useCallback((a: Article) => {
@@ -78,10 +80,11 @@ export function Review() {
       if (e.metaKey || e.ctrlKey || e.altKey || e.target instanceof HTMLInputElement) return;
       if (e.key === "z") return void undo();
       if (!item) return;
-      if (isArticle && !revealed && ["1", "2", "3"].includes(e.key)) return pick(ARTICLES[Number(e.key) - 1]!);
+      const n = Number(e.key);
+      if (isArticle && !revealed && n >= 1 && n <= ARTICLES.length) return pick(ARTICLES[n - 1]!);
       if (e.key === " " || e.key === "Enter") {
         e.preventDefault();
-        if (isArticle && !revealed) return; // pick der, die or das first
+        if (isArticle && !revealed) return; // pick the article first
         if (!revealed) setRevealed(true);
         else if (isArticle) void answer(picked === correctArticle ? 3 : 1);
         return;
@@ -135,7 +138,7 @@ export function Review() {
         {isArticle && !revealed && (
           <div className="choice" role="group" aria-label="Which article?">
             {ARTICLES.map((a, i) => (
-              <button key={a} type="button" className="choice__button" data-gender={a} onClick={() => pick(a)}>
+              <button key={a} type="button" className="choice__button" data-gender={articleColour(a)} onClick={() => pick(a)}>
                 {a} <kbd>{i + 1}</kbd>
               </button>
             ))}
@@ -182,11 +185,11 @@ export function Review() {
 }
 
 /** The example sentence from the game, with the word highlighted. */
-function Example({ context }: { context: WordContext | undefined }) {
+function Example({ context, lang }: { context: WordContext | undefined; lang: Language }) {
   if (!context) return null;
   const { text, start, end } = context;
   return (
-    <p className="example" lang="de">
+    <p className="example" lang={lang}>
       {text.slice(0, start)}
       <mark>{text.slice(start, end)}</mark>
       {text.slice(end)}
@@ -198,11 +201,11 @@ function MeaningFront({ item }: { item: ReviewItem }) {
   const w = item.word;
   return (
     <>
-      <p className="card-word" lang="de">
+      <p className="card-word" lang={languageOf(w)}>
         <span data-gender={genderKey(w)}>{headword(w)}</span>
       </p>
       <p className="pos">{posLabel(w.pos)}</p>
-      <Example context={w.contexts[0]} />
+      <Example context={w.contexts[0]} lang={languageOf(w)} />
     </>
   );
 }
@@ -213,7 +216,7 @@ function RecallFront({ word, revealed }: { word: SavedWord; revealed: boolean })
       <p className="card-word card-word--english">{word.glosses.slice(0, 2).map(shortGloss).join("; ")}</p>
       <p className="pos">
         {posLabel(word.pos)}
-        {!revealed && ". What's the German word?"}
+        {!revealed && `. What's the ${LANGUAGES[languageOf(word)].name} word?`}
       </p>
     </>
   );
@@ -223,9 +226,9 @@ function ArticleFront({ word, picked }: { word: SavedWord; picked: Article | nul
   const right = word.articles?.[0];
   return (
     <>
-      <p className="card-word" lang="de">
+      <p className="card-word" lang={languageOf(word)}>
         {picked ? (
-          <span data-gender={right}>
+          <span data-gender={right && articleColour(right)}>
             {right} {word.lemma}
           </span>
         ) : (
@@ -253,7 +256,7 @@ function Back({ item, picked }: { item: ReviewItem; picked: Article | null }) {
   return (
     <div className="card-back">
       {item.card.kind === "recall" && (
-        <p className="card-word" lang="de">
+        <p className="card-word" lang={languageOf(w)}>
           <span data-gender={genderKey(w)}>{headword(w)}</span>
         </p>
       )}
@@ -269,10 +272,10 @@ function Back({ item, picked }: { item: ReviewItem; picked: Article | null }) {
         ))}
       {w.plural && (
         <p className="grammar">
-          Plural: <span lang="de">die {w.plural}</span>.
+          Plural: <span lang={languageOf(w)}>{pluralArticle(languageOf(w), w.articles)} {w.plural}</span>.
         </p>
       )}
-      {(item.card.kind !== "meaning" || picked) && <Example context={context} />}
+      {(item.card.kind !== "meaning" || picked) && <Example context={context} lang={languageOf(w)} />}
       {context?.translation && <p className="example-translation">{context.translation}</p>}
     </div>
   );

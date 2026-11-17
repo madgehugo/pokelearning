@@ -183,8 +183,10 @@ with English translations: a Spanish dictionary (Wiktionary), `es→en`
 translation, and Spanish game names. When a Spanish game connects, the app
 downloads what it needs (about 160 MB) and shows the progress in the top bar.
 From source: `npm run dict:import -- es` and `npm run names:import`.
-Not yet for Spanish: saving words, review and the games (they are German-only
-for now), and the stat abbreviations. Only the Smaragd ROM has been tested in-game.
+Saved words, review (el/la article cards) and the games work for Spanish too:
+each word keeps its language, and the Games page has a German/Spanish switch.
+The Listening game uses a Spain Spanish voice (`es-ES`). Only the Smaragd ROM
+has been tested in-game; Esmeralda's menus and text buffers haven't.
 
 ### Games without a RAM adapter
 

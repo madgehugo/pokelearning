@@ -56,6 +56,14 @@ describe("prepareForTranslation", () => {
     assert.deepEqual(sentences[0]!.slots, ["Speed", "Birch"]);
   });
 
+  it("keeps the Spanish stat labels whole, and only for Spanish", () => {
+    assert.equal(prepareForTranslation("AT. ESP.", glossary, "es"), "X1");
+    assert.equal(prepareForTranslation("DEF. ESP.", glossary, "es"), "X1");
+    assert.deepEqual(prepareSentences("Recupera PS y VELOC.", glossary, "es")[0]!.slots, ["HP", "Speed"]);
+    assert.notEqual(prepareForTranslation("VERT.", glossary, "es"), "X1", "German labels are not applied to Spanish");
+    assert.equal(prepareForTranslation("PS", glossary), "PS", "and Spanish labels not to German");
+  });
+
   it("restores placeholders, or reports one that went missing", () => {
     assert.equal(restoreSlots("X2 uses X1!", ["Ember", "Zigzagoon"]), "Zigzagoon uses Ember!");
     assert.equal(restoreSlots("You got an X1!", ["Super Potion"]), "You got a Super Potion!");

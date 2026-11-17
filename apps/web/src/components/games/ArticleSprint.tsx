@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Article, ArticleItem } from "@pokelearning/shared";
+import { articleColour, LANGUAGES, pluralArticle } from "../../language.ts";
 import { Highlighted, NotEnough, Results, StartScreen, useMaterial, useNumberKeys, useStopwatch } from "./common.tsx";
 
-const ARTICLES: Article[] = ["der", "die", "das"];
 const DURATION_MS = 60_000;
 const MIN_ITEMS = 10;
 /** How long a wrong answer stays on screen with the right article. */
@@ -13,6 +13,8 @@ type Phase = "start" | "playing" | "done";
 export function ArticleSprint() {
   const [round, setRound] = useState(0);
   const { material, error } = useMaterial("articles", round);
+  const lang = material?.lang ?? "de";
+  const ARTICLES = LANGUAGES[lang].articles;
   const [phase, setPhase] = useState<Phase>("start");
   const [index, setIndex] = useState(0);
   const [right, setRight] = useState(0);
@@ -54,7 +56,7 @@ export function ArticleSprint() {
     },
     [phase, item, feedback],
   );
-  useNumberKeys(phase === "playing", 3, (i) => pick(ARTICLES[i]!));
+  useNumberKeys(phase === "playing", ARTICLES.length, (i) => pick(ARTICLES[i]!));
 
   const restart = () => {
     setRound((r) => r + 1);
@@ -86,10 +88,10 @@ export function ArticleSprint() {
             <ul>
               {[...new Map(wrong.map((w) => [w.item.lemma, w])).values()].map(({ item: w, picked }) => (
                 <li key={w.lemma}>
-                  <b lang="de" data-gender={w.article}>
+                  <b lang={lang} data-gender={articleColour(w.article)}>
                     {w.article} {w.lemma}
                   </b>
-                  {w.plural && <span className="muted"> (die {w.plural})</span>} {w.gloss}
+                  {w.plural && <span className="muted"> ({pluralArticle(lang, [w.article])} {w.plural})</span>} {w.gloss}
                   <span className="muted">. You picked {picked}.</span>
                 </li>
               ))}
@@ -113,9 +115,9 @@ export function ArticleSprint() {
       <section className="box review__card" data-flash={feedback ? (feedback.ok ? "right" : "wrong") : undefined}>
         {item && (
           <>
-            <p className="card-word" lang="de">
+            <p className="card-word" lang={lang}>
               {feedback ? (
-                <span data-gender={item.article}>
+                <span data-gender={articleColour(item.article)}>
                   {item.article} {item.lemma}
                 </span>
               ) : (
@@ -126,7 +128,7 @@ export function ArticleSprint() {
             </p>
             <p className="pos">{item.gloss}</p>
             {feedback && !feedback.ok && item.example && (
-              <p className="example" lang="de">
+              <p className="example" lang={lang}>
                 <Highlighted example={item.example} />
               </p>
             )}
@@ -139,7 +141,7 @@ export function ArticleSprint() {
             key={a}
             type="button"
             className="choice__button"
-            data-gender={a}
+            data-gender={articleColour(a)}
             data-picked={feedback?.picked === a ? "" : undefined}
             onClick={() => pick(a)}
           >

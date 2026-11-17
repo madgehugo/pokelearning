@@ -41,7 +41,7 @@ export class Translator {
   async translateLine(text: string, from: string, to: string, glossary: Glossary = this.glossary): Promise<Translation> {
     let allCached = true;
     const out: string[] = [];
-    for (const sentence of prepareSentences(text, glossary)) {
+    for (const sentence of prepareSentences(text, glossary, from)) {
       const first = await this.cached(sentence.text, from, to);
       allCached &&= first.cached;
       let translated = restoreSlots(first.text, sentence.slots);

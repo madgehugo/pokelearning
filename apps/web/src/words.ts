@@ -1,5 +1,6 @@
 /** Presentation helpers for analysed words. */
 import type { TokenAnalysis, WordSense } from "@pokelearning/shared";
+import { articleColour } from "./language.ts";
 
 export type GenderKey = "der" | "die" | "das" | "mixed";
 
@@ -7,8 +8,7 @@ export type GenderKey = "der" | "die" | "das" | "mixed";
 export function genderKey(sense: Pick<WordSense, "articles" | "pos"> | undefined): GenderKey | undefined {
   if (!sense?.articles || (sense.pos !== "noun" && sense.pos !== "name")) return undefined;
   // Spanish el/la share the colours of masculine (blue) and feminine (rose)
-  const key = { der: "der", die: "die", das: "das", el: "der", la: "die" } as const;
-  return sense.articles.length === 1 ? key[sense.articles[0]!] : "mixed";
+  return sense.articles.length === 1 ? articleColour(sense.articles[0]!) : "mixed";
 }
 
 /** "die Leute", "der/das Leut", "ausruhen". */
@@ -82,12 +82,12 @@ export function wordText(tokens: TokenAnalysis[], index: number): string {
 /** The saved names that come straight from PokéAPI (not dictionary words). */
 export const GAME_NAME_POS = new Set(["pokemon", "move", "ability", "item", "place"]);
 
-const TITLES: Record<string, [english: string, german: string]> = {
-  ruby: ["Pokémon Ruby", "Pokémon Rubin"],
-  sapphire: ["Pokémon Sapphire", "Pokémon Saphir"],
-  firered: ["Pokémon FireRed", "Pokémon Feuerrot"],
-  leafgreen: ["Pokémon LeafGreen", "Pokémon Blattgrün"],
-  emerald: ["Pokémon Emerald", "Pokémon Smaragd"],
+const TITLES: Record<string, [english: string, german: string, spanish: string]> = {
+  ruby: ["Pokémon Ruby", "Pokémon Rubin", "Pokémon Rubí"],
+  sapphire: ["Pokémon Sapphire", "Pokémon Saphir", "Pokémon Zafiro"],
+  firered: ["Pokémon FireRed", "Pokémon Feuerrot", "Pokémon Rojo Fuego"],
+  leafgreen: ["Pokémon LeafGreen", "Pokémon Blattgrün", "Pokémon Verde Hoja"],
+  emerald: ["Pokémon Emerald", "Pokémon Smaragd", "Pokémon Esmeralda"],
 };
 
 /** "pokemon-emerald-de" → "Pokémon Smaragd"; unknown ids are shown as they are. */
@@ -95,7 +95,7 @@ export function gameName(id: string): string {
   const [, title, lang] = id.match(/^pokemon-([a-z]+)-([a-z]+)$/) ?? [];
   const names = title ? TITLES[title] : undefined;
   if (!names) return id;
-  return lang === "de" ? names[1] : names[0];
+  return lang === "de" ? names[1] : lang === "es" ? names[2] : names[0];
 }
 
 /** "now", "in 10 min", "in 3 days", "3 days ago". */

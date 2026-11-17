@@ -113,5 +113,6 @@ export function glossarySense(e: GlossaryEntry, lang: Language = "de"): WordSens
     glosses: e.glosses,
     ...(e.plural ? { formTags: "plural" } : {}),
     source: "glossary",
+    ...(lang !== "de" ? { lang } : {}),
   };
 }

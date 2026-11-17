@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
+import type { Language } from "@pokelearning/shared";
+import { LANGUAGES } from "../../language.ts";
+import { usePrefs } from "../../prefs.ts";
 import { NotEnough, Results, StartScreen, useConfirmKey, useMaterial, useNumberKeys, useStopwatch } from "./common.tsx";
 
 const MIN_ROUNDS = 4;
 
-/** The browser's German voices (Web Speech API); they load asynchronously. */
-function useGermanVoice(): { voice: SpeechSynthesisVoice | null; supported: boolean; loaded: boolean } {
+/** The browser's voices for a language (Web Speech API); they load asynchronously. */
+function useVoice(lang: Language): { voice: SpeechSynthesisVoice | null; supported: boolean; loaded: boolean } {
   const supported = typeof window !== "undefined" && "speechSynthesis" in window;
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>(() => (supported ? speechSynthesis.getVoices() : []));
   useEffect(() => {
@@ -14,10 +17,11 @@ function useGermanVoice(): { voice: SpeechSynthesisVoice | null; supported: bool
     update();
     return () => speechSynthesis.removeEventListener("voiceschanged", update);
   }, [supported]);
-  const german = voices.filter((v) => v.lang.toLowerCase().startsWith("de"));
-  // prefer a voice for Germany, and a local one (works offline)
+  const { speech } = LANGUAGES[lang];
+  const matching = voices.filter((v) => v.lang.toLowerCase().startsWith(lang));
+  // prefer a voice for the home country (Germany, Spain), and a local one (works offline)
   const voice =
-    german.find((v) => v.lang === "de-DE" && v.localService) ?? german.find((v) => v.lang === "de-DE") ?? german[0] ?? null;
+    matching.find((v) => v.lang.replace("_", "-") === speech && v.localService) ?? matching.find((v) => v.lang.replace("_", "-") === speech) ?? matching[0] ?? null;
   return { voice, supported, loaded: voices.length > 0 };
 }
 
@@ -33,7 +37,8 @@ function speak(text: string, voice: SpeechSynthesisVoice, rate: number) {
 export function Listening() {
   const [round, setRound] = useState(0);
   const { material, error } = useMaterial("listening", round);
-  const { voice, supported, loaded } = useGermanVoice();
+  const lang = usePrefs().gameLanguage;
+  const { voice, supported, loaded } = useVoice(lang);
   const [phase, setPhase] = useState<"start" | "playing" | "done">("start");
   const [index, setIndex] = useState(0);
   const [picked, setPicked] = useState<string | null>(null);
@@ -102,10 +107,10 @@ export function Listening() {
   if (!supported || (loaded && !voice)) {
     return (
       <section className="box box--empty">
-        <p className="line">This browser has no German voice.</p>
+        <p className="line">This browser has no {LANGUAGES[lang].name} voice.</p>
         <p className="box__hint">
-          On a Mac: System Settings → Accessibility → Spoken Content → System voice → Manage voices, and add a German
-          voice such as Anna. On a phone, add a German voice in the text-to-speech settings. Then reload this page.
+          On a Mac: System Settings → Accessibility → Spoken Content → System voice → Manage voices, and add a {LANGUAGES[lang].name}
+          voice such as {LANGUAGES[lang].voiceName}. On a phone, add a {LANGUAGES[lang].name} voice in the text-to-speech settings. Then reload this page.
         </p>
         <a href="#/games" className="link-button">
           All games
@@ -143,7 +148,7 @@ export function Listening() {
       </div>
       <section className="box review__card">
         {answered ? (
-          <p className="example example--big" lang="de">
+          <p className="example example--big" lang={lang}>
             {r!.text}
           </p>
         ) : (

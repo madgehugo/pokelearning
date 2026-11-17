@@ -28,6 +28,8 @@ export interface WordSense {
   /** Separable verb prefix if this reading is a separable verb ("aus" in ausruhen). */
   particle?: string;
   source: "dictionary" | "glossary" | "derived";
+  /** The word's language, set for anything but German (the original language, left out). */
+  lang?: Language;
 }
 
 export interface TokenAnalysis {
