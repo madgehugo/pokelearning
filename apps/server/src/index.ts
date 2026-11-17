@@ -167,19 +167,25 @@ const ingest = createIngestServer({
         styleText("green", `[${time()}] ${client} says hello:`),
         `${msg.adapter} ${msg.version}, game ${styleText("bold", msg.game)}`,
       );
-      status.game = msg.game;
-      if (languageOf(msg.game) === "es") {
-        setup.requireSpanish();
-        void setup.start();
-      }
+      useGame(msg.game);
       status.adapterWarning = adapterVersionProblem(msg);
       if (status.adapterWarning) warn(status.adapterWarning);
       ui.broadcastStatus();
     } else {
+      if (msg.game !== status.game) useGame(msg.game); // the game changed without a new hello
       void pipeline.submit(msg);
     }
   },
 });
+
+/** The adapter is playing this game: a Spanish one needs the Spanish pack. */
+function useGame(game: string): void {
+  status.game = game;
+  if (languageOf(game) !== "es") return;
+  setup.requireSpanish();
+  void setup.start();
+  ui.broadcastStatus();
+}
 
 const exitOnListenError = (port: number, envVar: string) => (err: NodeJS.ErrnoException) => {
   if (err.code === "EADDRINUSE") {

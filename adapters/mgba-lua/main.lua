@@ -87,19 +87,21 @@ local function now()
   return ok and t * 1000 or 0
 end
 
+local function hello()
+  return {
+    type = "hello",
+    adapter = ADAPTER,
+    version = VERSION,
+    game = state.cfg and state.cfg.game or "unknown",
+    timestamp = now(),
+  }
+end
+
 local transport = Transport.new({
   host = CONFIG.host,
   port = CONFIG.port,
   log = log,
-  onConnect = function(t)
-    t:sendFirst({
-      type = "hello",
-      adapter = ADAPTER,
-      version = VERSION,
-      game = state.cfg and state.cfg.game or "unknown",
-      timestamp = now(),
-    })
-  end,
+  onConnect = function(t) t:sendFirst(hello()) end,
 })
 _POKELEARNING.transport = transport
 
@@ -202,6 +204,8 @@ local function initGame()
   end
   setupWatchers()
   setupMenuHook()
+  -- A ROM loaded inside mGBA keeps the connection open: tell the server which game this is now.
+  if transport.sock then transport:sendFirst(hello()); transport:flush() end
 end
 
 ---------------------------------------------------------------------------
