@@ -197,6 +197,8 @@ export class WordBank {
     const line = this.app.getLine(req.lineId);
     const tokens = line?.analysis?.tokens;
     if (!line || !tokens) throw new WordBankError("That line isn't stored or has no word breakdown", 404);
+    // Cards, articles and example words are German-only for now.
+    if (line.analysis?.lang !== "de") throw new WordBankError("Saving words from Spanish games isn't supported yet", 400);
     let token = tokens[req.tokenIndex];
     if (token && req.part !== undefined) token = token.parts?.[req.part];
     const sense = token && (req.alternative !== undefined ? token.alternatives?.[req.alternative] : token.best);

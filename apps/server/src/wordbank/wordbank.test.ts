@@ -214,4 +214,9 @@ describe("formatInterval", () => {
     assert.deepEqual([30_000, 10 * MIN, 3 * 60 * MIN, DAY, 4 * DAY, 60 * DAY, 400 * DAY].map(formatInterval),
       ["1 min", "10 min", "3 h", "1 day", "4 days", "2 mo", "1.1 yr"]);
   });
+
+  it("doesn't save words from Spanish games yet", async () => {
+    const line = (await pipeline.submit({ ...msg("Das Haus"), game: "pokemon-emerald-es", lang: "es" }))!;
+    assert.throws(() => bank.save({ lineId: line.id, tokenIndex: 0 }, T0), /Spanish/);
+  });
 });

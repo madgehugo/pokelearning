@@ -176,6 +176,16 @@ about three messages, the console prints `found a text buffer at 0x…`, and lin
 start coming in. FireRed and LeafGreen get Kanto's place names, the others
 Hoenn's.
 
+### Spanish games
+
+Spanish games (Pokémon Esmeralda and the other Gen 3 titles) are read in Spanish
+with English translations: a Spanish dictionary (Wiktionary), `es→en`
+translation, and Spanish game names. When a Spanish game connects, the app
+downloads what it needs (about 160 MB) and shows the progress in the top bar.
+From source: `npm run dict:import -- es` and `npm run names:import`.
+Not yet for Spanish: saving words, review and the games (they are German-only
+for now), and the stat abbreviations. Only the Smaragd ROM has been tested in-game.
+
 ### Games without a RAM adapter
 
 The [OCR adapter](adapters/ocr-macos/README.md) reads a game window's text box

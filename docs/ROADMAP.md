@@ -15,6 +15,10 @@
 - Translation through a provider interface. The default is local Opus-MT (free, offline after the first download), translating one sentence at a time with each sentence cached.
 - Unit tests (`npm test`).
 
+### Spanish (in progress)
+- **Done:** per-language dictionary, analysis (el/la, no German-only rules), names, `es→en` translation, on-demand download, tests with real data.
+- **Next:** a `lang` on saved words (a table rebuild), el/la cards and games, Spain Spanish voice (`es-ES`) for Listening, Spanish stat abbreviations (needs the ROM's text), language-aware wording in the UI, and a check in-game with Esmeralda.
+
 ### Follow-ups
 - ✅ Pokémon and move names (German ↔ English) from PokéAPI (`npm run names:import`). Names written in Gen 3 capitals reach the translator as placeholders (X1, X2) and go back in as English afterwards.
 - ✅ Abilities, items (with category and Emerald bag description) and Hoenn places from PokéAPI. Multi-word names ("BLÜTENBURG CITY", "RECHTE HAND") are matched as one, ß matches SS, and items are recognised in the plural (*POKéBÄLLE*). Items take their gender from the dictionary or from their compound's last part, so they get article cards.
