@@ -1367,3 +1367,13 @@ kbd {
 .prefs__row span:first-child {
   flex: 1;
 }
+
+.update {
+  flex: none;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  background: var(--cursor);
+  color: var(--frame);
+  font-size: 0.8rem;
+  text-decoration: none;
+}

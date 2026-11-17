@@ -103,5 +103,5 @@ Built from your own material: saved words first, then the words and lines you pl
 ### Follow-ups
 - Sign with a Developer ID and notarize, so the app opens without the Open Anyway step.
 - A universal build (Intel Macs).
-- Update checks.
+- Updating itself: the app only tells you a newer release exists (a daily GitHub check, `UPDATE_CHECK=0` to disable); you download it yourself. It finds nothing until a release is published on GitHub.
 - Move to the mGBA 0.11 release once it's out, instead of a development build.

@@ -131,6 +131,10 @@ Everything is local and free: no accounts or API keys. Downloaded data and your
 database live in `data/` (git-ignored). Set `TRANSLATOR=none` to turn off
 translation.
 
+The only thing it asks the internet for after setup is whether a newer release
+exists (GitHub's releases API, once a day; an "Update" link appears in the
+top bar). Set `UPDATE_CHECK=0` to turn that off.
+
 **On your phone:** start with `npm run play -- --lan` and open the address the
 server prints (`http://192.168.…:8766`) on a phone on the same Wi-Fi. On iOS,
 *Share → Add to Home Screen* gives it its own icon. Only the web UI is opened

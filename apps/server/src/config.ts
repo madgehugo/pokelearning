@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { PROTOCOL_PORT, UI_PORT } from "@pokelearning/shared";
@@ -40,6 +41,11 @@ export const config = {
     generation: Number(process.env.NAMES_GENERATION ?? 3),
     regions: (process.env.NAMES_REGIONS ?? "3").split(",").map(Number),
   },
+  /** This build's version: the app sets APP_VERSION; from source it is the root package.json's. */
+  version: process.env.APP_VERSION ?? (JSON.parse(fs.readFileSync(path.join(repoRoot, "package.json"), "utf8")).version as string),
+  /** Where releases are published, for the update check. UPDATE_CHECK=0 turns the check off. */
+  repo: "madgehugo/pokelearning",
+  updateCheck: process.env.UPDATE_CHECK !== "0",
   /** "opus-mt" (local, default) or "none". */
   translator: process.env.TRANSLATOR ?? "opus-mt",
   targetLang: "en",

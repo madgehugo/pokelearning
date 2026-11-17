@@ -8,6 +8,12 @@ import type { HiddenWord, WordBankStats } from "./wordbank.ts";
 
 export const UI_PORT = 8766;
 
+/** A newer release of the app. */
+export interface UpdateInfo {
+  version: string;
+  url: string;
+}
+
 export interface ServerStatus {
   /** Game adapters currently connected. */
   adapters: number;
@@ -19,6 +25,8 @@ export interface ServerStatus {
   translator: string | null;
   /** Dictionary build, or null if none is installed. */
   dictionary: string | null;
+  /** A newer release than this build, or null. */
+  update: UpdateInfo | null;
 }
 
 /** Which words are saved (as wordKey strings) and the review counts. */

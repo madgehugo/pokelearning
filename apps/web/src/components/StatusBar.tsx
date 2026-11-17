@@ -46,6 +46,11 @@ export function StatusBar(props: Props) {
         {text}
         {translationOff && <span className="status__extra"> Translation is loading or off.</span>}
       </p>
+      {props.status?.update && (
+        <a className="update" href={props.status.update.url} target="_blank" rel="noreferrer">
+          Update {props.status.update.version}
+        </a>
+      )}
       <PrefsMenu />
     </header>
   );

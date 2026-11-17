@@ -99,6 +99,7 @@ final class ServerProcess {
     var env = ProcessInfo.processInfo.environment
     env["DATA_DIR"] = paths.data.path
     env["WEB_DIST_DIR"] = paths.web.path
+    env["APP_VERSION"] = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
     env["FORCE_COLOR"] = "0"
     env["NO_COLOR"] = "1"
     if lan { env["UI_HOST"] = "0.0.0.0" }

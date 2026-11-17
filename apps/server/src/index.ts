@@ -19,6 +19,7 @@ import { Games } from "./games/games.ts";
 import { createUiServer } from "./ui/server.ts";
 import { Scheduler } from "./wordbank/scheduler.ts";
 import { WordBank } from "./wordbank/wordbank.ts";
+import { checkForUpdate } from "./update.ts";
 import { Setup } from "./setup/setup.ts";
 import { importDictionary } from "./setup/dictionary.ts";
 import { importNames } from "./setup/names.ts";
@@ -40,7 +41,7 @@ else warn("no game names found: run `npm run names:import` (the app's first-laun
 if (language.dictionary) info(`dictionary ${language.dictionary.version}`);
 else warn("no dictionary found: run `npm run dict:import` (the app's first-launch setup does this)");
 
-const status: ServerStatus = { adapters: 0, game: null, adapterWarning: null, translator: null, dictionary: language.dictionary?.version ?? null };
+const status: ServerStatus = { adapters: 0, game: null, adapterWarning: null, translator: null, dictionary: language.dictionary?.version ?? null, update: null };
 
 let translator: Translator | null = null;
 if (config.translator === "opus-mt") {
@@ -171,6 +172,19 @@ ui.http.listen(config.uiPort, config.uiHost, () => {
   console.log(styleText("green", `Web UI: http://localhost:${config.uiPort}`) + (open.length ? ` (phone: ${open.join(", ")})` : ""));
   if (!open.length) console.log(styleText("dim", "To use it on your phone, start with UI_HOST=0.0.0.0."));
 });
+
+/** Look for a newer release now and then daily; the server runs as long as the app does. */
+if (config.updateCheck) {
+  const look = async () => {
+    const update = await checkForUpdate(config.version, config.repo);
+    if (JSON.stringify(update) === JSON.stringify(status.update)) return;
+    status.update = update;
+    if (update) info(`version ${update.version} is available: ${update.url}`);
+    ui.broadcastStatus();
+  };
+  void look();
+  setInterval(() => void look(), 24 * 60 * 60 * 1000).unref();
+}
 
 const shutdown = () => {
   ingest.close();

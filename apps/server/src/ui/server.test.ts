@@ -14,7 +14,7 @@ import { createUiServer, type UiServer } from "./server.ts";
 
 describe("UI server", () => {
   const db = new AppDb(":memory:");
-  const status: ServerStatus = { adapters: 1, game: "pokemon-emerald-de", adapterWarning: null, translator: "fake", dictionary: null };
+  const status: ServerStatus = { adapters: 1, game: "pokemon-emerald-de", adapterWarning: null, translator: "fake", dictionary: null, update: null };
   const staticDir = fs.mkdtempSync(path.join(os.tmpdir(), "pokelearning-web-"));
   fs.writeFileSync(path.join(staticDir, "index.html"), "<!doctype html><title>app</title>");
   let ui: UiServer;
