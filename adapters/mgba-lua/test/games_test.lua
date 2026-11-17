@@ -26,6 +26,14 @@ h.test("games: Smaragd (BPED) has pinned buffers and a menu printer", function()
   h.truthy(c.printer and #c.printer.bytes > 0, "printer")
 end)
 
+h.test("games: Esmeralda (BPES) has its field buffer pinned", function()
+  local c = gen3.config("BPES")
+  h.eq(c.game, "pokemon-emerald-es")
+  h.eq(c.lang, "es")
+  h.eq(c.discover, false)
+  h.eq(c.buffers[1].addr, 0x02021FC4)
+end)
+
 h.test("games: games with no known addresses fall back to discovery", function()
   local c = gen3.config("BPRD") -- FireRed, German
   h.eq(c.discover, true)

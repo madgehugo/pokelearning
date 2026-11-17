@@ -45,6 +45,17 @@ M.versions = {
     -- (other languages, other titles) have it found by its code: see lib/menu.lua.
     printer = { addr = 0x0800467C, bytes = "\xF0\xB5\x06\x1C\x94\x46" },
   },
+  BPES = {
+    game = "pokemon-emerald-es",
+    lang = "es",
+    buffers = {
+      -- field confirmed in-game (Edición Esmeralda, Spain): the same address as the other releases
+      { name = "field",  addr = 0x02021FC4, size = 1000, verified = true },
+      -- battle: the same as the other releases, not yet confirmed
+      { name = "battle", addr = 0x02022E2C, size = 300,  verified = false },
+    },
+    cursors = {},
+  },
 }
 
 function M.matches(gameCode)
