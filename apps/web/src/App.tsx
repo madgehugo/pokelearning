@@ -39,11 +39,11 @@ function useRoute(): { route: Route; game: GameKind | null } {
 export function App() {
   const { route, game } = useRoute();
   const server = useServer();
-  const { lines, status, connection, hasOlder, loadOlder, wordbank } = server;
+  const { lines, status, connection, hasOlder, loadOlder, wordbank, setup } = server;
   const saved = useMemo(() => new Set(wordbank?.saved ?? []), [wordbank]);
   const hidden = useMemo(() => new Set((wordbank?.hidden ?? []).map((w) => wordKey(w.lemma, w.pos))), [wordbank]);
   const due = wordbank?.stats.dueNow ?? 0;
-  const top = <StatusBar connection={connection} status={status} route={route} due={due} />;
+  const top = <StatusBar connection={connection} status={status} setup={setup} route={route} due={due} />;
   if (route === "panel") return <Panel server={server} />;
   if (route === "setup") return <Setup />;
 

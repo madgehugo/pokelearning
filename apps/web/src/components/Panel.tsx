@@ -5,7 +5,7 @@
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { menuRows, wordKey, type ProcessedLine } from "@pokelearning/shared";
-import type { useServer } from "../useServer.ts";
+import { setupNote, type useServer } from "../useServer.ts";
 import { Breakdown } from "./Breakdown.tsx";
 import { DialogueBox } from "./DialogueBox.tsx";
 import { HiddenList } from "./HiddenList.tsx";
@@ -25,6 +25,8 @@ function state(server: Server): { state: "live" | "waiting" | "offline"; text: s
   if (server.connection === "offline") return { state: "offline", text: "Server not running" };
   if (!server.status || server.connection === "connecting") return { state: "waiting", text: "Connecting…" };
   if (server.status.adapters === 0) return { state: "waiting", text: "Load the script in mGBA" };
+  const note = setupNote(server.setup);
+  if (note) return { state: "waiting", text: note };
   if (server.status.adapterWarning) return { state: "waiting", text: "mGBA script out of date: reload it" };
   return { state: "live", text: "Live" };
 }

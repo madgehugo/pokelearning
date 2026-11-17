@@ -1,12 +1,13 @@
-import type { ServerStatus } from "@pokelearning/shared";
+import type { ServerStatus, SetupStatus } from "@pokelearning/shared";
 import type { Route } from "../App.tsx";
-import type { Connection } from "../useServer.ts";
+import { setupNote, type Connection } from "../useServer.ts";
 import { gameName } from "../words.ts";
 import { PrefsMenu } from "./PrefsMenu.tsx";
 
 interface Props {
   connection: Connection;
   status: ServerStatus | null;
+  setup: SetupStatus | null;
   route: Route;
   /** Cards to review now. */
   due: number;
@@ -44,7 +45,11 @@ export function StatusBar(props: Props) {
       <p className="status" data-state={state} role="status">
         <span className="status__dot" aria-hidden="true" />
         {text}
-        {translationOff && <span className="status__extra"> Translation is loading or off.</span>}
+        {setupNote(props.setup) ? (
+          <span className="status__extra"> {setupNote(props.setup)}</span>
+        ) : (
+          translationOff && <span className="status__extra"> Translation is loading or off.</span>
+        )}
       </p>
       {props.status?.update && (
         <a className="update" href={props.status.update.url} target="_blank" rel="noreferrer">

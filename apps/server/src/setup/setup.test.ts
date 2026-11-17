@@ -82,4 +82,31 @@ describe("Setup", () => {
     const { deps } = fakeDeps({ namesReady: () => true, dictionaryReady: () => true, model: null });
     assert.equal(new Setup(deps).status().ready, true);
   });
+
+  it("adds the Spanish dictionary and model once a Spanish game is seen", async () => {
+    const log: string[] = [];
+    let esModel: ProviderStatus = { state: "idle", progress: null, detail: "" };
+    const { deps } = fakeDeps({
+      namesReady: () => true,
+      dictionaryReady: () => true,
+      model: null,
+      spanish: {
+        namesReady: () => false,
+        dictionaryReady: () => false,
+        importDictionary: async () => void log.push("dictionary-es"),
+        model: { status: () => esModel, warmUp: async () => { log.push("model-es"); esModel = { state: "ready", progress: 1, detail: "" }; } },
+      },
+      importNames: async () => void log.push("names"),
+    });
+    const setup = new Setup(deps);
+    assert.deepEqual(setup.status().steps.map((x) => x.id), ["names", "dictionary", "model"], "German only until then");
+    assert.equal(setup.status().ready, true);
+    setup.requireSpanish();
+    assert.deepEqual(setup.status().steps.map((x) => [x.id, x.state]),
+      [["names", "missing"], ["dictionary", "ready"], ["model", "ready"], ["dictionary-es", "missing"], ["model-es", "waiting"]]);
+    assert.equal(setup.status().ready, false);
+    await setup.start();
+    assert.deepEqual(log, ["names", "dictionary-es", "model-es"]);
+    assert.equal(setup.status().ready, true);
+  });
 });

@@ -6,8 +6,10 @@ import { useCallback, useEffect, useState } from "react";
 import type { SetupStatus, SetupStep, SetupStepId } from "@pokelearning/shared";
 
 const STEPS: Record<SetupStepId, { title: string; about: string }> = {
-  names: { title: "Game names", about: "German and English names of Pokémon, moves, items and places, from PokéAPI." },
+  names: { title: "Game names", about: "German, Spanish and English names of Pokémon, moves, items and places, from PokéAPI." },
   dictionary: { title: "German dictionary", about: "About 100 MB from Wiktionary, turned into a dictionary on your Mac." },
+  "dictionary-es": { title: "Spanish dictionary", about: "About 100 MB from Wiktionary, turned into a dictionary on your Mac." },
+  "model-es": { title: "Spanish translation model", about: "About 60 MB. Translates Spanish to English on your Mac, offline." },
   model: { title: "Translation model", about: "About 110 MB. Translates on your Mac, without an internet connection." },
 };
 

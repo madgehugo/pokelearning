@@ -11,6 +11,7 @@ import { AppDb } from "./db/app-db.ts";
 import { openDictionary } from "./dictionary/db.ts";
 import { createIngestServer } from "./ingest/tcp.ts";
 import { languageOf, loadGameGlossaries } from "./language/load.ts";
+import { loadNames } from "./language/names.ts";
 import { LinePipeline } from "./pipeline.ts";
 import { printLine, time } from "./print.ts";
 import { OpusMtProvider } from "./translate/opus-mt.ts";
@@ -84,6 +85,12 @@ async function warmUpModel(): Promise<void> {
   }
 }
 
+/** Names files imported before Spanish support lack the Spanish names. */
+function namesIncludeSpanish(): boolean {
+  const names = loadNames(config.namesPath);
+  return names?.species[0]?.es !== undefined;
+}
+
 const setup = new Setup({
   namesReady: () => fs.existsSync(config.namesPath),
   dictionaryReady: () => language.dictionary !== null,
@@ -92,8 +99,18 @@ const setup = new Setup({
   // rebuilds it, so the ~100 MB raw download can go. `npm run dict:import` keeps it.
   importDictionary: (p) => importDictionary(config, p, { deleteDownload: true }),
   model: translator && { status: () => translator!.status(), warmUp: warmUpModel },
+  spanish: {
+    namesReady: () => namesIncludeSpanish(),
+    dictionaryReady: () => language.dictionaryEs !== null,
+    importDictionary: (p) => importDictionary(config.languages.es, p, { deleteDownload: true }),
+    model: translatorEs && { status: () => translatorEs!.status(), warmUp: () => translatorEs!.warmUp() },
+  },
   onImported: (step) => {
-    if (step === "dictionary") {
+    if (step === "dictionary-es") {
+      language.dictionaryEs?.close();
+      language.dictionaryEs = openDictionary(config.languages.es.dictionaryDbPath);
+      info(`Spanish dictionary ${language.dictionaryEs?.version ?? "?"} loaded`);
+    } else if (step === "dictionary") {
       language.dictionary?.close();
       language.dictionary = openDictionary(config.dictionaryDbPath);
       status.dictionary = language.dictionary?.version ?? null;
@@ -106,6 +123,8 @@ const setup = new Setup({
   },
   onChange: () => ui.broadcastSetup(),
 });
+
+if (language.dictionaryEs) setup.requireSpanish(); // Spanish was set up before: keep it ready
 
 const wordbank = new WordBank(db, new Scheduler());
 const games = new Games(db, wordbank);
@@ -149,7 +168,10 @@ const ingest = createIngestServer({
         `${msg.adapter} ${msg.version}, game ${styleText("bold", msg.game)}`,
       );
       status.game = msg.game;
-      if (languageOf(msg.game) === "es") void translatorEs?.warmUp().catch((err) => warn(`Spanish translation model failed to load: ${(err as Error).message}`));
+      if (languageOf(msg.game) === "es") {
+        setup.requireSpanish();
+        void setup.start();
+      }
       status.adapterWarning = adapterVersionProblem(msg);
       if (status.adapterWarning) warn(status.adapterWarning);
       ui.broadcastStatus();

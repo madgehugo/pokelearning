@@ -1,6 +1,13 @@
 /** Live connection to the server: lines (newest first), status, history paging. */
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { ProcessedLine, ServerMessage, ServerStatus, WordBankSummary } from "@pokelearning/shared";
+import type { ProcessedLine, ServerMessage, ServerStatus, SetupStatus, WordBankSummary } from "@pokelearning/shared";
+
+/** What setup is downloading right now, in a few words, or null. Shown while a new language is set up during play. */
+export function setupNote(setup: SetupStatus | null): string | null {
+  const step = setup?.steps.find((s) => s.state === "running");
+  if (!setup || setup.ready || !step) return null;
+  return `Getting ready: ${step.detail}${step.progress !== null ? ` ${Math.round(step.progress * 100)}%` : ""}`;
+}
 
 export type Connection = "connecting" | "open" | "offline";
 
@@ -18,6 +25,7 @@ export function useServer() {
   const [connection, setConnection] = useState<Connection>("connecting");
   const [hasOlder, setHasOlder] = useState(true);
   const [wordbank, setWordbank] = useState<WordBankSummary | null>(null);
+  const [setup, setSetup] = useState<SetupStatus | null>(null);
   const loadingOlder = useRef(false);
 
   useEffect(() => {
@@ -45,6 +53,8 @@ export function useServer() {
           setStatus(msg.status);
         } else if (msg.type === "wordbank") {
           setWordbank(msg.wordbank);
+        } else if (msg.type === "setup") {
+          setSetup(msg.setup);
         }
       };
       ws.onclose = () => {
@@ -87,5 +97,5 @@ export function useServer() {
     return () => clearInterval(timer);
   }, [connection]);
 
-  return { lines, status, connection, hasOlder, loadOlder, wordbank };
+  return { lines, status, connection, hasOlder, loadOlder, wordbank, setup };
 }
