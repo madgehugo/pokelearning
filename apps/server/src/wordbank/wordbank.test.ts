@@ -242,3 +242,36 @@ describe("formatInterval", () => {
     assert.equal(bank.hiddenWords().length, 0);
   });
 });
+
+describe("studying one language", () => {
+  beforeEach(async () => {
+    const es = fixtureDictionary([{ word: "casa", pos: "noun", senses: [{ glosses: ["house"], tags: ["feminine"] }] }]);
+    const spanish = new LinePipeline(db, (_game, lang) => ({ lang, dictionary: es, glossary }), null, "en");
+    const line = (await spanish.submit({ ...msg("La casa"), game: "pokemon-emerald-es", lang: "es" }))!;
+    bank.save({ lineId: line.id, tokenIndex: tokenIndex(line, "casa") }, T0);
+    save(await play("Das Haus"), "Haus");
+  });
+
+  const words = (items: { word: { lemma: string } }[]) => items.map((i) => i.word.lemma);
+
+  it("lists, reviews and counts each language apart", () => {
+    assert.deepEqual(bank.list("es").map((w) => w.lemma), ["casa"]);
+    assert.deepEqual(bank.list("de").map((w) => w.lemma), ["Haus"]);
+    assert.equal(bank.list().length, 2, "all languages when none is given");
+    assert.deepEqual(words(bank.queue(T0, "es").items), ["casa"]);
+    assert.deepEqual(words(bank.queue(T0, "de").items), ["Haus"]);
+    assert.equal(bank.queue(T0).items.length, 2);
+    assert.deepEqual([bank.stats(T0, "es").words, bank.stats(T0, "es").dueNow], [1, 1]);
+    assert.deepEqual([bank.stats(T0, "de").words, bank.stats(T0, "de").dueNow], [1, 1]);
+  });
+
+  it("gives each language its own new cards for the day, and its own reviews", () => {
+    bank.updateSettings({ newPerDay: 1 }, T0);
+    const german = bank.queue(T0, "de").items[0]!;
+    bank.answer(german.card.id, 3, undefined, T0);
+    assert.equal(bank.queue(T0, "de").newAvailable, 0, "German's allowance is used up");
+    assert.equal(bank.queue(T0, "es").newAvailable, 1, "Spanish still has its own");
+    assert.equal(bank.stats(T0, "de").reviewedToday, 1);
+    assert.equal(bank.stats(T0, "es").reviewedToday, 0);
+  });
+});

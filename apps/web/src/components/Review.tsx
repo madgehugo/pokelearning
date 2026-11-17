@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Article, Grade, Language, ReviewItem, ReviewQueue, SavedWord, WordContext } from "@pokelearning/shared";
 import { api } from "../api.ts";
+import { usePrefs } from "../prefs.ts";
 import { articleColour, LANGUAGES, languageOf, pluralArticle } from "../language.ts";
 import { genderKey, headword, posLabel, relativeTime, shortGloss } from "../words.ts";
 
@@ -12,6 +13,7 @@ const GRADES: { grade: Grade; label: string }[] = [
 ];
 
 export function Review() {
+  const { language: study } = usePrefs();
   const [queue, setQueue] = useState<ReviewQueue | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [revealed, setRevealed] = useState(false);
@@ -21,12 +23,12 @@ export function Review() {
 
   const load = useCallback(async () => {
     try {
-      setQueue(await api.queue());
+      setQueue(await api.queue(study));
       setError(null);
     } catch (err) {
       setError((err as Error).message);
     }
-  }, []);
+  }, [study]);
   useEffect(() => void load(), [load]);
 
   const item = queue?.items[0];
@@ -41,7 +43,7 @@ export function Review() {
       if (!item || busy) return;
       setBusy(true);
       try {
-        setQueue(await api.answer(item.card.id, { grade, durationMs: Date.now() - shownAt.current }));
+        setQueue(await api.answer(item.card.id, { grade, durationMs: Date.now() - shownAt.current }, study));
         setError(null);
       } catch (err) {
         setError((err as Error).message);
@@ -49,21 +51,21 @@ export function Review() {
         setBusy(false);
       }
     },
-    [item, busy],
+    [item, busy, study],
   );
 
   const undo = useCallback(async () => {
     if (!queue?.canUndo || busy) return;
     setBusy(true);
     try {
-      setQueue(await api.undo());
+      setQueue(await api.undo(study));
       setError(null);
     } catch (err) {
       setError((err as Error).message);
     } finally {
       setBusy(false);
     }
-  }, [queue?.canUndo, busy]);
+  }, [queue?.canUndo, busy, study]);
 
   const lang = languageOf(item?.word);
   const ARTICLES = LANGUAGES[lang].articles;

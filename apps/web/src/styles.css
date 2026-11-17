@@ -793,6 +793,21 @@ kbd {
 .choice__button:hover {
   background: var(--cursor-wash);
 }
+/* the language switch in the top bar */
+.choice--compact {
+  display: inline-flex;
+  gap: 4px;
+}
+.choice--compact .choice__button {
+  padding: 2px 10px;
+  border-width: 2px;
+  border-radius: 8px;
+  font-size: 0.95rem;
+}
+.choice--compact .choice__button[aria-pressed="true"] {
+  background: var(--g);
+  color: var(--box);
+}
 
 .grades {
   display: grid;

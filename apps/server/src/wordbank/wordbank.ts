@@ -286,8 +286,9 @@ export class WordBank {
     return this.load("WHERE w.id = ?", [id])[0];
   }
 
-  list(): SavedWord[] {
-    return this.load("", []);
+  /** Saved words, newest first; of one language, or of all when none is given. */
+  list(lang?: Language): SavedWord[] {
+    return lang ? this.load("WHERE w.lang = ?", [lang]) : this.load("", []);
   }
 
   private load(where: string, params: (number | string)[]): SavedWord[] {
@@ -366,32 +367,44 @@ export class WordBank {
 
   // Review -----------------------------------------------------------------
 
-  private newIntroducedToday(now: number): number {
+  /** Restricts a query on a table with a `word_id` or `card_id` column to one language's words. */
+  private static ofLanguage(column: "word_id" | "card_id", lang?: Language): { sql: string; params: string[] } {
+    if (!lang) return { sql: "", params: [] };
+    const words = "SELECT id FROM words WHERE lang = ?";
+    return column === "word_id"
+      ? { sql: ` AND word_id IN (${words})`, params: [lang] }
+      : { sql: ` AND card_id IN (SELECT id FROM cards WHERE word_id IN (${words}))`, params: [lang] };
+  }
+
+  private newIntroducedToday(now: number, lang?: Language): number {
+    const scope = WordBank.ofLanguage("card_id", lang);
     return (
       this.db
-        .prepare("SELECT count(DISTINCT card_id) AS n FROM review_log WHERE state = ? AND review >= ?")
-        .get(STATE_NEW, dayStart(now)) as { n: number }
+        .prepare(`SELECT count(DISTINCT card_id) AS n FROM review_log WHERE state = ? AND review >= ?${scope.sql}`)
+        .get(STATE_NEW, dayStart(now), ...scope.params) as { n: number }
     ).n;
   }
 
-  queue(now = Date.now()): ReviewQueue {
+  /** The cards to review now: of one language, or of all when none is given. */
+  queue(now = Date.now(), lang?: Language): ReviewQueue {
     const kinds = this.enabledKinds();
     const kindList = kinds.map(() => "?").join(",");
     const settings = this.settings();
+    const scope = WordBank.ofLanguage("word_id", lang);
 
     const dueCount = (
       this.db
-        .prepare(`SELECT count(*) AS n FROM cards WHERE state != ? AND due <= ? AND kind IN (${kindList})`)
-        .get(STATE_NEW, now, ...kinds) as { n: number }
+        .prepare(`SELECT count(*) AS n FROM cards WHERE state != ? AND due <= ? AND kind IN (${kindList})${scope.sql}`)
+        .get(STATE_NEW, now, ...kinds, ...scope.params) as { n: number }
     ).n;
     let due = this.db
       .prepare(
-        `SELECT * FROM cards WHERE state != ? AND due <= ? AND kind IN (${kindList}) ORDER BY due LIMIT ${QUEUE_SIZE}`,
+        `SELECT * FROM cards WHERE state != ? AND due <= ? AND kind IN (${kindList})${scope.sql} ORDER BY due LIMIT ${QUEUE_SIZE}`,
       )
-      .all(STATE_NEW, now, ...kinds) as unknown as CardRow[];
+      .all(STATE_NEW, now, ...kinds, ...scope.params) as unknown as CardRow[];
 
     // New cards, at most newPerDay a day, one card per word a day ("article" waits until "meaning" was seen).
-    const newAvailable = Math.max(0, settings.newPerDay - this.newIntroducedToday(now));
+    const newAvailable = Math.max(0, settings.newPerDay - this.newIntroducedToday(now, lang));
     const reviewedToday = new Set(
       (
         this.db
@@ -401,8 +414,8 @@ export class WordBank {
     );
     const eligible: CardRow[] = [];
     const candidates = this.db
-      .prepare(`SELECT * FROM cards WHERE state = ? AND kind IN (${kindList}) ORDER BY created_at, id`)
-      .all(STATE_NEW, ...kinds) as unknown as CardRow[];
+      .prepare(`SELECT * FROM cards WHERE state = ? AND kind IN (${kindList})${scope.sql} ORDER BY created_at, id`)
+      .all(STATE_NEW, ...kinds, ...scope.params) as unknown as CardRow[];
     for (const c of candidates) {
       if (eligible.length >= newAvailable) break;
       if (reviewedToday.has(c.word_id) || eligible.some((f) => f.word_id === c.word_id)) continue;
@@ -413,21 +426,21 @@ export class WordBank {
     if (due.length === 0 && fresh.length === 0) {
       due = this.db
         .prepare(
-          `SELECT * FROM cards WHERE state IN (1, 3) AND due <= ? AND kind IN (${kindList}) ORDER BY due LIMIT ${QUEUE_SIZE}`,
+          `SELECT * FROM cards WHERE state IN (1, 3) AND due <= ? AND kind IN (${kindList})${scope.sql} ORDER BY due LIMIT ${QUEUE_SIZE}`,
         )
-        .all(now + LEARN_AHEAD_MS, ...kinds) as unknown as CardRow[];
+        .all(now + LEARN_AHEAD_MS, ...kinds, ...scope.params) as unknown as CardRow[];
     }
 
     const items = [...due, ...fresh].slice(0, QUEUE_SIZE).map((c) => this.item(c, now));
     let nextDue: number | null = null;
     if (items.length === 0) {
       const next = this.db
-        .prepare(`SELECT min(due) AS due FROM cards WHERE state != ? AND kind IN (${kindList})`)
-        .get(STATE_NEW, ...kinds) as { due: number | null };
+        .prepare(`SELECT min(due) AS due FROM cards WHERE state != ? AND kind IN (${kindList})${scope.sql}`)
+        .get(STATE_NEW, ...kinds, ...scope.params) as { due: number | null };
       nextDue = next.due;
       const waitingNew = this.db
-        .prepare(`SELECT count(*) AS n FROM cards WHERE state = ? AND kind IN (${kindList})`)
-        .get(STATE_NEW, ...kinds) as { n: number };
+        .prepare(`SELECT count(*) AS n FROM cards WHERE state = ? AND kind IN (${kindList})${scope.sql}`)
+        .get(STATE_NEW, ...kinds, ...scope.params) as { n: number };
       if (waitingNew.n > 0) {
         const tomorrow = dayStart(now) + DAY_MS;
         nextDue = nextDue === null ? tomorrow : Math.min(nextDue, tomorrow);
@@ -503,17 +516,20 @@ export class WordBank {
     return summary(this.db.prepare("SELECT * FROM cards WHERE id = ?").get(last.card_id) as unknown as CardRow);
   }
 
-  stats(now = Date.now()): WordBankStats {
-    const q = this.queue(now);
-    const words = (this.db.prepare("SELECT count(*) AS n FROM words").get() as { n: number }).n;
+  stats(now = Date.now(), lang?: Language): WordBankStats {
+    const q = this.queue(now, lang);
+    const log = WordBank.ofLanguage("card_id", lang);
+    const words = (
+      this.db.prepare(`SELECT count(*) AS n FROM words${lang ? " WHERE lang = ?" : ""}`).get(...(lang ? [lang] : [])) as { n: number }
+    ).n;
     const reviewedToday = (
-      this.db.prepare("SELECT count(*) AS n FROM review_log WHERE review >= ?").get(dayStart(now)) as { n: number }
+      this.db.prepare(`SELECT count(*) AS n FROM review_log WHERE review >= ?${log.sql}`).get(dayStart(now), ...log.params) as { n: number }
     ).n;
     const r = this.db
       .prepare(
-        `SELECT count(*) AS total, coalesce(sum(grade > 1), 0) AS kept FROM review_log WHERE state = ? AND review >= ?`,
+        `SELECT count(*) AS total, coalesce(sum(grade > 1), 0) AS kept FROM review_log WHERE state = ? AND review >= ?${log.sql}`,
       )
-      .get(STATE_REVIEW, now - 30 * DAY_MS) as { total: number; kept: number };
+      .get(STATE_REVIEW, now - 30 * DAY_MS, ...log.params) as { total: number; kept: number };
     return {
       words,
       dueNow: q.due + q.newAvailable,

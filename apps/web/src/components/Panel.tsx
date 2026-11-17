@@ -4,7 +4,8 @@
  * with saving. Review, Words and Games open on the full website.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
-import { menuRows, wordKey, type ProcessedLine } from "@pokelearning/shared";
+import { menuRows, type ProcessedLine } from "@pokelearning/shared";
+import { hiddenKeys, languageOfGame } from "../language.ts";
 import { setupNote, type useServer } from "../useServer.ts";
 import { Breakdown } from "./Breakdown.tsx";
 import { DialogueBox } from "./DialogueBox.tsx";
@@ -48,13 +49,16 @@ export function Panel({ server }: { server: Server }) {
   const docked = useDocked();
   const { lines, status, wordbank } = server;
   const saved = useMemo(() => new Set(wordbank?.saved ?? []), [wordbank]);
-  const hiddenWords = wordbank?.hidden ?? [];
-  const hidden = useMemo(() => new Set(hiddenWords.map((w) => wordKey(w.lemma, w.pos))), [hiddenWords]);
+  // The panel shows the language of the game being played.
+  const language = languageOfGame(status?.game) ?? "de";
+  const allHidden = wordbank?.hidden ?? [];
+  const hidden = useMemo(() => hiddenKeys(allHidden), [allHidden]);
+  const hiddenWords = useMemo(() => allHidden.filter((w) => (w.lang ?? "de") === language), [allHidden, language]);
   const [showHidden, setShowHidden] = useState(false);
   const [offset, setOffset] = useState(0); // 0 = newest line; ← and → in the header step through earlier ones
   const [selected, setSelected] = useState<number | null>(null);
   const line: ProcessedLine | undefined = lines[offset];
-  const due = wordbank?.stats.dueNow ?? 0;
+  const due = wordbank?.stats[language].dueNow ?? 0;
   const s = state(server);
 
   // a new line comes in: back to it, unless you are reading an earlier one

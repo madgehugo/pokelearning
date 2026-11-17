@@ -10,7 +10,7 @@
  *   POST   /api/hidden/remove                { lemma, pos }
  *   GET    /api/review                       ReviewQueue
  *   POST   /api/review/:cardId               AnswerRequest → ReviewQueue
- *   GET    /api/stats                        WordBankStats
+ *   GET    /api/stats                        { de, es }: WordBankStats for each language
  *   GET    /api/settings                     Settings
  *   PUT    /api/settings                     Partial<Settings> → Settings
  *   GET    /api/games                        { availability: GameAvailability[], records: GameRecord[] }
@@ -84,6 +84,8 @@ async function readJson<T>(req: http.IncomingMessage): Promise<T> {
 
 /** ?lang=es picks Spanish; anything else is German. */
 const languageParam = (url: URL): Language => (url.searchParams.get("lang") === "es" ? "es" : "de");
+/** ?lang=de or ?lang=es limits words and cards to that language; without it, all of them. */
+const optionalLanguage = (url: URL): Language | undefined => (url.searchParams.has("lang") ? languageParam(url) : undefined);
 
 const id = (s: string | undefined) => {
   const n = Number(s);
@@ -119,7 +121,7 @@ export async function handleApi(
         sendJson(res, 200, deps.status());
         break;
       case "GET /api/words":
-        sendJson(res, 200, wordbank.list());
+        sendJson(res, 200, wordbank.list(optionalLanguage(url)));
         break;
       case "POST /api/words": {
         const body = await readJson<SaveWordRequest>(req);
@@ -141,31 +143,31 @@ export async function handleApi(
         break;
       }
       case "POST /api/hidden/remove": {
-        const body = await readJson<{ lemma: string; pos: string }>(req);
-        wordbank.unhide(body.lemma, body.pos);
+        const body = await readJson<{ lemma: string; pos: string; lang?: Language }>(req);
+        wordbank.unhide(body.lemma, body.pos, body.lang === "es" ? "es" : "de");
         deps.onWordBankChange();
         sendJson(res, 204, undefined);
         break;
       }
       case "GET /api/review":
-        sendJson(res, 200, wordbank.queue());
+        sendJson(res, 200, wordbank.queue(Date.now(), optionalLanguage(url)));
         break;
       case "POST /api/review/:id": {
         const body = await readJson<AnswerRequest>(req);
         wordbank.answer(id(param), body.grade, body.durationMs);
         deps.onWordBankChange();
-        sendJson(res, 200, wordbank.queue());
+        sendJson(res, 200, wordbank.queue(Date.now(), optionalLanguage(url)));
         break;
       }
       case "POST /api/review/undo": {
         checkSameOrigin(req);
         wordbank.undo();
         deps.onWordBankChange();
-        sendJson(res, 200, wordbank.queue());
+        sendJson(res, 200, wordbank.queue(Date.now(), optionalLanguage(url)));
         break;
       }
       case "GET /api/stats":
-        sendJson(res, 200, wordbank.stats());
+        sendJson(res, 200, { de: wordbank.stats(Date.now(), "de"), es: wordbank.stats(Date.now(), "es") });
         break;
       case "GET /api/settings":
         sendJson(res, 200, wordbank.settings());

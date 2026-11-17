@@ -1,5 +1,5 @@
 /** What differs between the languages the app teaches. */
-import type { Article, Language } from "@pokelearning/shared";
+import { wordKey, type Article, type HiddenWord, type Language } from "@pokelearning/shared";
 
 export interface LanguageInfo {
   name: string;
@@ -15,6 +15,13 @@ export const LANGUAGES: Record<Language, LanguageInfo> = {
   de: { name: "German", articles: ["der", "die", "das"], speech: "de-DE", voiceName: "Anna" },
   es: { name: "Spanish", articles: ["el", "la"], speech: "es-ES", voiceName: "Mónica" },
 };
+
+/** The language of a game id: "pokemon-emerald-es" → "es". */
+export const languageOfGame = (game: string | null | undefined): Language | null =>
+  !game ? null : game.endsWith("-es") ? "es" : "de";
+
+/** Keys of hidden words, for matching against a word in a line. */
+export const hiddenKeys = (words: HiddenWord[]): Set<string> => new Set(words.map((w) => wordKey(w.lemma, w.pos, w.lang)));
 
 export const languageOf = (x: { lang?: Language } | undefined): Language => x?.lang ?? "de";
 

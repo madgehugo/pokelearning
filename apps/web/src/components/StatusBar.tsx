@@ -2,6 +2,7 @@ import type { ServerStatus, SetupStatus } from "@pokelearning/shared";
 import type { Route } from "../App.tsx";
 import { setupNote, type Connection } from "../useServer.ts";
 import { gameName } from "../words.ts";
+import { LanguageSwitch } from "./LanguageSwitch.tsx";
 import { PrefsMenu } from "./PrefsMenu.tsx";
 
 interface Props {
@@ -41,6 +42,7 @@ export function StatusBar(props: Props) {
           {link("words", "Words")}
           {link("games", "Games")}
         </nav>
+        <LanguageSwitch />
       </div>
       <p className="status" data-state={state} role="status">
         <span className="status__dot" aria-hidden="true" />

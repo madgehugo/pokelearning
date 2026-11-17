@@ -69,7 +69,9 @@ function serveStatic(staticDir: string, urlPath: string, res: http.ServerRespons
 }
 
 export function createUiServer({ db, wordbank, games, setup, status, staticDir }: UiServerOptions): UiServer {
-  const summary = (): WordBankSummary => ({ saved: wordbank.savedKeys(), hidden: wordbank.hiddenWords(), stats: wordbank.stats() });
+  const summary = (): WordBankSummary => ({
+    saved: wordbank.savedKeys(), hidden: wordbank.hiddenWords(), stats: { de: wordbank.stats(Date.now(), "de"), es: wordbank.stats(Date.now(), "es") },
+  });
   const apiDeps = { db, wordbank, games, setup, status, onWordBankChange: () => broadcast({ type: "wordbank", wordbank: summary() }) };
 
   const server = http.createServer((req, res) => {

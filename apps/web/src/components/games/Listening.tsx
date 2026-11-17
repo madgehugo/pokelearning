@@ -37,7 +37,7 @@ function speak(text: string, voice: SpeechSynthesisVoice, rate: number) {
 export function Listening() {
   const [round, setRound] = useState(0);
   const { material, error } = useMaterial("listening", round);
-  const lang = usePrefs().gameLanguage;
+  const lang = usePrefs().language;
   const { voice, supported, loaded } = useVoice(lang);
   const [phase, setPhase] = useState<"start" | "playing" | "done">("start");
   const [index, setIndex] = useState(0);

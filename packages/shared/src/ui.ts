@@ -2,7 +2,7 @@
  * Server ↔ browser UI protocol: JSON messages over a WebSocket at /ws.
  * The server sends a snapshot on connect, then one message per event.
  */
-import type { ProcessedLine } from "./analysis.ts";
+import type { Language, ProcessedLine } from "./analysis.ts";
 import type { SetupStatus } from "./setup.ts";
 import type { HiddenWord, WordBankStats } from "./wordbank.ts";
 
@@ -34,7 +34,8 @@ export interface WordBankSummary {
   saved: string[];
   /** Words hidden from the breakdown. */
   hidden: HiddenWord[];
-  stats: WordBankStats;
+  /** The counts for each language's words. */
+  stats: Record<Language, WordBankStats>;
 }
 
 export type ServerMessage =

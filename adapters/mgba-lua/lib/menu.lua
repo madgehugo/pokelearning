@@ -56,7 +56,23 @@ function M.locatePrinter(printer, from, size)
 end
 
 function M.new(lang)
-  return setmetatable({ lang = lang, items = {}, seen = {}, address = nil, lastFrame = 0, lastSent = nil }, M)
+  return setmetatable({ lang = lang, items = {}, seen = {}, address = nil, lastFrame = 0, lastSent = nil, pockets = {}, shown = {} }, M)
+end
+
+-- The bag draws a pocket's name into a window twice as wide as the screen shows, together with its
+-- neighbour's name (to scroll between them): "OBJETOS" at x=11 and "POKé BALLS" at x=67. Which one
+-- ends up on screen depends on the direction of the scroll, and the other one is never seen.
+-- The names use their own text colours (template bytes 12-13), so they can be told apart from other
+-- text; of a pair, the one that wasn't on screen before is the new pocket.
+local POCKET_COLOURS = "\x10\x40"
+local VISIBLE_WIDTH = 0x40
+
+-- Template fields (pokeemerald TextPrinterTemplate): window id, x, y and the colours.
+local function templateInfo(template)
+  return {
+    window = emu:read8(template + 4), x = emu:read8(template + 6), y = emu:read8(template + 7),
+    colours = string.char(emu:read8(template + 12), emu:read8(template + 13)),
+  }
 end
 
 local function looksLikeText(stats)
@@ -82,11 +98,42 @@ function M:onPrint(frame)
   local text, stats = charmap.decode(raw, self.lang)
   if not looksLikeText(stats) then return end
   local flat = charmap.flatten(text)
-  if flat ~= "" then
-    self.items[#self.items + 1] = flat
-    self.address = self.address or ptr
-  end
+  if flat == "" then return end
   self.lastFrame = frame
+
+  local info = templateInfo(template)
+  if info.colours == POCKET_COLOURS and textmem.isRom(ptr) then
+    local key = info.window .. ":" .. info.y
+    if info.x < VISIBLE_WIDTH then
+      self.pockets[key] = { text = flat } -- on its own, or the first of a pair
+    else
+      local first = self.pockets[key]
+      self.pockets[key] = nil
+      if first then
+        -- the second of a pair: of the two, the one that wasn't on screen before is the new pocket
+        local shown = self.shown[key]
+        if shown == first.text then
+          self:dropItem(first.text)
+          self.shown[key] = flat
+        elseif shown == flat then
+          self.shown[key] = first.text
+          return -- the neighbour, not on screen
+        end
+      end
+    end
+  end
+  self.items[#self.items + 1] = flat
+  self.address = self.address or ptr
+end
+
+-- Take a label back out of the collected items.
+function M:dropItem(text)
+  for i = #self.items, 1, -1 do
+    if self.items[i] == text then
+      table.remove(self.items, i)
+      return
+    end
+  end
 end
 
 -- Once the screen has settled: the collected items as one text, plus the address
@@ -95,7 +142,8 @@ end
 function M:flush(frame)
   if #self.items == 0 or frame - self.lastFrame < M.QUIET_FRAMES then return nil end
   local text, address = table.concat(self.items, "\n"), self.address
-  self.items, self.seen, self.address = {}, {}, nil
+  for key, pocket in pairs(self.pockets) do self.shown[key] = pocket.text end -- a pocket drawn alone is the one on screen
+  self.items, self.seen, self.address, self.pockets = {}, {}, nil, {}
   if text == self.lastSent then return nil end
   self.lastSent = text
   return text, address

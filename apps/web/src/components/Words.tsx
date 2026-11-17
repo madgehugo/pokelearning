@@ -3,6 +3,7 @@ import type { HiddenWord, SavedWord, Settings, WordBankStats } from "@pokelearni
 import { api } from "../api.ts";
 import { HiddenList } from "./HiddenList.tsx";
 import { languageOf, pluralArticle } from "../language.ts";
+import { usePrefs } from "../prefs.ts";
 import { genderKey, headword, posLabel, relativeTime, shortGloss } from "../words.ts";
 
 interface Props {
@@ -32,14 +33,15 @@ function nextReview(word: SavedWord): string {
 }
 
 export function Words({ stats, hidden, version }: Props) {
+  const { language } = usePrefs();
   const [words, setWords] = useState<SavedWord[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState<number | null>(null);
 
   useEffect(() => {
-    api.words().then(setWords, (err: Error) => setError(err.message));
-  }, [version]);
+    api.words(language).then(setWords, (err: Error) => setError(err.message));
+  }, [version, language]);
 
   if (error) return <p className="error">Couldn't load your words: {error}</p>;
   if (!words) return <p className="muted">Loading your words…</p>;

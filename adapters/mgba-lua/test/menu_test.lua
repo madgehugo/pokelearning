@@ -55,6 +55,39 @@ h.test("menu: a label drawn well before the rest of the screen still belongs to 
   h.eq((menu:flush(118 + Menu.QUIET_FRAMES)), "OBJETOS\nVolver al juego")
 end)
 
+-- The bag's pocket names: drawn into a double-width window, a pair at a time (x < 64 and x >= 64),
+-- in their own colours (template bytes 12-13).
+local function pocketName(e, menu, frame, ptr, x)
+  e.poke(TEMPLATE + 4, "\x06\x01" .. string.char(x, 1, x, 1) .. "\0\0\x10\x40")
+  draw(e, menu, frame, ptr, 0xFF)
+end
+
+h.test("menu: of the bag's two pocket names only the one on screen is sent", function()
+  local e = setup()
+  local OBJ, BALLS, TM = ROM_STR, ROM_STR + 0x20, ROM_STR + 0x40
+  e.poke(OBJ, enc("OBJETOS")); e.poke(BALLS, enc("POKé BALLS")); e.poke(TM, enc("MT / MO"))
+  local menu = Menu.new("de")
+  local function screen(frame, first, second, fx, sx)
+    pocketName(e, menu, frame, first, fx)
+    if second then pocketName(e, menu, frame, second, sx) end
+    return (menu:flush(frame + Menu.QUIET_FRAMES))
+  end
+  h.eq(screen(100, OBJ, nil, 11), "OBJETOS", "the bag opens on its first pocket")
+  h.eq(screen(200, OBJ, BALLS, 11, 67), "POKé BALLS", "scrolling right: the second is the new one")
+  h.eq(screen(300, BALLS, TM, 3, 78), "MT / MO", "and again")
+  h.eq(screen(400, BALLS, TM, 3, 78), "POKé BALLS", "scrolling back left: the first is the new one")
+  h.eq(screen(500, OBJ, BALLS, 11, 67), "OBJETOS", "and again")
+end)
+
+h.test("menu: other labels in two columns are both kept", function()
+  local e = setup()
+  e.poke(ROM_STR, enc("TEXTO")); e.poke(ROM_STR + 0x20, enc("LENTO"))
+  local menu = Menu.new("de")
+  e.poke(TEMPLATE + 4, "\x01\x01\x08\x01\x08\x01\0\0\x10\x30"); draw(e, menu, 100, ROM_STR, 0xFF)
+  e.poke(TEMPLATE + 4, "\x01\x01\x68\x01\x68\x01\0\0\x10\x30"); draw(e, menu, 100, ROM_STR + 0x20, 0xFF)
+  h.eq((menu:flush(100 + Menu.QUIET_FRAMES)), "TEXTO\nLENTO")
+end)
+
 h.test("menu: the same screen redrawn is only sent once", function()
   local e = setup()
   e.poke(ROM_STR, enc("Neues Spiel"))

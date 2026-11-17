@@ -30,22 +30,15 @@ export function GamesPage({ game }: { game: GameKind | null }) {
 function GameList() {
   const [data, setData] = useState<{ availability: GameAvailability[]; records: GameRecord[] } | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const { gameLanguage } = usePrefs();
+  const { language } = usePrefs();
   useEffect(() => {
     setData(null);
-    api.games(gameLanguage).then(setData, (err: Error) => setError(err.message));
-  }, [gameLanguage]);
+    api.games(language).then(setData, (err: Error) => setError(err.message));
+  }, [language]);
   if (error) return <p className="error">Couldn't load the games: {error}</p>;
   if (!data) return <p className="muted">Loading games…</p>;
   return (
     <div className="games">
-      <div className="choice" role="group" aria-label="Language">
-        {(Object.keys(LANGUAGES) as (keyof typeof LANGUAGES)[]).map((l) => (
-          <button key={l} type="button" className="choice__button" aria-pressed={gameLanguage === l} onClick={() => setPrefs({ gameLanguage: l })}>
-            {LANGUAGES[l].name}
-          </button>
-        ))}
-      </div>
       <p className="stats">Practice with words and lines from your own game. Games don't change your review schedule.</p>
       <ul className="game-list">
         {ORDER.map((kind) => {

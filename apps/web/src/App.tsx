@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { menuRows, wordKey, type GameKind } from "@pokelearning/shared";
+import { menuRows, type GameKind } from "@pokelearning/shared";
 import { Breakdown } from "./components/Breakdown.tsx";
 import { GamesPage } from "./components/games/GamesPage.tsx";
 import { DialogueBox } from "./components/DialogueBox.tsx";
@@ -9,7 +9,8 @@ import { Setup } from "./components/Setup.tsx";
 import { Review } from "./components/Review.tsx";
 import { StatusBar } from "./components/StatusBar.tsx";
 import { Words } from "./components/Words.tsx";
-import { usePrefs } from "./prefs.ts";
+import { hiddenKeys, languageOfGame } from "./language.ts";
+import { setPrefs, usePrefs } from "./prefs.ts";
 import { useServer } from "./useServer.ts";
 import { wordsOf } from "./words.ts";
 
@@ -41,8 +42,16 @@ export function App() {
   const server = useServer();
   const { lines, status, connection, hasOlder, loadOlder, wordbank, setup } = server;
   const saved = useMemo(() => new Set(wordbank?.saved ?? []), [wordbank]);
-  const hidden = useMemo(() => new Set((wordbank?.hidden ?? []).map((w) => wordKey(w.lemma, w.pos))), [wordbank]);
-  const due = wordbank?.stats.dueNow ?? 0;
+  const hidden = useMemo(() => hiddenKeys(wordbank?.hidden ?? []), [wordbank]);
+  const { language } = usePrefs();
+  const hiddenHere = useMemo(() => (wordbank?.hidden ?? []).filter((w) => (w.lang ?? "de") === language), [wordbank, language]);
+  const due = wordbank?.stats[language].dueNow ?? 0;
+
+  // You study the language of the game you're playing, from the moment it connects or changes.
+  const gameLanguage = languageOfGame(status?.game);
+  useEffect(() => {
+    if (gameLanguage) setPrefs({ language: gameLanguage });
+  }, [gameLanguage]);
   const top = <StatusBar connection={connection} status={status} setup={setup} route={route} due={due} />;
   if (route === "panel") return <Panel server={server} />;
   if (route === "setup") return <Setup />;
@@ -57,7 +66,7 @@ export function App() {
           ) : route === "games" ? (
             <GamesPage key={game ?? "list"} game={game} />
           ) : (
-            <Words stats={wordbank?.stats} hidden={wordbank?.hidden ?? []} version={wordbank} />
+            <Words stats={wordbank?.stats[language]} hidden={hiddenHere} version={wordbank} />
           )}
         </main>
       </div>

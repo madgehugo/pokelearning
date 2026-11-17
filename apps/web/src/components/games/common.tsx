@@ -14,11 +14,11 @@ export const GAME_INFO: Record<GameKind, { title: string; blurb: string; unit: s
 export function useMaterial<K extends GameKind>(kind: K, round: number) {
   const [material, setMaterial] = useState<Extract<GameMaterial, { kind: K }> | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const { gameLanguage } = usePrefs();
+  const { language } = usePrefs();
   useEffect(() => {
     setMaterial(null);
-    api.gameMaterial(kind, gameLanguage).then(setMaterial, (err: Error) => setError(err.message));
-  }, [kind, round, gameLanguage]);
+    api.gameMaterial(kind, language).then(setMaterial, (err: Error) => setError(err.message));
+  }, [kind, round, language]);
   return { material, error };
 }
 
