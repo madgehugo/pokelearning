@@ -124,11 +124,11 @@ const setup = new Setup({
   onChange: () => ui.broadcastSetup(),
 });
 
-if (language.dictionaryEs) setup.requireSpanish(); // Spanish was set up before: keep it ready
 
 const wordbank = new WordBank(db, new Scheduler());
 const games = new Games(db, wordbank);
 const ui = createUiServer({ db, wordbank, games, setup, status: () => ({ ...status }), staticDir: config.webDistDir });
+if (language.dictionaryEs) setup.requireSpanish(); // Spanish was set up before: keep it ready
 
 const pipeline = new LinePipeline(
   db,
