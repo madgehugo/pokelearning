@@ -13,12 +13,16 @@ spaced repetition (FSRS). First target: **Pokémon Smaragd** (German Emerald) in
 ## Architecture
 
 ```
-┌──────────── mGBA ────────────┐      TCP :8765        ┌──────── server (Node/TS) ────────┐   WebSocket   ┌─── web UI (React/Vite) ───┐
-│ Lua game adapter             │  newline-delimited    │ ingest → tokenize → dictionary   │ ────────────▶ │ live line, translation,   │
-│ watches text buffers, decodes│ ───────JSON─────────▶ │ → translate → SQLite             │   (phase 3)   │ word breakdown, word bank,│
-│ Gen 3 charset → UTF-8        │  { game, line, ts }   │                                  │               │ FSRS review (phone too)   │
-└──────────────────────────────┘                       └──────────────────────────────────┘               └───────────────────────────┘
+┌─ mGBA + Lua adapter ─────────┐      ┌─ server (Node/TS) ───────────────────┐      ┌─ panel and website ────────┐
+│ dialogue: text buffers       │      │ tokenize → dictionary (Wiktionary)   │      │ side panel (Swift), docked │
+│ menus: AddTextPrinter hook   │─────▶│ → translate (Opus-MT, on your Mac)   │─────▶│ next to mGBA (#/panel)     │
+│ Gen 3 charset → UTF-8        │ TCP  │ → SQLite, word bank + FSRS           │ HTTP │ website: Live, Review,     │
+└──────────────────────────────┘ 8765 │ mini-games                           │ 8766 │ Words, Games (phone too)   │
+                                      └──────────────────────────────────────┘      └────────────────────────────┘
 ```
+
+The OCR adapter (any game, macOS) sends the same messages as the Lua adapter.
+`Pokélearning.app` starts all of it: the server, mGBA with the script, and the panel.
 
 Adapters are plug-ins. Anything that can produce
 `{ type: "line", adapter, game, line, timestamp }` can feed the server: another

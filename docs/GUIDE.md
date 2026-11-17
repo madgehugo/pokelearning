@@ -288,7 +288,8 @@ Start with the two status lines: the panel's (or the website's top bar), and
 | Talking to the same person twice shows nothing the second time | The adapter hasn't found the game's text printer yet | Talk to two or three different people first, until the console says `text printer found`. `pokelearning.status()` shows the search |
 | Odd codes like `[A3]` in a line | A character the decoder doesn't know | Add it to `adapters/mgba-lua/lib/charmap.lua` (see finding-addresses.md) |
 | Item descriptions and Pokédex entries don't appear | They're printed straight from the ROM, not through the message buffer | Register them once: finding-addresses.md, section 4 |
-| Some menu text, the naming screen | Drawn without the text printer | Not captured. The OCR adapter can read them |
+| A menu shows no translation | The menu hook couldn't find the game's text printer | The console says `couldn't find the game's text printer`. The adapter looks for it by its code (`adapters/mgba-lua/lib/menu.lua`); it is confirmed on Pokémon Smaragd only |
+| The naming screen, some other screens | Drawn without the text printer | Not captured. The OCR adapter can read them |
 
 ### Words and translations
 
