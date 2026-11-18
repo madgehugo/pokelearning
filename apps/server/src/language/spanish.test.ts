@@ -36,6 +36,7 @@ const ENTRIES: KaikkiEntry[] = [
   { word: "vez", pos: "noun", forms: [{ form: "veces", tags: ["plural"] }], senses: [{ glosses: ["time, instance"], tags: ["feminine"] }] },
   { word: "veces", pos: "prep", senses: [{ glosses: ["by, times (multiplication)"] }] },
   { word: "nueva", pos: "name", senses: [{ glosses: ["a village in Asturias"] }] },
+  { word: "nueva", pos: "noun", senses: [{ glosses: ["news, novelty"], tags: ["feminine"] }] },
   { word: "nuevo", pos: "adj", forms: [{ form: "nueva", tags: ["feminine", "singular"] }], senses: [{ glosses: ["new"] }] },
   { word: "ver", pos: "verb", forms: [{ form: "ven", tags: ["indicative", "plural", "present", "third-person"] }], senses: [{ glosses: ["to see"] }] },
   { word: "venir", pos: "verb", forms: [{ form: "ven", tags: ["imperative", "second-person", "singular"] }], senses: [{ glosses: ["to come"] }] },
@@ -43,6 +44,7 @@ const ENTRIES: KaikkiEntry[] = [
   { word: "rico", pos: "adj", senses: [{ glosses: ["rich; tasty"] }] },
   { word: "haber", pos: "verb", forms: [{ form: "hay", tags: ["impersonal", "indicative", "present", "singular", "third-person"] }], senses: [{ glosses: ["to have"] }] },
   { word: "ahí", pos: "adv", forms: [{ form: "hay", tags: ["Internet", "alternative", "colloquial"] }], senses: [{ glosses: ["there"] }] },
+  { word: "partida", pos: "noun", senses: [{ glosses: ["game; departure"], tags: ["feminine"] }] },
   { word: "pueblo", pos: "verb", senses: [{ glosses: ["first-person singular present of poblar"], tags: ["form-of"], form_of: [{ word: "poblar" }] }] },
 ];
 
@@ -112,6 +114,12 @@ describe("Spanish ranking", () => {
 
   it("prefers the standard spelling to an Internet form", () => {
     assert.equal(word("Aquí hay una casa", "hay").best?.lemma, "haber");
+  });
+
+  it("reads an adjective after its noun: PARTIDA NUEVA is a new game, not 'news'", () => {
+    assert.equal(word("PARTIDA NUEVA", "NUEVA").best?.lemma, "nuevo");
+    assert.equal(word("La casa nueva", "nueva").best?.lemma, "nuevo");
+    assert.equal(word("Las noticias", "noticias")?.best?.pos ?? "noun", "noun", "other words are untouched");
   });
 
   it("doesn't take a village for an all-caps adjective", () => {

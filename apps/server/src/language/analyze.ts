@@ -84,6 +84,8 @@ export function analyzeLine(text: string, deps: AnalyzerDeps): LineAnalysis {
   if (lang === "de") {
     linkSeparableVerbs(tokens, work, analyses);
     preferRelativePronouns(tokens, work);
+  } else {
+    preferAdjectiveAfterNoun(tokens, work);
   }
 
   for (const w of work) {
@@ -209,6 +211,23 @@ function analyzeWord(token: Token, index: number, ctx: WordContext, deps: Analyz
   return { index, analysis, candidates };
 }
 
+
+/**
+ * Spanish puts the adjective after its noun ("PARTIDA NUEVA", "POKéMON salvajes"). A word that can be
+ * a noun or an adjective, right after a noun, is the adjective: "nueva" is "nuevo", not "news".
+ */
+function preferAdjectiveAfterNoun(tokens: Token[], work: (WordWork | null)[]): void {
+  for (const w of work) {
+    if (!w || w.index === 0) continue;
+    const before = work[w.index - 1];
+    const gap = tokens[w.index]!.start - tokens[w.index - 1]!.end;
+    if (!before || before.analysis.best || gap > 1) continue;
+    if (rank(before.candidates)[0]?.match.lexeme.pos !== "noun") continue;
+    const adjectives = w.candidates.filter((c) => c.match.lexeme.pos === "adj");
+    if (adjectives.length === 0 || !w.candidates.some((c) => c.match.lexeme.pos === "noun")) continue;
+    for (const c of adjectives) c.score += 2;
+  }
+}
 
 const RELATIVE_FORMS = new Set(["der", "die", "das", "dem", "den", "dessen", "deren", "denen"]);
 /** What follows a relative pronoun: a pronoun, verb, adverb… but not an adjective or noun ("der alte Mann"). */
