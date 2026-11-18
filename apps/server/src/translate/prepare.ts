@@ -18,7 +18,7 @@ const MAX_ACRONYM_LENGTH = 3;
 const ABBREVIATIONS = ["Prof.", "Dr.", "Nr.", "St.", "z.B.", "usw.", "bzw.", "ca.", "Sr.", "Sra.", "Srta.", "Dra."];
 
 /** Game phrases the tokenizer splits up, protected as a whole. */
-const PHRASES_DE: [RegExp, string][] = [
+const PHRASES_DE: [RegExp, string, string?][] = [
   [/\bE\.-Punkte\b/g, "Exp. Points"],
   // Stat names on the summary screen and in battle ("INIT. von X sinkt."). The full stops are part
   // of the abbreviation, not sentence ends. Longest first: "SP. ANG." before "ANG.".
@@ -52,6 +52,14 @@ const PHRASES_DE: [RegExp, string][] = [
   [/\bKAMPF\b/g, "Fight"],
   [/\bBEUTEL\b/g, "Bag"],
   [/\bFLUCHT\b/g, "Run"],
+  // Words the model translates as ordinary German ("TRAINER" is "coach", "RÜPEL" "ruffles", "EI" is left alone)
+  [/\bTRAINERN\b/g, "Trainers"], // dative plural; TRAINERS is a genitive singular
+  [/\bTRAINERS?\b/g, "Trainer"],
+  [/\bRÜPEL(?![\p{L}])/gu, "Grunt"],
+  [/\bEI\b/g, "Egg"],
+  [/\bBEERENMIXER\b/g, "Berry Blender"],
+  [/\bPOKéNAV\b/g, "PokéNav"],
+  [/\bANGR\./g, "Attack", "Angriff"],
 ];
 
 /** The same for Spanish games (the labels found in the Esmeralda ROM). */
@@ -73,10 +81,16 @@ const PHRASES_ES: [RegExp, string, string?][] = [
   [/\bOBJETOS\b/g, "Items"],
   [/\bMT\s*\/\s*MO\b/g, "TMs/HMs"],
   [/\bENTRENADOR(?![\p{L}])/gu, "Trainer"],
+  [/\bBAYAS\b/g, "Berries"],
+  [/\bBAYA\b/g, "Berry"],
+  [/\bLICUABAYAS\b/g, "Berry Blender"],
+  [/\bPOKéNAV\b/g, "PokéNav"],
   // Stat names: a label on its own is the game's English abbreviation; inside a sentence it is spelt
   // out in Spanish (third item), so the translator gets the grammar right ("¡Velocidad de X1 bajó!").
   [/\bAT\.\s*ESP\./g, "Sp. Atk", "ataque especial"],
   [/\bDEF\.\s*ESP\./g, "Sp. Def", "defensa especial"],
+  [/\bAT\./g, "Attack", "ataque"],
+  [/\bDEF\./g, "Defense", "defensa"],
   [/\bVELOCID\./g, "Speed", "velocidad"],
   [/\bVELOC\./g, "Speed", "velocidad"],
   [/\bPS\b/g, "HP"],
@@ -105,9 +119,16 @@ const REWRITES_ES: [RegExp, string][] = [
   [/\bya que estamos\b/giu, "ya que estamos en ello"],
   [/\bretoño(s?)\b/giu, "niño$1"],
   [/\bchill(a|an|ar|aba|aban)\b/giu, "grit$1"],
+  [/\bmalandrines\b/giu, "granujas"],
+  [/\bmalandrín\b/giu, "granuja"],
 ];
 
 function reword(text: string, lang: string): string {
+  // Gen 3 writes an inflection after a name in capitals ("TRAINERn", "POKéBÄLLe"): all capitals, so the
+  // glossary and the capitals handling see it as the name it is
+  text = text.replace(/[\p{Lu}é][\p{Lu}é]{2,}\p{Ll}{1,3}(?![\p{L}])/gu, (m) => m.toUpperCase());
+  // "EINZELKAMPF-Hallen": a capitals part before a hyphen
+  text = text.replace(/(?<![\p{L}])\p{Lu}{4,}(?=-\p{Lu}?\p{Ll})/gu, (m) => titleCase(m));
   // "PKMN-SUPERMARKT" is a compound: "Pokémon-Supermarkt"
   if (lang === "de") text = text.replace(/\bPKMN-(\p{Lu})(\p{Lu}+)\b/gu, (_, a: string, b: string) => `Pokémon-${a}${b.toLowerCase()}`);
   for (const [re, to] of lang === "es" ? REWRITES_ES : REWRITES_DE) {

@@ -2,8 +2,14 @@
 import type { Translation } from "@pokelearning/shared";
 import type { AppDb } from "../db/app-db.ts";
 import type { Glossary } from "../language/glossary.ts";
+import { titleCase } from "../language/tokenize.ts";
 import { fillSlots, prepareSentences, restoreSlots } from "./prepare.ts";
 import type { ProviderStatus, TranslationProvider } from "./provider.ts";
+
+/** A speaker label at the start of a text: capitals (names, titles) and a colon, then a sentence. */
+const SPEAKER = /^(\p{Lu}[\p{Lu}\p{M}.'’ -]{1,24}?):\s+(?=\S.{6,})/u;
+
+const TITLE = /^(?:MR|MRS|SR|SRA|SRTA|DR|DRA|PROF|CAP|KAPT|HERR|FRAU)\.?$/;
 
 export class Translator {
   constructor(
@@ -49,7 +55,31 @@ export class Translator {
   }
 
   /** `glossary` is the line's game's glossary (defaults to the one given at construction). */
-  async translateLine(text: string, from: string, to: string, glossary: Glossary = this.glossary): Promise<Translation> {
+  async translateLine(
+    text: string,
+    from: string,
+    to: string,
+    glossary: Glossary = this.glossary,
+    isWord?: (word: string) => boolean,
+  ): Promise<Translation> {
+    // "MELI: Estamos…": the model drops a speaker's name, so the name is handled on its own
+    const speaker = text.match(SPEAKER);
+    if (speaker) {
+      const label = speaker[1]!;
+      const words = label.split(/\s+/);
+      // Titles don't decide: "PROF. ABEDUL" is a title and a plain word (abedul = birch, "Prof. Birch").
+      // A name nobody lists ("MELI", "MC") stays as written, because the model mangles it.
+      const bare = words.filter((w) => !TITLE.test(w));
+      let name: { text: string; cached: boolean } | null = null;
+      if (bare.length > 0 && bare.every((w) => glossary.get(w) || isWord?.(w))) {
+        const spelled = words.map((w) => (TITLE.test(w) ? titleCase(w) : w)).join(" ");
+        const translated = await this.translateLine(spelled, from, to, glossary);
+        if (translated.text.replace(/[^\p{L}]/gu, "").length >= 3) name = translated; // "MAMÁ" → "Mom", not "M"
+      }
+      const rest = await this.translateLine(text.slice(speaker[0].length), from, to, glossary, isWord);
+      const shown = name?.text ?? words.map((w) => titleCase(w)).join(" "); // a name stays as written
+      return { ...rest, text: `${shown}: ${rest.text}`, cached: (name?.cached ?? true) && rest.cached };
+    }
     let allCached = true;
     const out: string[] = [];
     for (const sentence of prepareSentences(text, glossary, from)) {
@@ -78,7 +108,7 @@ export function isDegenerate(source: string, translation: string): boolean {
 /** What the pipeline needs from a translator: Translator, or a TranslatorSet that picks one by language. */
 export interface LineTranslator {
   supports(from: string, to: string): boolean;
-  translateLine(text: string, from: string, to: string, glossary?: Glossary): Promise<Translation>;
+  translateLine(text: string, from: string, to: string, glossary?: Glossary, isWord?: (word: string) => boolean): Promise<Translation>;
 }
 
 /** One translator per source language ("de", "es"). */
@@ -89,9 +119,9 @@ export class TranslatorSet implements LineTranslator {
     return this.byLanguage.get(from)?.supports(from, to) ?? false;
   }
 
-  translateLine(text: string, from: string, to: string, glossary?: Glossary): Promise<Translation> {
+  translateLine(text: string, from: string, to: string, glossary?: Glossary, isWord?: (word: string) => boolean): Promise<Translation> {
     const translator = this.byLanguage.get(from);
     if (!translator) return Promise.reject(new Error(`no translator for ${from}`));
-    return translator.translateLine(text, from, to, glossary);
+    return translator.translateLine(text, from, to, glossary, isWord);
   }
 }

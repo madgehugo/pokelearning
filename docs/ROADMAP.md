@@ -23,7 +23,8 @@
 - **Names as the ROM spells them:** the Esmeralda ROM's move and ability table is compared with PokéAPI, and the 51 spellings that differ (*DISP. DEMORA* = String Shot, *ELEC. ESTÁT.* = Static) are in `glossary/rom-es.json`. Glossary phrases may now contain full stops.
 - **Also:** imperatives at the start of a sentence (*¡Ven!* = venir), *-ísimo* forms, Internet spellings ranked last, and a few idioms the translator got wrong are reworded before translating (*estupendo*, *ya que estamos*, *retoño*).
 - **Adjective after its noun:** a word that can be a noun or an adjective, right after a noun, is read as the adjective (*PARTIDA NUEVA* = nuevo, not "news").
-- **Next:** more idioms as they turn up in play. Item names the ROM shortens are not yet compared.
+- **Script sweep:** the whole script of both ROMs (about 10,000 strings each, read locally and never committed) was run through the pipeline. Fixes: speaker labels (*MELI:*) are kept or translated separately so the model can't drop them; names written in capitals with a lowercase ending (*TRAINERn*, *POKéBÄLLe*, *EINZELKAMPF-Hallen*); *TRAINER*, *RÜPEL*, *EI*, *BEERENMIXER*, *POKéNAV*, *BAYA*, *AT.* / *ANGR.*; glossary entries for *PKMN*, *Hoenn*, *Pokédex*, *mamá*, *papá*.
+- **Next:** the ROM's item names (many abbreviated, e.g. *RESTAU. TODO*) need Gen 3's item order, which PokéAPI doesn't list, so they are still unmatched; battle facility names (Battle Frontier); more idioms as they turn up in play.
 
 ### Follow-ups
 - ✅ Pokémon and move names (German ↔ English) from PokéAPI (`npm run names:import`). Names written in Gen 3 capitals reach the translator as placeholders (X1, X2) and go back in as English afterwards.

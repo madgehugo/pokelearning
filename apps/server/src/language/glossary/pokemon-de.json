@@ -200,5 +200,74 @@
     "glosses": [
       "the Select button on the console"
     ]
+  },
+  {
+    "match": [
+      "PKMN"
+    ],
+    "lemma": "PKMN (Pokémon)",
+    "pos": "abbrev",
+    "gender": "n",
+    "glosses": [
+      "Pokémon (short form)"
+    ],
+    "mt": "Pokémon"
+  },
+  {
+    "match": [
+      "POKéNAV"
+    ],
+    "lemma": "PokéNav",
+    "pos": "noun",
+    "gender": "m",
+    "glosses": [
+      "PokéNav (the handheld device with map, phone and trainer list)"
+    ],
+    "mt": "PokéNav"
+  },
+  {
+    "match": [
+      "Hey"
+    ],
+    "lemma": "hey",
+    "pos": "intj",
+    "glosses": [
+      "hey"
+    ]
+  },
+  {
+    "match": [
+      "Hoenn"
+    ],
+    "lemma": "Hoenn",
+    "pos": "name",
+    "glosses": [
+      "Hoenn (the region)"
+    ],
+    "mt": "Hoenn"
+  },
+  {
+    "match": [
+      "BEERENMIXER"
+    ],
+    "lemma": "Beerenmixer",
+    "pos": "noun",
+    "gender": "m",
+    "glosses": [
+      "Berry Blender (mixes Berries into Pokéblocks)"
+    ],
+    "mt": "Berry Blender"
+  },
+  {
+    "match": [
+      "RÜPEL"
+    ],
+    "lemma": "Rüpel",
+    "pos": "noun",
+    "gender": "m",
+    "glosses": [
+      "Grunt (a member of Team Aqua or Magma)",
+      "lout, ruffian"
+    ]
   }
 ]

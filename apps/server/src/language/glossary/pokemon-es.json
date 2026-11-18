@@ -1,14 +1,224 @@
 [
-  { "match": ["tu"], "lemma": "tu", "pos": "det", "glosses": ["your (before a noun)"] },
-  { "match": ["tus"], "lemma": "tu", "pos": "det", "glosses": ["your (before a plural noun)"], "plural": "tus" },
-  { "match": ["mi"], "lemma": "mi", "pos": "det", "glosses": ["my (before a noun)"] },
-  { "match": ["mis"], "lemma": "mi", "pos": "det", "glosses": ["my (before a plural noun)"], "plural": "mis" },
-  { "match": ["veces"], "lemma": "vez", "pos": "noun", "gender": "f", "glosses": ["time, occasion"], "plural": "veces" },
-  { "match": ["he"], "lemma": "haber", "pos": "verb", "glosses": ["I have (auxiliary: “he dedicado” = I have dedicated)"] },
-  { "match": ["sí"], "lemma": "sí", "pos": "particle", "glosses": ["yes"] },
-  { "match": ["lo"], "lemma": "lo", "pos": "pron", "glosses": ["it, him (object pronoun: “te lo dé” = I give it to you)", "the (neuter article: “lo que” = what, the thing that)"] },
-  { "match": ["MT"], "lemma": "MT (Máquina Técnica)", "pos": "abbrev", "gender": "f", "glosses": ["TM, technical machine"], "mt": "TM" },
-  { "match": ["MO"], "lemma": "MO (Máquina Oculta)", "pos": "abbrev", "gender": "f", "glosses": ["HM, hidden machine"], "mt": "HM" },
-  { "match": ["EXP."], "lemma": "EXP. (experiencia)", "pos": "abbrev", "gender": "f", "glosses": ["EXP, experience points"], "mt": "EXP." },
-  { "match": ["gracias"], "lemma": "gracias", "pos": "intj", "glosses": ["thanks, thank you"] }
+  {
+    "match": [
+      "tu"
+    ],
+    "lemma": "tu",
+    "pos": "det",
+    "glosses": [
+      "your (before a noun)"
+    ]
+  },
+  {
+    "match": [
+      "tus"
+    ],
+    "lemma": "tu",
+    "pos": "det",
+    "glosses": [
+      "your (before a plural noun)"
+    ],
+    "plural": "tus"
+  },
+  {
+    "match": [
+      "mi"
+    ],
+    "lemma": "mi",
+    "pos": "det",
+    "glosses": [
+      "my (before a noun)"
+    ]
+  },
+  {
+    "match": [
+      "mis"
+    ],
+    "lemma": "mi",
+    "pos": "det",
+    "glosses": [
+      "my (before a plural noun)"
+    ],
+    "plural": "mis"
+  },
+  {
+    "match": [
+      "veces"
+    ],
+    "lemma": "vez",
+    "pos": "noun",
+    "gender": "f",
+    "glosses": [
+      "time, occasion"
+    ],
+    "plural": "veces"
+  },
+  {
+    "match": [
+      "he"
+    ],
+    "lemma": "haber",
+    "pos": "verb",
+    "glosses": [
+      "I have (auxiliary: “he dedicado” = I have dedicated)"
+    ]
+  },
+  {
+    "match": [
+      "sí"
+    ],
+    "lemma": "sí",
+    "pos": "particle",
+    "glosses": [
+      "yes"
+    ]
+  },
+  {
+    "match": [
+      "lo"
+    ],
+    "lemma": "lo",
+    "pos": "pron",
+    "glosses": [
+      "it, him (object pronoun: “te lo dé” = I give it to you)",
+      "the (neuter article: “lo que” = what, the thing that)"
+    ]
+  },
+  {
+    "match": [
+      "MT"
+    ],
+    "lemma": "MT (Máquina Técnica)",
+    "pos": "abbrev",
+    "gender": "f",
+    "glosses": [
+      "TM, technical machine"
+    ],
+    "mt": "TM"
+  },
+  {
+    "match": [
+      "MO"
+    ],
+    "lemma": "MO (Máquina Oculta)",
+    "pos": "abbrev",
+    "gender": "f",
+    "glosses": [
+      "HM, hidden machine"
+    ],
+    "mt": "HM"
+  },
+  {
+    "match": [
+      "EXP."
+    ],
+    "lemma": "EXP. (experiencia)",
+    "pos": "abbrev",
+    "gender": "f",
+    "glosses": [
+      "EXP, experience points"
+    ],
+    "mt": "EXP."
+  },
+  {
+    "match": [
+      "gracias"
+    ],
+    "lemma": "gracias",
+    "pos": "intj",
+    "glosses": [
+      "thanks, thank you"
+    ]
+  },
+  {
+    "match": [
+      "PKMN"
+    ],
+    "lemma": "PKMN (Pokémon)",
+    "pos": "abbrev",
+    "gender": "m",
+    "glosses": [
+      "Pokémon (short form)"
+    ],
+    "mt": "Pokémon"
+  },
+  {
+    "match": [
+      "POKéNAV"
+    ],
+    "lemma": "PokéNav",
+    "pos": "noun",
+    "gender": "m",
+    "glosses": [
+      "PokéNav (the handheld device with map, phone and trainer list)"
+    ],
+    "mt": "PokéNav"
+  },
+  {
+    "match": [
+      "Pokédex"
+    ],
+    "lemma": "Pokédex",
+    "pos": "noun",
+    "gender": "f",
+    "glosses": [
+      "Pokédex (the Pokémon encyclopedia)"
+    ],
+    "mt": "Pokédex"
+  },
+  {
+    "match": [
+      "Hoenn"
+    ],
+    "lemma": "Hoenn",
+    "pos": "name",
+    "glosses": [
+      "Hoenn (the region)"
+    ],
+    "mt": "Hoenn"
+  },
+  {
+    "match": [
+      "LICUABAYAS"
+    ],
+    "lemma": "Licuabayas",
+    "pos": "noun",
+    "gender": "f",
+    "glosses": [
+      "Berry Blender (mixes Berries into Pokéblocks)"
+    ],
+    "mt": "Berry Blender"
+  },
+  {
+    "match": [
+      "Mmm"
+    ],
+    "lemma": "mmm",
+    "pos": "intj",
+    "glosses": [
+      "hmm"
+    ]
+  },
+  {
+    "match": [
+      "mamá"
+    ],
+    "lemma": "mamá",
+    "pos": "noun",
+    "gender": "f",
+    "glosses": [
+      "mom, mum"
+    ]
+  },
+  {
+    "match": [
+      "papá"
+    ],
+    "lemma": "papá",
+    "pos": "noun",
+    "gender": "m",
+    "glosses": [
+      "dad"
+    ]
+  }
 ]

@@ -91,6 +91,21 @@ describe("prepareForTranslation", () => {
     assert.equal(text("Es füllte KP von ZIGZACHS (Wild) auf!"), "Es füllte KP von Zigzachs (wild) auf!");
   });
 
+  it("normalises names written in capitals with a lowercase ending, and words the model mistranslates", () => {
+    const de = (t: string) => prepareSentences(t, glossary).map((s) => s.text).join(" ");
+    assert.equal(de("Es gibt keine TRAINERn mehr."), "Es gibt keine X1 mehr.");
+    assert.deepEqual(prepareSentences("Alle RÜPEL und das EI.", glossary)[0]!.slots, ["Grunt", "Egg"]);
+    assert.deepEqual(prepareSentences("Die Geschichte eines TRAINERs.", glossary)[0]!.slots, ["Trainer"]);
+    assert.deepEqual(prepareSentences("Mit den TRAINERn.", glossary)[0]!.slots, ["Trainers"]);
+    assert.equal(de("Die EINZELKAMPF-Hallen."), "Die Einzelkampf-Hallen.");
+    assert.deepEqual(prepareSentences("Der POKéNAV klingelt.", glossary)[0]!.slots, ["PokéNav"]);
+    assert.equal(prepareSentences("Senkt den ANGR.-Wert.", glossary)[0]!.text, "Senkt den Angriff-Wert.");
+    const es = (t: string) => prepareSentences(t, glossary, "es")[0]!;
+    assert.deepEqual(es("¿Qué BAYA debería plantar?").slots, ["Berry"]);
+    assert.equal(es("Suben el AT. de ASH.").text.startsWith("Suben el ataque"), true, "spelt out in a sentence");
+    assert.equal(es("Esos malandrines.").text, "Esos granujas.");
+  });
+
   it("gives the Spanish options and trainer card labels their English names", () => {
     const slots = (text: string) => prepareSentences(text, glossary, "es").flatMap((s) => s.slots);
     assert.deepEqual(slots("VELOC. TEXTO"), ["Text Speed"], "not just Speed");
@@ -122,6 +137,33 @@ describe("prepareForTranslation", () => {
 
   it("splits sentences but not after abbreviations", () => {
     assert.deepEqual(splitSentences("Hallo! Ich bin Prof. Birch. Und du?"), ["Hallo!", "Ich bin Prof. Birch.", "Und du?"]);
+  });
+});
+
+describe("speaker labels", () => {
+  const known = new Set(["mamá", "abedul"]);
+  const isWord = (w: string) => known.has(w.toLowerCase());
+  const run = async (text: string) => {
+    const provider = new FakeProvider();
+    const out = await new Translator(provider, new AppDb(":memory:"), glossary).translateLine(text, "de", "en", glossary, isWord);
+    return { text: out.text, calls: provider.calls };
+  };
+
+  it("keeps a speaker's name as written, so the model can't drop or mangle it", async () => {
+    const r = await run("MR. TRUMM: Hast du meinen Auftrag vergessen?");
+    assert.equal(r.text, "Mr. Trumm: EN(Hast du meinen Auftrag vergessen?)");
+    assert.deepEqual(r.calls, ["Hast du meinen Auftrag vergessen?"]);
+    assert.equal((await run("JO: Wirklich, wir sind viel besser geworden.")).text.startsWith("Jo: "), true);
+  });
+
+  it("translates a role that is a plain word, and a name the glossary knows", async () => {
+    assert.equal((await run("MAMÁ: Hola, cariño, ¿cómo estás?")).text, "EN(Mamá): EN(Hola, cariño, ¿cómo estás?)");
+    assert.equal((await run("BIRK: Hallo, ich bin hier, komm herein.")).text, "EN(Birch): EN(Hallo, ich bin hier, komm herein.)");
+    assert.equal((await run("PROF. ABEDUL: Hola, cariño, ¿cómo estás?")).text, "EN(Prof. Abedul): EN(Hola, cariño, ¿cómo estás?)", "a title plus a plain word");
+  });
+
+  it("is not a speaker without a space after the colon", async () => {
+    assert.equal((await run("TIPO:NORMAL")).text, "EN(Tipo:Normal)");
   });
 });
 

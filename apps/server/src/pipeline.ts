@@ -20,6 +20,13 @@ export interface PipelineEvents {
 /** Languages the analyser and dictionary support. */
 const ANALYSED_LANGS = new Set<string>(["de", "es"]);
 
+/** A plain word of the language ("MAMÁ", "MUTTER"), as opposed to a name nobody has listed. */
+function isDictionaryWord(dictionary: AnalyzerDeps["dictionary"], word: string): boolean {
+  if (!dictionary) return false;
+  const lower = word.toLowerCase();
+  return dictionary.lookup(lower).length > 0 || dictionary.lookup(lower.charAt(0).toUpperCase() + lower.slice(1)).length > 0;
+}
+
 export class LinePipeline extends EventEmitter<PipelineEvents> {
   private queue: Promise<void> = Promise.resolve();
 
@@ -70,7 +77,7 @@ export class LinePipeline extends EventEmitter<PipelineEvents> {
       try {
         translation = msg.meta?.source === "menu"
           ? await this.translateMenu(msg.line, lang, deps.glossary)
-          : await this.translator.translateLine(msg.line, lang, this.targetLang, deps.glossary);
+          : await this.translator.translateLine(msg.line, lang, this.targetLang, deps.glossary, (w) => isDictionaryWord(deps.dictionary, w));
         this.db.saveLineTranslation(id, translation.provider, translation.text);
       } catch (err) {
         // A failed translation shouldn't lose the line or its analysis.
