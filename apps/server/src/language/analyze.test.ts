@@ -208,3 +208,23 @@ describe("German menu words in capitals", () => {
     assert.equal(pos("ANGRIFF", "ANGRIFF"), "noun");
   });
 });
+
+describe("German participles and adjectives with the same spelling", () => {
+  const entries = [
+    { word: "geschickt", pos: "adj", senses: [{ glosses: ["skilled"] }] },
+    { word: "schicken", pos: "verb", forms: [{ form: "geschickt", tags: ["participle", "past"] }], senses: [{ glosses: ["to send"] }] },
+  ];
+  const d = { dictionary: fixtureDictionary(entries), glossary: createGlossary([]) };
+  const lemma = (line: string) => analyzeLine(line, d).tokens.find((t) => t.text === "geschickt")?.best?.lemma;
+
+  it("is the participle after haben or werden, at the end of the clause", () => {
+    assert.equal(lemma("Er wird in den Kampf geschickt!"), "schicken");
+    assert.equal(lemma("Er hat mir einen Brief geschickt."), "schicken");
+    assert.equal(lemma("Ich weiß, dass er es geschickt hat."), "schicken");
+  });
+
+  it("stays the adjective otherwise", () => {
+    assert.equal(lemma("Das war sehr geschickt."), "geschickt");
+    assert.equal(lemma("Er hat geschickt gespielt."), "geschickt", "an adverb before another participle");
+  });
+});

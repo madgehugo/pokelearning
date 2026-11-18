@@ -84,6 +84,7 @@ export function analyzeLine(text: string, deps: AnalyzerDeps): LineAnalysis {
   if (lang === "de") {
     linkSeparableVerbs(tokens, work, analyses);
     preferRelativePronouns(tokens, work);
+    preferParticiples(tokens, work);
   } else {
     preferAdjectiveAfterNoun(tokens, work);
   }
@@ -226,6 +227,34 @@ function preferAdjectiveAfterNoun(tokens: Token[], work: (WordWork | null)[]): v
     const adjectives = w.candidates.filter((c) => c.match.lexeme.pos === "adj");
     if (adjectives.length === 0 || !w.candidates.some((c) => c.match.lexeme.pos === "noun")) continue;
     for (const c of adjectives) c.score += 2;
+  }
+}
+
+/** Forms of haben and werden, which build the perfect and the passive with a participle. */
+const PARTICIPLE_AUXILIARIES = new Set([
+  "hat", "hast", "habe", "haben", "habt", "hatte", "hatten", "hattest", "hatten", "hätte", "hätten",
+  "wird", "wirst", "werde", "werden", "werdet", "wurde", "wurden", "wurdest", "würde", "würden", "worden",
+]);
+
+/**
+ * "wird in den Kampf geschickt", "hat einen Brief geschickt": a word that is both an adjective and a
+ * past participle ("geschickt" is skilled, or sent) is the participle when it ends its clause after
+ * haben or werden, or is followed by that auxiliary ("…, weil er es geschickt hat"). With sein it stays
+ * ambiguous ("Das war sehr geschickt"), so it is left alone.
+ */
+function preferParticiples(tokens: Token[], work: (WordWork | null)[]): void {
+  for (const w of work) {
+    if (!w) continue;
+    const participles = w.candidates.filter((c) => c.match.lexeme.pos === "verb" && /\bparticiple\b/.test(c.match.formTags ?? ""));
+    if (participles.length === 0 || !w.candidates.some((c) => c.match.lexeme.pos === "adj" || c.match.lexeme.pos === "adv")) continue;
+    const next = tokens[w.index + 1];
+    const endsClause = !next || (next.kind === "punct" && !/^[„“"”»«]$/.test(next.text)) || (next.kind === "word" && PARTICIPLE_AUXILIARIES.has(next.text.toLowerCase()));
+    if (!endsClause) continue;
+    let auxBefore = next?.kind === "word"; // followed by the auxiliary itself
+    for (let j = w.index - 1; !auxBefore && j >= 0 && !isClauseBoundary(tokens[j]!); j--) {
+      if (tokens[j]!.kind === "word" && PARTICIPLE_AUXILIARIES.has(tokens[j]!.text.toLowerCase())) auxBefore = true;
+    }
+    if (auxBefore) for (const c of participles) c.score += 2.5;
   }
 }
 
