@@ -22,7 +22,7 @@ const PHRASES_DE: [RegExp, string, string?][] = [
   [/\bE\.-Punkte\b/g, "Exp. Points"],
   // Stat names on the summary screen and in battle ("INIT. von X sinkt."). The full stops are part
   // of the abbreviation, not sentence ends. Longest first: "SP. ANG." before "ANG.".
-  [/\bSP\.\s*ANG\./g, "Sp. Atk"],
+  [/\bSP\.\s*ANGR?\./g, "Sp. Atk"],
   [/\bSP\.\s*VER(?:T)?\./g, "Sp. Def"],
   [/\bANG\./g, "Attack"],
   [/\bVERT\./g, "Defense"],
@@ -111,6 +111,13 @@ const REWRITES_DE: [RegExp, string][] = [
   // "Wenn wir schon mal hier sind" is "since we're here anyway", not "if we're here before"
   [/\b(?:wenn|da|wo) (wir|ich|du|ihr|sie) schon (?:mal|einmal) (hier|da) (sind|bin|bist|seid)\b/giu, "da $1 ohnehin $2 $3"],
   [/\b(?:wenn|da|wo) wir (?:schon|gerade)(?: mal| einmal)? dabei sind\b/giu, "wo wir gerade dabei sind"],
+  // "Die Verbindung zu deinem Freund" is "to your boyfriend" for the model
+  [/\bVerbindung zu (?:dein|mein|sein|ihr)em Freund\b/giu, "Verbindung zu einem deiner Freunde"],
+  // "Legt Wert auf ANGRIFF" is "emphasises", not "sets value to"
+  [/\bLegt Wert auf\b/giu, "Betont"],
+  // the games' "Preis" is a prize ("Bitte hole deinen Preis ab"); only "hohe Preise" are prices
+  [/\b(?<!hohe[nmrs]? )Preis(?:e|en)\b/giu, "Belohnungen"],
+  [/\b(?<!hohe[nmrs]? )Preis\b/giu, "Belohnung"],
   // the model reads "Spielstand" as a score
   [/\beinen Spielstand\b/g, "ein gespeichertes Spiel"],
   [/\bden Spielstand\b/g, "das gespeicherte Spiel"],

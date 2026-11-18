@@ -85,6 +85,13 @@ describe("prepareForTranslation", () => {
 
   it("rewords German the translator gets wrong", () => {
     const text = (t: string) => prepareSentences(t, glossary).map((s) => s.text).join(" ");
+    assert.equal(text("Bitte hole deinen Preis später ab."), "Bitte hole deinen Belohnung später ab.");
+    assert.equal(text("Tausche Punkte gegen tolle Preise."), "Tausche Punkte gegen tolle Belohnungen.");
+    assert.equal(text("Für das Geweih werden hohe Preise gezahlt."), "Für das Geweih werden hohe Preise gezahlt.", "a real price stays");
+    assert.equal(text("Die Verbindung zu deinem Freund wurde gekappt."), "Die Verbindung zu einem deiner Freunde wurde gekappt.");
+    assert.equal(text("Dein Freund ist da."), "Dein Freund ist da.");
+    assert.equal(text("Legt Wert auf Angriff."), "Betont Angriff.");
+    assert.deepEqual(prepareSentences("Betont INIT. und SP. ANGR.", glossary)[0]!.slots, ["Speed", "Sp. Atk"], "both spellings of the stat");
     assert.equal(text("Wenn wir schon mal hier sind…"), "Da wir ohnehin hier sind…");
     assert.equal(text("Und wenn ich schon einmal da bin, frage ich."), "Und da ich ohnehin da bin, frage ich.");
     assert.equal(text("Wenn wir schon dabei sind, gehen wir."), "Wo wir gerade dabei sind, gehen wir.");
