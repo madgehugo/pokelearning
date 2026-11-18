@@ -27,7 +27,28 @@ const PHRASES_DE: [RegExp, string][] = [
   [/\bANG\./g, "Attack"],
   [/\bVERT\./g, "Defense"],
   [/\bINIT\./g, "Speed"],
-  // Battle menu labels, which are only ever written in capitals
+  // Menu labels, which are only ever written in capitals. The model reads them as ordinary words
+  // ("EIN" → "Page 3", "ZURÜCK" → "Prev", "ORDEN" → "Order"), so they get the game's English names.
+  [/\bBEUTEL SCHLIESSEN\b/g, "Close Bag"],
+  [/\bTEXT-TEMPO\b/g, "Text Speed"],
+  [/\bKAMPFSTIL\b/g, "Battle Style"],
+  [/\bKNOPFBELEGUNG\b/g, "Button Mode"],
+  [/\bANIMATION\b/g, "Battle Scene"],
+  [/^\s*RAHMEN\s*$/g, "Frame"],
+  [/^\s*WECHSEL\s*$/g, "Shift"],
+  [/^\s*FOLGE\s*$/g, "Set"],
+  [/^\s*EIN\s*$/g, "On"],
+  [/^\s*AUS\s*$/g, "Off"],
+  [/^\s*TON\s*$/g, "Sound"],
+  [/^\s*ZURÜCK\s*$/g, "Back"],
+  [/^\s*WEITER\s*$/g, "Continue"],
+  [/^\s*SICHERN\s*$/g, "Save"],
+  [/\bOPTION\./g, "Options"],
+  [/^\s*SPIELER\s*$/g, "Player"],
+  [/^\s*ORDEN\s*$/g, "Badges"],
+  [/\bITEMS\b/g, "Items"],
+  [/\bJA\b/g, "Yes"],
+  [/\bNEIN\b/g, "No"],
   [/\bKAMPF\b/g, "Fight"],
   [/\bBEUTEL\b/g, "Bag"],
   [/\bFLUCHT\b/g, "Run"],
@@ -68,6 +89,17 @@ const PHRASES_ES: [RegExp, string, string?][] = [
  * Spanish words and idioms Opus-MT renders badly ("¡Estupendo!" → "Stupend!", "retoño" → "baby"),
  * reworded in Spanish it handles well. The first letter keeps its case.
  */
+const REWRITES_DE: [RegExp, string][] = [
+  [/\bPKMN\b/g, "Pokémon"],
+  // "ZIGZACHS (Wild) setzt X ein!" is "the wild Zigzagoon uses X!"; elsewhere the name only gets lowercase "(wild)"
+  [/(?<=^|[.!?]\s+)(\p{Lu}[\p{L}-]*) \(Wild\)/gu, "Das wilde $1"],
+  [/\(Wild\)/g, "(wild)"],
+  // the model reads "Spielstand" as a score
+  [/\beinen Spielstand\b/g, "ein gespeichertes Spiel"],
+  [/\bden Spielstand\b/g, "das gespeicherte Spiel"],
+  [/\bSpielstand\b/g, "gespeichertes Spiel"],
+];
+
 const REWRITES_ES: [RegExp, string][] = [
   [/\bestupend([oa])s?\b/giu, "genial"],
   [/\bya que estamos\b/giu, "ya que estamos en ello"],
@@ -75,8 +107,10 @@ const REWRITES_ES: [RegExp, string][] = [
   [/\bchill(a|an|ar|aba|aban)\b/giu, "grit$1"],
 ];
 
-function reword(text: string): string {
-  for (const [re, to] of REWRITES_ES) {
+function reword(text: string, lang: string): string {
+  // "PKMN-SUPERMARKT" is a compound: "Pokémon-Supermarkt"
+  if (lang === "de") text = text.replace(/\bPKMN-(\p{Lu})(\p{Lu}+)\b/gu, (_, a: string, b: string) => `Pokémon-${a}${b.toLowerCase()}`);
+  for (const [re, to] of lang === "es" ? REWRITES_ES : REWRITES_DE) {
     text = text.replace(re, (m, ...groups) => {
       const out = to.replace(/\$(\d)/g, (_, n) => (groups[Number(n) - 1] as string | undefined) ?? "");
       return m[0] === m[0]!.toUpperCase() && m[0] !== m[0]!.toLowerCase() ? out[0]!.toUpperCase() + out.slice(1) : out;
@@ -109,7 +143,7 @@ function protect(text: string, glossary: Glossary, lang: string): { text: string
     return `X${slots.length}`;
   };
 
-  if (lang === "es") text = reword(text);
+  text = reword(text, lang);
   for (const [re, english, spelledOut] of PHRASES[lang] ?? []) {
     const alone = spelledOut !== undefined && new RegExp(`^(?:${re.source})$`).test(text.trim());
     text = text.replace(re, (match: string, offset: number, whole: string) => {

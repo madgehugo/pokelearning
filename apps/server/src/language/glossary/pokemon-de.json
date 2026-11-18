@@ -157,5 +157,48 @@
       "Sp., special"
     ],
     "capsOnly": true
+  },
+  {
+    "match": [
+      "dies"
+    ],
+    "lemma": "dies",
+    "pos": "pron",
+    "glosses": [
+      "this (neuter; also short for “dieses”)"
+    ]
+  },
+  {
+    "match": [
+      "Item"
+    ],
+    "lemma": "Item",
+    "pos": "noun",
+    "gender": "n",
+    "glosses": [
+      "item (a thing you can carry in the game)"
+    ]
+  },
+  {
+    "match": [
+      "Items"
+    ],
+    "lemma": "Item",
+    "pos": "noun",
+    "gender": "n",
+    "glosses": [
+      "item (a thing you can carry in the game)"
+    ],
+    "plural": "Items"
+  },
+  {
+    "match": [
+      "SELECT"
+    ],
+    "lemma": "SELECT",
+    "pos": "abbrev",
+    "glosses": [
+      "the Select button on the console"
+    ]
   }
 ]

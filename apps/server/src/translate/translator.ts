@@ -28,11 +28,22 @@ export class Translator {
     return this.provider.status?.() ?? { state: "ready", progress: 1, detail: "" };
   }
 
+  /**
+   * Opus-MT sometimes falls into a loop on a very short text ("Items" → "♪ ♪ ♪ …"). Try the text as a
+   * sentence; if that loops too, show the original rather than rubbish.
+   */
+  private async translateSentence(sentence: string, from: string, to: string): Promise<string> {
+    const text = await this.provider.translate(sentence, from, to);
+    if (!isDegenerate(sentence, text)) return text;
+    const retry = await this.provider.translate(`${sentence}.`, from, to);
+    return isDegenerate(sentence, retry) ? sentence : retry.replace(/\.$/, "");
+  }
+
   /** Cached translation of one sentence. */
   private async cached(sentence: string, from: string, to: string): Promise<{ text: string; cached: boolean }> {
     const hit = this.db.getCachedTranslation(this.provider.id, from, to, sentence);
     if (hit !== undefined) return { text: hit, cached: true };
-    const text = await this.provider.translate(sentence, from, to);
+    const text = await this.translateSentence(sentence, from, to);
     this.db.cacheTranslation(this.provider.id, from, to, sentence, text);
     return { text, cached: false };
   }
@@ -55,6 +66,13 @@ export class Translator {
     }
     return { provider: this.provider.id, from, to, text: out.join(" "), cached: allCached };
   }
+}
+
+/** A translation that repeats one token over and over, or is far longer than its source. */
+export function isDegenerate(source: string, translation: string): boolean {
+  const words = translation.split(/\s+/).filter(Boolean);
+  if (words.length >= 8 && new Set(words).size <= 2 && source.split(/\s+/).length < words.length / 2) return true;
+  return translation.length > source.length * 6 + 40;
 }
 
 /** What the pipeline needs from a translator: Translator, or a TranslatorSet that picks one by language. */

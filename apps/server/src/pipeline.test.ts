@@ -6,7 +6,7 @@ import { createGlossary } from "./language/glossary.ts";
 import { LinePipeline } from "./pipeline.ts";
 import { prepareForTranslation, prepareSentences, restoreSlots, splitSentences } from "./translate/prepare.ts";
 import type { TranslationProvider } from "./translate/provider.ts";
-import { Translator } from "./translate/translator.ts";
+import { isDegenerate, Translator } from "./translate/translator.ts";
 
 const glossary = createGlossary([
   { match: ["Birk"], lemma: "Birk", pos: "name", glosses: ["Professor Birch"], mt: "Birch" },
@@ -73,6 +73,24 @@ describe("prepareForTranslation", () => {
     assert.deepEqual(prepareSentences("FLUCHT", glossary)[0]!.slots, ["Run"]);
   });
 
+  it("gives the German menu labels their English names, only when they stand alone", () => {
+    const slots = (text: string) => prepareSentences(text, glossary).flatMap((s) => s.slots);
+    for (const [label, english] of [["ZURÜCK", "Back"], ["EIN", "On"], ["AUS", "Off"], ["SICHERN", "Save"], ["ORDEN", "Badges"], ["KNOPFBELEGUNG", "Button Mode"], ["ITEMS", "Items"]] as const) {
+      assert.deepEqual(slots(label), [english], label);
+    }
+    assert.deepEqual(slots("BEUTEL SCHLIESSEN"), ["Close Bag"], "not 'Bag Close'");
+    assert.deepEqual(slots("BITTE NICHT AUSSCHALTEN"), [], "words that merely contain a label");
+    assert.deepEqual(slots("Mach das Licht aus."), [], "only in capitals");
+  });
+
+  it("rewords German the translator gets wrong", () => {
+    const text = (t: string) => prepareSentences(t, glossary).map((s) => s.text).join(" ");
+    assert.equal(text("Es gibt bereits einen Spielstand."), "Es gibt bereits ein gespeichertes Spiel.");
+    assert.equal(text("Das ist ein PKMN-SUPERMARKT."), "Das ist ein Pokémon-Supermarkt.");
+    assert.equal(text("ZIGZACHS (Wild) wurde besiegt!"), "Das wilde Zigzachs wurde besiegt!");
+    assert.equal(text("Es füllte KP von ZIGZACHS (Wild) auf!"), "Es füllte KP von Zigzachs (wild) auf!");
+  });
+
   it("gives the Spanish options and trainer card labels their English names", () => {
     const slots = (text: string) => prepareSentences(text, glossary, "es").flatMap((s) => s.slots);
     assert.deepEqual(slots("VELOC. TEXTO"), ["Text Speed"], "not just Speed");
@@ -107,12 +125,31 @@ describe("prepareForTranslation", () => {
   });
 });
 
+describe("degenerate translations", () => {
+  it("spots a loop or runaway output, not ordinary text", () => {
+    assert.equal(isDegenerate("Items", "♪ ♪ ♪ ♪ ♪ ♪ ♪ ♪ ♪ ♪ ♪ ♪"), true);
+    assert.equal(isDegenerate("Hallo", "x".repeat(200)), true);
+    assert.equal(isDegenerate("Hallo!", "Hello!"), false);
+    assert.equal(isDegenerate("Ha ha ha ha ha ha ha ha", "Ha ha ha ha ha ha ha ha"), false, "a repeated source is allowed");
+  });
+
+  it("retries once, then shows the original", async () => {
+    const db = new AppDb(":memory:");
+    const provider = new FakeProvider();
+    provider.translate = async (text: string) => (text === "Items" ? "♪ ".repeat(40) : text === "Items." ? "Items." : "EN");
+    const t = new Translator(provider, db, glossary);
+    assert.equal((await t.translateLine("Items", "de", "en")).text, "Items", "the retry worked");
+    provider.translate = async () => "♪ ".repeat(40);
+    assert.equal((await t.translateLine("Dinge", "de", "en")).text, "Dinge", "gave up: the original");
+  });
+});
+
 describe("LinePipeline", () => {
   it("translates a menu screen one label per line", async () => {
     const { provider, pipeline } = setup();
     const out = await pipeline.submit({ ...line("WEITER\nSPIELZEIT"), meta: { source: "menu" } });
-    assert.equal(out?.translation?.text, "EN(Weiter)\nEN(Spielzeit)");
-    assert.deepEqual(provider.calls, ["Weiter", "Spielzeit"]);
+    assert.equal(out?.translation?.text, "EN(Continue)\nEN(Spielzeit)");
+    assert.deepEqual(provider.calls, ["X1", "Spielzeit"]);
   });
 
   it("stores, translates per sentence and emits the line", async () => {

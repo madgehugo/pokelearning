@@ -36,6 +36,9 @@ export const ES_DETERMINERS = new Set([
   "aquel", "aquella", "otro", "otra", "otros", "otras", "cada", "algún", "ningún", "del", "al",
 ]);
 
+/** German parts of speech for which a Gen 3 capitals word is more likely the plain word than a noun. */
+const DE_FUNCTION = new Set(["adv", "intj", "prep", "conj", "particle", "adj"]);
+
 /** Spanish parts of speech that are function words: their rare noun readings ("no", "contra") shouldn't win. */
 const ES_FUNCTION = new Set(["prep", "conj", "adv", "pron", "det", "article", "contraction", "particle"]);
 
@@ -73,6 +76,8 @@ export function scoreMatch(match: FormMatch, spelling: string, ctx: WordContext,
   // Gen 3 writes names and items in capitals. Spanish names come from the glossary, so there an
   // all-caps name from the dictionary ("NUEVA", a village) is only a guess.
   if (allCaps && nounLike) score += ctx.lang === "de" ? 1 : lexeme.pos === "name" ? -1.5 : 0;
+  // German menu words in capitals ("NEIN", "ZURÜCK", "AUS") are not nouns just because "Nein" is in the dictionary
+  if (allCaps && ctx.lang === "de" && DE_FUNCTION.has(lexeme.pos)) score += 1.5;
   if (ctx.lang === "es") {
     // chat spellings and misspellings ("hay" as an Internet form of "ahí") lose to the standard reading
     if (match.formTags && /\b(Internet|misspelling|nonstandard|eye dialect)\b/i.test(match.formTags)) score -= 2;

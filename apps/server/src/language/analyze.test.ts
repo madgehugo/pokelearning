@@ -187,3 +187,24 @@ describe("relative pronouns", () => {
     assert.equal(pos("Das ich suche.", 0), "article");
   });
 });
+
+describe("German menu words in capitals", () => {
+  const entries = [
+    { word: "Nein", pos: "noun", senses: [{ glosses: ["no (a refusal)"], tags: ["neuter"] }] },
+    { word: "nein", pos: "intj", senses: [{ glosses: ["no"] }] },
+    { word: "Aus", pos: "noun", senses: [{ glosses: ["the end"], tags: ["neuter"] }] },
+    { word: "aus", pos: "prep", senses: [{ glosses: ["out of"] }] },
+    { word: "Angriff", pos: "noun", senses: [{ glosses: ["attack"], tags: ["masculine"] }] },
+  ];
+  const d = { dictionary: fixtureDictionary(entries), glossary: createGlossary([]) };
+  const pos = (line: string, text: string) => analyzeLine(line, d).tokens.find((t) => t.text === text)?.best?.pos;
+
+  it("are the plain word, not the noun that shares their spelling", () => {
+    assert.equal(pos("NEIN", "NEIN"), "intj");
+    assert.equal(pos("AUS", "AUS"), "prep");
+  });
+
+  it("stay nouns when only a noun fits", () => {
+    assert.equal(pos("ANGRIFF", "ANGRIFF"), "noun");
+  });
+});
