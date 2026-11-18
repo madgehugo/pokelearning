@@ -1,6 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect x="4" y="10" width="56" height="44" rx="9" fill="#fff" stroke="#2d3a55" stroke-width="5"/>
-  <rect x="10" y="16" width="44" height="32" rx="4" fill="none" stroke="#9fb0cf" stroke-width="2"/>
-  <text x="32" y="42" text-anchor="middle" font-family="Georgia, serif" font-size="26" font-weight="700" fill="#1e2433">ä</text>
-  <path d="M46 40l6 0-3 4z" fill="#f2b233"/>
+  <rect x="5" y="5" width="54" height="54" rx="13" fill="#2d3a55"/>
+  <path d="M19 15h26a5 5 0 0 1 5 5v18a5 5 0 0 1-5 5H29l-9 8v-8h-1a5 5 0 0 1-5-5V20a5 5 0 0 1 5-5z" fill="#fff"/>
+  <path d="M19 17.5h26a2.5 2.5 0 0 1 2.5 2.5v18a2.5 2.5 0 0 1-2.5 2.5H19A2.5 2.5 0 0 1 16.5 38V20a2.5 2.5 0 0 1 2.5-2.5z" fill="none" stroke="#9fb0cf" stroke-width="1.2"/>
+  <g fill="none" stroke="#1e2433" stroke-width="3.4" stroke-linecap="round">
+    <circle cx="29.5" cy="32.5" r="5.4"/>
+    <path d="M36.2 27.5v10"/>
+  </g>
+  <circle cx="27.3" cy="22.8" r="1.8" fill="#1e2433"/>
+  <circle cx="33.3" cy="22.8" r="1.8" fill="#1e2433"/>
+  <path d="M41 35.5h5l-2.5 3.8z" fill="#f2b233"/>
 </svg>

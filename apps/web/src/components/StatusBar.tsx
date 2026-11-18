@@ -35,7 +35,10 @@ export function StatusBar(props: Props) {
   return (
     <header className="topbar">
       <div className="topbar__main">
-        <span className="brand">Pokélearning</span>
+        <span className="brand">
+          <img className="brand__logo" src="/icon.svg" alt="" width="28" height="28" />
+          Pokélearning
+        </span>
         <nav className="nav" aria-label="Sections">
           {link("live", "Live")}
           {link("review", "Review", props.due > 0 ? String(props.due) : undefined)}
