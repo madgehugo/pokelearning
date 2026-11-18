@@ -15,7 +15,7 @@ import { isAllCaps, titleCase, tokenize } from "../language/tokenize.ts";
 /** Acronyms Gen 3 uses that must stay in capitals: KP, AP, VM, TM, PC… */
 const MAX_ACRONYM_LENGTH = 3;
 
-const ABBREVIATIONS = ["Prof.", "Dr.", "Nr.", "St.", "z.B.", "usw.", "bzw.", "ca.", "Sr.", "Sra.", "Srta.", "Dra."];
+const ABBREVIATIONS = ["Prof.", "Dr.", "Nr.", "St.", "z.B.", "usw.", "bzw.", "ca.", "K.O.", "Sr.", "Sra.", "Srta.", "Dra."];
 
 /** Game phrases the tokenizer splits up, protected as a whole. */
 const PHRASES_DE: [RegExp, string, string?][] = [
@@ -116,8 +116,15 @@ const REWRITES_DE: [RegExp, string][] = [
   // "Legt Wert auf ANGRIFF" is "emphasises", not "sets value to"
   [/\bLegt Wert auf\b/giu, "Betont"],
   // the games' "Preis" is a prize ("Bitte hole deinen Preis ab"); only "hohe Preise" are prices
+  [/\b(ein|dein|kein|mein|sein|ihr|euer|dies|welch)en Preis\b/giu, "$1e Belohnung"],
+  [/\bden (erst|zweit|dritt)en Preis\b/giu, "die $1e Belohnung"],
+  [/\bden Preis\b/giu, "die Belohnung"],
   [/\b(?<!hohe[nmrs]? )Preis(?:e|en)\b/giu, "Belohnungen"],
   [/\b(?<!hohe[nmrs]? )Preis\b/giu, "Belohnung"],
+  // the model loops on "Irgendwo gibt es …" at the start of a sentence
+  [/\bIrgendwo gibt es\b/gu, "Es gibt irgendwo"],
+  // "HOENN-POKéDEX": the model garbles the hyphenated spelling ("Hoenn-Poké-Prox")
+  [/\b([\p{Lu}][\p{L}]+)-POKéDEX\b/gu, "$1 Pokédex"],
   // the model reads "Spielstand" as a score
   [/\beinen Spielstand\b/g, "ein gespeichertes Spiel"],
   [/\bden Spielstand\b/g, "das gespeicherte Spiel"],
@@ -136,9 +143,16 @@ const REWRITES_ES: [RegExp, string][] = [
 function reword(text: string, lang: string): string {
   // Gen 3 writes an inflection after a name in capitals ("TRAINERn", "POKéBÄLLe"): all capitals, so the
   // glossary and the capitals handling see it as the name it is
-  text = text.replace(/[\p{Lu}é][\p{Lu}é]{2,}\p{Ll}{1,3}(?![\p{L}])/gu, (m) => m.toUpperCase());
-  // "EINZELKAMPF-Hallen": a capitals part before a hyphen
-  text = text.replace(/(?<![\p{L}])\p{Lu}{4,}(?=-\p{Lu}?\p{Ll})/gu, (m) => titleCase(m));
+  text = text.replace(/[\p{Lu}é][\p{Lu}é]{3,}\p{Ll}{1,3}(?![\p{L}])/gu, (m) => m.toUpperCase());
+  if (lang === "de") text = text.replace(/\bPKMN\b/g, "Pokémon"); // before the hyphenated words below: "WASSER-PKMN"
+  // "EINZELKAMPF-Hallen", "KÄFER-POKéMON-Team": in a hyphenated word that mixes capitals and lower case,
+  // the capitals parts are ordinary words ("Käfer-Pokémon-Team")
+  text = text.replace(/[\p{L}é]+(?:-[\p{L}é]+)+/gu, (word) => {
+    const parts = word.split("-");
+    const caps = (p: string) => p.length >= 4 && isAllCaps(p);
+    const lower = (p: string) => /\p{Ll}/u.test(p.replace(/é/g, ""));
+    return parts.some(caps) && parts.some(lower) ? parts.map((p) => (caps(p) ? titleCase(p) : p)).join("-") : word;
+  });
   // "PKMN-SUPERMARKT" is a compound: "Pokémon-Supermarkt"
   if (lang === "de") text = text.replace(/\bPKMN-(\p{Lu})(\p{Lu}+)\b/gu, (_, a: string, b: string) => `Pokémon-${a}${b.toLowerCase()}`);
   for (const [re, to] of lang === "es" ? REWRITES_ES : REWRITES_DE) {

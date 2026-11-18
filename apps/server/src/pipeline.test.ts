@@ -85,13 +85,22 @@ describe("prepareForTranslation", () => {
 
   it("rewords German the translator gets wrong", () => {
     const text = (t: string) => prepareSentences(t, glossary).map((s) => s.text).join(" ");
-    assert.equal(text("Bitte hole deinen Preis später ab."), "Bitte hole deinen Belohnung später ab.");
+    assert.equal(text("Bitte hole deinen Preis später ab."), "Bitte hole deine Belohnung später ab.");
+    assert.equal(text("IDNr.53336"), "IDNr.53336", "three capitals and a lowercase letter is not a name with an ending");
+    assert.equal(text("Bitte such dir einen Preis aus."), "Bitte such dir eine Belohnung aus.");
+    assert.equal(text("Du bekommst den zweiten Preis."), "Du bekommst die zweite Belohnung.");
+    assert.equal(text("Ein WASSER-PKMN greift an."), "Ein Wasser-Pokémon greift an.");
     assert.equal(text("Tausche Punkte gegen tolle Preise."), "Tausche Punkte gegen tolle Belohnungen.");
     assert.equal(text("Für das Geweih werden hohe Preise gezahlt."), "Für das Geweih werden hohe Preise gezahlt.", "a real price stays");
     assert.equal(text("Die Verbindung zu deinem Freund wurde gekappt."), "Die Verbindung zu einem deiner Freunde wurde gekappt.");
     assert.equal(text("Dein Freund ist da."), "Dein Freund ist da.");
     assert.equal(text("Legt Wert auf Angriff."), "Betont Angriff.");
     assert.deepEqual(prepareSentences("Betont INIT. und SP. ANGR.", glossary)[0]!.slots, ["Speed", "Sp. Atk"], "both spellings of the stat");
+    assert.equal(text("Irgendwo gibt es hohes Gras."), "Es gibt irgendwo hohes Gras.");
+    assert.equal(text("Dein HOENN-POKéDEX ist fertig."), "Dein Hoenn Pokédex ist fertig.");
+    assert.equal(text("Mein KÄFER-POKéMON-Team!"), "Mein Käfer-Pokémon-Team!");
+    assert.equal(text("Das POKéMON-CENTER."), "Das Pokémon-Center.", "an all-capitals name is left alone");
+    assert.equal(prepareSentences("Item (Tragen) kann manchmal K.O. verhindern.", glossary).length, 1, "K.O. does not end a sentence");
     assert.equal(text("Wenn wir schon mal hier sind…"), "Da wir ohnehin hier sind…");
     assert.equal(text("Und wenn ich schon einmal da bin, frage ich."), "Und da ich ohnehin da bin, frage ich.");
     assert.equal(text("Wenn wir schon dabei sind, gehen wir."), "Wo wir gerade dabei sind, gehen wir.");
@@ -189,6 +198,9 @@ describe("degenerate translations", () => {
   it("spots a loop or runaway output, not ordinary text", () => {
     assert.equal(isDegenerate("Items", "♪ ♪ ♪ ♪ ♪ ♪ ♪ ♪ ♪ ♪ ♪ ♪"), true);
     assert.equal(isDegenerate("Hallo", "x".repeat(200)), true);
+    assert.equal(isDegenerate("Irgendwo gibt es hohes Gras.", "I'm a little old, ".repeat(6)), true, "a repeated phrase");
+    assert.equal(isDegenerate("Item verhindert K.O.", "Item prevents K.O. The Commission has taken measures."), true, "an invented sentence");
+    assert.equal(isDegenerate("Die Kommission tagt.", "The Commission meets."), false, "unless the source says so");
     assert.equal(isDegenerate("Hallo!", "Hello!"), false);
     assert.equal(isDegenerate("Ha ha ha ha ha ha ha ha", "Ha ha ha ha ha ha ha ha"), false, "a repeated source is allowed");
   });

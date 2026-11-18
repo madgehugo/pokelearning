@@ -98,8 +98,26 @@ export class Translator {
   }
 }
 
+/** How often the most repeated run of three words occurs in a text. */
+function mostRepeatedPhrase(text: string): number {
+  const tokens = text.toLowerCase().split(/\s+/).filter(Boolean);
+  const counts = new Map<string, number>();
+  let most = 0;
+  for (let i = 0; i + 3 <= tokens.length; i++) {
+    const g = tokens.slice(i, i + 3).join(" ");
+    const n = (counts.get(g) ?? 0) + 1;
+    counts.set(g, n);
+    most = Math.max(most, n);
+  }
+  return most;
+}
+
 /** A translation that repeats one token over and over, or is far longer than its source. */
 export function isDegenerate(source: string, translation: string): boolean {
+  // Opus-MT, trained on EU texts, sometimes invents a sentence about "the Commission" for a fragment
+  if (/\b(?:Commission|Member States|Parliament|Directive)\b/.test(translation) && !/Kommission|Mitglied|Parlament|Richtlinie|Comisión|Estados miembros|Directiva/i.test(source)) return true;
+  // a phrase repeated over and over ("I'm a little old, I'm a little old, …"), more than the source does
+  if (mostRepeatedPhrase(translation) >= 4 && mostRepeatedPhrase(translation) > mostRepeatedPhrase(source)) return true;
   const words = translation.split(/\s+/).filter(Boolean);
   if (words.length >= 8 && new Set(words).size <= 2 && source.split(/\s+/).length < words.length / 2) return true;
   return translation.length > source.length * 6 + 40;
