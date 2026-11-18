@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import type { LineMessage } from "@pokelearning/shared";
 import { AppDb } from "./db/app-db.ts";
-import { createGlossary } from "./language/glossary.ts";
+import { createGlossary, curatedEntries } from "./language/glossary.ts";
 import { LinePipeline } from "./pipeline.ts";
 import { prepareForTranslation, prepareSentences, restoreSlots, splitSentences } from "./translate/prepare.ts";
 import type { TranslationProvider } from "./translate/provider.ts";
@@ -98,6 +98,9 @@ describe("prepareForTranslation", () => {
     assert.deepEqual(prepareSentences("Betont INIT. und SP. ANGR.", glossary)[0]!.slots, ["Speed", "Sp. Atk"], "both spellings of the stat");
     assert.equal(text("Irgendwo gibt es hohes Gras."), "Es gibt irgendwo hohes Gras.");
     assert.equal(text("Dein HOENN-POKéDEX ist fertig."), "Dein Hoenn Pokédex ist fertig.");
+    const curated = createGlossary(curatedEntries);
+    assert.deepEqual(prepareSentences("Dein POKEDEX ist fertig.", curated)[0]!.slots, ["Pokédex"], "the accent may be missing");
+    assert.deepEqual(prepareSentences("Du hast TURBOTRETER erhalten!", curated)[0]!.slots, ["Running Shoes"]);
     assert.equal(text("Mein KÄFER-POKéMON-Team!"), "Mein Käfer-Pokémon-Team!");
     assert.equal(text("Das POKéMON-CENTER."), "Das Pokémon-Center.", "an all-capitals name is left alone");
     assert.equal(prepareSentences("Item (Tragen) kann manchmal K.O. verhindern.", glossary).length, 1, "K.O. does not end a sentence");

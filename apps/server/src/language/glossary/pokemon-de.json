@@ -12,7 +12,8 @@
   },
   {
     "match": [
-      "Pokédex"
+      "Pokédex",
+      "Pokedex"
     ],
     "lemma": "Pokédex",
     "pos": "noun",
@@ -33,6 +34,18 @@
       "Pokémon Center (heals your Pokémon)"
     ],
     "mt": "Pokémon Center"
+  },
+  {
+    "match": [
+      "Turbotreter"
+    ],
+    "lemma": "Turbotreter",
+    "pos": "noun",
+    "gender": "m",
+    "glosses": [
+      "Running Shoes (hold B to run)"
+    ],
+    "mt": "Running Shoes"
   },
   {
     "match": [
