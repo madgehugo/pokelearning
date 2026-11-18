@@ -110,6 +110,13 @@ describe("prepareForTranslation", () => {
     assert.equal(es("Esos malandrines.").text, "Esos granujas.");
   });
 
+  it("gives the German badge names their English names", async () => {
+    const real = (await import("./language/glossary.ts")).loadGlossary([], "de");
+    assert.deepEqual(prepareSentences("Du erhältst den SCHAUERORDEN.", real)[0]!.slots, ["Rain Badge"]);
+    assert.deepEqual(prepareSentences("Der DYNAMO-ORDEN macht dich schneller.", real)[0]!.slots, ["Dynamo Badge"]);
+    assert.equal(real.get("STEINORDEN")?.gender, "m", "der Orden");
+  });
+
   it("gives the Spanish options and trainer card labels their English names", () => {
     const slots = (text: string) => prepareSentences(text, glossary, "es").flatMap((s) => s.slots);
     assert.deepEqual(slots("VELOC. TEXTO"), ["Text Speed"], "not just Speed");

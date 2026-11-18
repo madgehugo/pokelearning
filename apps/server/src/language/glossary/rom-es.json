@@ -214,5 +214,267 @@
    "id": 76,
    "name": "CACOFONÍA"
   }
+ ],
+ "items": [
+  {
+   "id": 22,
+   "name": "ANTIPARALIZ"
+  },
+  {
+   "id": 23,
+   "name": "RESTAU. TODO"
+  },
+  {
+   "id": 24,
+   "name": "MÁX. POCIÓN"
+  },
+  {
+   "id": 29,
+   "name": "MÁX. REVIVIR"
+  },
+  {
+   "id": 36,
+   "name": "POL.CURACIÓN"
+  },
+  {
+   "id": 37,
+   "name": "HIERBA REV."
+  },
+  {
+   "id": 39,
+   "name": "ÉTER MÁX."
+  },
+  {
+   "id": 41,
+   "name": "ELIXIR MÁX."
+  },
+  {
+   "id": 66,
+   "name": "FL. AMARILLA"
+  },
+  {
+   "id": 69,
+   "name": "FL. BLANCA"
+  },
+  {
+   "id": 44,
+   "name": "CEN. SAGRADA"
+  },
+  {
+   "id": 71,
+   "name": "C. CARDUMEN"
+  },
+  {
+   "id": 74,
+   "name": "P. AMARILLA"
+  },
+  {
+   "id": 53,
+   "name": "MÁX. PP"
+  },
+  {
+   "id": 55,
+   "name": "PROTEC. ESP."
+  },
+  {
+   "id": 56,
+   "name": "DIRECTO"
+  },
+  {
+   "id": 61,
+   "name": "ESPECIAL X"
+  },
+  {
+   "id": 76,
+   "name": "SUPERREPEL"
+  },
+  {
+   "id": 77,
+   "name": "MÁX. REPEL"
+  },
+  {
+   "id": 91,
+   "name": "TR. ESTRELLA"
+  },
+  {
+   "id": 93,
+   "name": "ESC. CORAZÓN"
+  },
+  {
+   "id": 191,
+   "name": "HIER. BLANCA"
+  },
+  {
+   "id": 192,
+   "name": "VESTIDURA"
+  },
+  {
+   "id": 195,
+   "name": "CAMP. ALIVIO"
+  },
+  {
+   "id": 196,
+   "name": "HIER. MENTAL"
+  },
+  {
+   "id": 197,
+   "name": "CIN. ELEGIDA"
+  },
+  {
+   "id": 200,
+   "name": "MON. AMULETO"
+  },
+  {
+   "id": 203,
+   "name": "DIENTE MAR."
+  },
+  {
+   "id": 204,
+   "name": "ESCAMA MAR."
+  },
+  {
+   "id": 205,
+   "name": "BOLA HUMO"
+  },
+  {
+   "id": 207,
+   "name": "CINTA FOCUS"
+  },
+  {
+   "id": 210,
+   "name": "REV.METÁLICO"
+  },
+  {
+   "id": 216,
+   "name": "SEM. MILAGRO"
+  },
+  {
+   "id": 218,
+   "name": "CINT. NEGRO"
+  },
+  {
+   "id": 222,
+   "name": "FLECHA VEN."
+  },
+  {
+   "id": 223,
+   "name": "ANTIDERRETIR"
+  },
+  {
+   "id": 225,
+   "name": "CUCHARA TOR"
+  },
+  {
+   "id": 227,
+   "name": "COLMILLODRAG"
+  },
+  {
+   "id": 228,
+   "name": "PAÑUELO SEDA"
+  },
+  {
+   "id": 230,
+   "name": "CAMP. CONCHA"
+  },
+  {
+   "id": 231,
+   "name": "INCIE. MAR."
+  },
+  {
+   "id": 232,
+   "name": "INCIE. SUAVE"
+  },
+  {
+   "id": 234,
+   "name": "POL.METÁLICO"
+  },
+  {
+   "id": 236,
+   "name": "PALO"
+  },
+  {
+   "id": 240,
+   "name": "PAÑ. VERDE"
+  },
+  {
+   "id": 241,
+   "name": "P. AMARILLO"
+  },
+  {
+   "id": 527,
+   "name": "BICI CARRERA"
+  },
+  {
+   "id": 465,
+   "name": "BUSCAOBJETOS"
+  },
+  {
+   "id": 434,
+   "name": "PASE CONCUR."
+  },
+  {
+   "id": 529,
+   "name": "CUBO WAILMER"
+  },
+  {
+   "id": 476,
+   "name": "LL. SÓTANO"
+  },
+  {
+   "id": 528,
+   "name": "BICI ACROB."
+  },
+  {
+   "id": 533,
+   "name": "CARTA"
+  },
+  {
+   "id": 467,
+   "name": "ESFERA ROJA"
+  },
+  {
+   "id": 468,
+   "name": "ESFERA AZUL"
+  },
+  {
+   "id": 536,
+   "name": "GAF. AISLAN."
+  },
+  {
+   "id": 440,
+   "name": "LL. ALMACÉN"
+  },
+  {
+   "id": 542,
+   "name": "DETEC. DEVON"
+  },
+  {
+   "id": 445,
+   "name": "LL. SECRETA"
+  },
+  {
+   "id": 546,
+   "name": "DIENTES ORO"
+  },
+  {
+   "id": 475,
+   "name": "LL.MAGNÉTICA"
+  },
+  {
+   "id": 547,
+   "name": "LL. ASCENSOR"
+  },
+  {
+   "id": 548,
+   "name": "SCOPE SILPH"
+  },
+  {
+   "id": 427,
+   "name": "BICICLETA"
+  },
+  {
+   "id": 550,
+   "name": "TUBO MT-MO"
+  }
  ]
 }

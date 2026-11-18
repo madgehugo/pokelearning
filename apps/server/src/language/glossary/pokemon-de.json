@@ -269,5 +269,131 @@
       "Grunt (a member of Team Aqua or Magma)",
       "lout, ruffian"
     ]
+  },
+  {
+    "match": [
+      "STEINORDEN"
+    ],
+    "lemma": "Steinorden",
+    "pos": "noun",
+    "gender": "m",
+    "glosses": [
+      "Stone Badge",
+      "Gym badge (Roxanne (Rustboro City))"
+    ],
+    "mt": "Stone Badge",
+    "capsOnly": true
+  },
+  {
+    "match": [
+      "KNÖCHELORDEN"
+    ],
+    "lemma": "Knöchelorden",
+    "pos": "noun",
+    "gender": "m",
+    "glosses": [
+      "Knuckle Badge",
+      "Gym badge (Brawly (Dewford Town))"
+    ],
+    "mt": "Knuckle Badge",
+    "capsOnly": true
+  },
+  {
+    "match": [
+      "DYNAMO-ORDEN"
+    ],
+    "lemma": "Dynamo-Orden",
+    "pos": "noun",
+    "gender": "m",
+    "glosses": [
+      "Dynamo Badge",
+      "Gym badge (Wattson (Mauville City))"
+    ],
+    "mt": "Dynamo Badge",
+    "capsOnly": true
+  },
+  {
+    "match": [
+      "HITZEORDEN"
+    ],
+    "lemma": "Hitzeorden",
+    "pos": "noun",
+    "gender": "m",
+    "glosses": [
+      "Heat Badge",
+      "Gym badge (Flannery (Lavaridge Town))"
+    ],
+    "mt": "Heat Badge",
+    "capsOnly": true
+  },
+  {
+    "match": [
+      "BALANCEORDEN"
+    ],
+    "lemma": "Balanceorden",
+    "pos": "noun",
+    "gender": "m",
+    "glosses": [
+      "Balance Badge",
+      "Gym badge (Norman (Petalburg City))"
+    ],
+    "mt": "Balance Badge",
+    "capsOnly": true
+  },
+  {
+    "match": [
+      "FEDERORDEN"
+    ],
+    "lemma": "Federorden",
+    "pos": "noun",
+    "gender": "m",
+    "glosses": [
+      "Feather Badge",
+      "Gym badge (Winona (Fortree City))"
+    ],
+    "mt": "Feather Badge",
+    "capsOnly": true
+  },
+  {
+    "match": [
+      "MENTALORDEN"
+    ],
+    "lemma": "Mentalorden",
+    "pos": "noun",
+    "gender": "m",
+    "glosses": [
+      "Mind Badge",
+      "Gym badge (Tate & Liza (Mossdeep City))"
+    ],
+    "mt": "Mind Badge",
+    "capsOnly": true
+  },
+  {
+    "match": [
+      "SCHAUERORDEN"
+    ],
+    "lemma": "Schauerorden",
+    "pos": "noun",
+    "gender": "m",
+    "glosses": [
+      "Rain Badge",
+      "Gym badge (Juan (Sootopolis City))"
+    ],
+    "mt": "Rain Badge",
+    "capsOnly": true
+  },
+  {
+    "match": [
+      "ARENAORDEN"
+    ],
+    "lemma": "Arenaorden",
+    "pos": "noun",
+    "gender": "m",
+    "glosses": [
+      "Gym Badge",
+      "Gym badge (given by a Gym Leader)"
+    ],
+    "mt": "Gym Badge",
+    "capsOnly": true
   }
 ]

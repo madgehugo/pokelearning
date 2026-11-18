@@ -149,10 +149,21 @@ function M.encode(text, lang)
   return table.concat(out)
 end
 
+local ACCENTED_LOWER = {}
+for _, c in utf8.codes("äöüßáéíóúñàèìòùâêîôûçëïœ") do ACCENTED_LOWER[utf8.char(c)] = true end
+local function isLower(ch)
+  return ch:match("^%l$") ~= nil or ACCENTED_LOWER[ch] == true
+end
+
 -- Turn decoded text into one flat sentence-ish line for the learning pipeline.
--- "Pokémon-\nCenter" keeps its hyphen; other breaks become single spaces.
+-- A word split across lines ("An-\ngriff") is joined without its hyphen ("Angriff"). A hyphen before a
+-- capital ("Pokémon-\nCenter") is part of the word and stays; other breaks become single spaces.
 function M.flatten(text)
-  local s = text:gsub("%-[\n\f]", "-"):gsub("[\n\f]", " "):gsub("%s+", " ")
+  local pattern = "(" .. utf8.charpattern .. ")%-\n(" .. utf8.charpattern .. ")"
+  local s = text:gsub(pattern, function(a, b)
+    if isLower(a) and isLower(b) then return a .. b end
+    return a .. "-" .. b
+  end):gsub("%-[\n\f]", "-"):gsub("[\n\f]", " "):gsub("%s+", " ")
   return (s:gsub("^%s+", ""):gsub("%s+$", ""))
 end
 

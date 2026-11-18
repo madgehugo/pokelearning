@@ -72,6 +72,16 @@ h.test("charmap: flatten joins lines but keeps hyphenated breaks", function()
   h.eq(charmap.flatten("  \n "), "")
 end)
 
+h.test("charmap: a word split across lines is joined without its hyphen", function()
+  h.eq(charmap.flatten("Der An-\ngriff"), "Der Angriff")
+  h.eq(charmap.flatten("Das Ge-\nbiet ist so-\ngar groß."), "Das Gebiet ist sogar groß.")
+  h.eq(charmap.flatten("Die Verbin-\ndung zu Rü-\nben"), "Die Verbindung zu Rüben")
+  h.eq(charmap.flatten("Ein Ber-\nüber"), "Ein Berüber") -- accents count as lowercase too
+  h.eq(charmap.flatten("POKéMON-\nCENTER und Pokémon-\nCenter"), "POKéMON-CENTER und Pokémon-Center")
+  h.eq(charmap.flatten("Rest-\f wie"), "Rest- wie") -- a page break is not a line break inside a word
+  h.eq(charmap.flatten("¡Mu-\nchas gra-\ncias!"), "¡Muchas gracias!")
+end)
+
 h.test("charmap: pages split on paragraph breaks and drop blanks", function()
   local pages = charmap.pages("eins\ndrei\fzwei\f\f ")
   h.eq(#pages, 2)

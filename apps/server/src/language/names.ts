@@ -15,7 +15,7 @@ const ES = "7";
 const EN = "9";
 const LANGUAGE_BY_ID: Record<string, "de" | "es" | "en"> = { [DE]: "de", [ES]: "es", [EN]: "en" };
 
-type RomNames = { moves: { id: number; name: string }[]; abilities: { id: number; name: string }[] };
+type RomNames = { moves: { id: number; name: string }[]; abilities: { id: number; name: string }[]; items: { id: number; name: string }[] };
 const ROM_NAMES: Record<"de" | "es", RomNames> = { de: romDeFile, es: romEsFile };
 
 /** The PokéAPI tables the import downloads. */
@@ -245,7 +245,8 @@ export function buildNames(csv: NameTables, versionGroup = 6): Omit<NamesFile, "
 /**
  * Gen 3 cut long move and ability names to fit 12 letters (Spanish "DISP. DEMORA" for "Disparo
  * Demora"), and some differ from PokéAPI's (German "PFUND" for Pound). These are the game's spellings,
- * read from the Esmeralda (Spain) and Smaragd ROMs, each tied to its PokéAPI id.
+ * read from the Esmeralda (Spain) and Smaragd ROMs, each tied to its PokéAPI id. Items go through the
+ * order of pret/pokeemerald's items.h (the ROM's item index → its English name → the PokéAPI item).
  */
 function romSpellings(
   names: Partial<Omit<NamesFile, "source" | "importedAt">>,
@@ -262,6 +263,13 @@ function romSpellings(
   for (const a of names.abilities ?? []) {
     const name = ROM_NAMES[lang].abilities.find((r) => r.id === a.id)?.name;
     if (name && a.generation <= scope.generation) add(name, "ability", [a.en, `Pokémon ability (${LABELS[lang].ability})`], a.en);
+  }
+  for (const i of names.items ?? []) {
+    const name = ROM_NAMES[lang].items.find((r) => r.id === i.id)?.name;
+    if (!name || !i.generations.includes(scope.generation)) continue;
+    const native = lang === "es" ? i.categoryEs : i.categoryDe;
+    const category = i.categoryEn ? `${i.categoryEn} item${native ? ` (${native})` : ""}` : "item";
+    add(name, "item", [i.en, category, i.descriptionEn], i.en);
   }
 }
 

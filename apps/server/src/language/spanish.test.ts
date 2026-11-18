@@ -200,3 +200,31 @@ describe("German ROM spellings", () => {
     assert.equal(glossary.get("KLAPS")?.mt, "Pound");
   });
 });
+
+describe("item names as the ROMs spell them", () => {
+  const items = [
+    { id: 23, generations: [3], de: "Top-Beleber", es: "Restaurar todo", en: "Full Restore", categoryDe: "Heilung", categoryEs: "curación", categoryEn: "Healing", descriptionEn: "Fully restores the HP and status of a POKéMON." },
+    { id: 58, generations: [3], de: "X-Abwehr", en: "X Defense", categoryDe: "Statusverbesserung", categoryEn: "Stat boosts", descriptionEn: "Raises the stat DEFENSE during one battle." },
+  ];
+  const scope = { generation: 3, regions: [3] };
+
+  it("matches an abbreviated Spanish name with its full stop, and gives the English name", () => {
+    const glossary = loadGlossary(nameEntries({ items }, scope, "es"), "es");
+    const a = analyzeLine("Has encontrado RESTAU. TODO.", { dictionary: fixtureDictionary(ENTRIES), glossary, lang: "es" });
+    const t = a.tokens.find((x) => x.text === "RESTAU")!;
+    assert.equal(t.best?.pos, "item");
+    assert.equal(t.best?.glosses[0], "Full Restore");
+    assert.deepEqual(prepareSentences("Has encontrado RESTAU. TODO.", glossary, "es")[0]!.slots, ["Full Restore"]);
+  });
+
+  it("does the same for a German name", () => {
+    const glossary = loadGlossary(nameEntries({ items }, scope, "de"), "de");
+    assert.equal(glossary.get("X-ABWEHR")?.mt, "X Defense");
+    assert.equal(glossary.get("X-Abwehr")?.mt, "X Defense", "PokéAPI's own spelling is still known");
+  });
+
+  it("leaves out items that don't exist in the game's generation", () => {
+    const glossary = loadGlossary(nameEntries({ items: [{ ...items[0]!, generations: [5] }] }, scope, "es"), "es");
+    assert.equal(glossary.get("RESTAU. TODO"), undefined);
+  });
+});

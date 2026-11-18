@@ -54,5 +54,103 @@
    "id": 76,
    "name": "KAKOPHONY"
   }
+ ],
+ "items": [
+  {
+   "id": 68,
+   "name": "SCHW. FLÖTE"
+  },
+  {
+   "id": 56,
+   "name": "ANGRIFFPLUS"
+  },
+  {
+   "id": 58,
+   "name": "X-ABWEHR"
+  },
+  {
+   "id": 59,
+   "name": "X-TEMPO"
+  },
+  {
+   "id": 60,
+   "name": "X-TREFFER"
+  },
+  {
+   "id": 61,
+   "name": "X-SPEZIAL"
+  },
+  {
+   "id": 192,
+   "name": "MACHOBAND"
+  },
+  {
+   "id": 201,
+   "name": "SCHUTZBAND"
+  },
+  {
+   "id": 204,
+   "name": "ABYSSPLATTE"
+  },
+  {
+   "id": 212,
+   "name": "DRACHENHAUT"
+  },
+  {
+   "id": 217,
+   "name": "SCHATTENGLAS"
+  },
+  {
+   "id": 221,
+   "name": "HACKATTACK"
+  },
+  {
+   "id": 230,
+   "name": "SEEGESANG"
+  },
+  {
+   "id": 465,
+   "name": "DETEKTOR"
+  },
+  {
+   "id": 434,
+   "name": "WETTB.-KARTE"
+  },
+  {
+   "id": 533,
+   "name": "BRIEF"
+  },
+  {
+   "id": 467,
+   "name": "ROTE KUGEL"
+  },
+  {
+   "id": 468,
+   "name": "BLAUE KUGEL"
+  },
+  {
+   "id": 536,
+   "name": "WÜSTENGLAS"
+  },
+  {
+   "id": 440,
+   "name": "L.-SCHLÜSSEL"
+  },
+  {
+   "id": 546,
+   "name": "GOLDZÄHNE"
+  },
+  {
+   "id": 475,
+   "name": "TÜRÖFFNER"
+  },
+  {
+   "id": 547,
+   "name": "LIFTÖFFNER"
+  },
+  {
+   "id": 550,
+   "name": "VM/TM-BOX"
+  }
  ]
 }
