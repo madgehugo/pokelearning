@@ -1,0 +1,10 @@
+[
+  { "match": ["tu"], "lemma": "tu", "pos": "det", "glosses": ["your (before a noun)"] },
+  { "match": ["tus"], "lemma": "tu", "pos": "det", "glosses": ["your (before a plural noun)"], "plural": "tus" },
+  { "match": ["mi"], "lemma": "mi", "pos": "det", "glosses": ["my (before a noun)"] },
+  { "match": ["mis"], "lemma": "mi", "pos": "det", "glosses": ["my (before a plural noun)"], "plural": "mis" },
+  { "match": ["veces"], "lemma": "vez", "pos": "noun", "gender": "f", "glosses": ["time, occasion"], "plural": "veces" },
+  { "match": ["he"], "lemma": "haber", "pos": "verb", "glosses": ["I have (auxiliary: “he dedicado” = I have dedicated)"] },
+  { "match": ["sí"], "lemma": "sí", "pos": "particle", "glosses": ["yes"] },
+  { "match": ["lo"], "lemma": "lo", "pos": "pron", "glosses": ["it, him (object pronoun: “te lo dé” = I give it to you)", "the (neuter article: “lo que” = what, the thing that)"] }
+]

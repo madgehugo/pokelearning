@@ -19,7 +19,8 @@
 - **Done:** per-language dictionary, analysis (el/la, no German-only rules), names, `es→en` translation, on-demand download, tests with real data.
 - **Also done:** a language on saved and hidden words (migration 6), el/la cards, per-language games with a language switch, the `es-ES` voice for Listening, Spanish stat labels (taken from the Esmeralda ROM).
 - **Confirmed in-game (Esmeralda, Spain):** dialogue, battle text and menus, including the bag (its pocket names are drawn in pairs; only the one on screen is sent).
-- **Next:** better Spanish ranking (adjective vs noun, `tu`) and Spanish clitic forms.
+- **Ranking and labels:** after an article or possessive a noun beats an adjective or verb (*tu padre*); function words beat their rare noun readings (*no*, *contra*); a small hand-written Spanish glossary covers *tu, mi, veces, he, lo, sí*; the options and trainer-card labels and stat names get English names (stats are spelt out inside sentences so the translation reads right). Clitic forms (*dámelo*, *verlo*) already resolve through the dictionary.
+- **Next:** more Spanish ranking cases as they turn up in play (e.g. *ven* as venir, an adjective after its noun), and Spanish idioms the translator renders literally (*ya que estamos*).
 
 ### Follow-ups
 - ✅ Pokémon and move names (German ↔ English) from PokéAPI (`npm run names:import`). Names written in Gen 3 capitals reach the translator as placeholders (X1, X2) and go back in as English afterwards.

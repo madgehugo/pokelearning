@@ -34,17 +34,37 @@ const PHRASES_DE: [RegExp, string][] = [
 ];
 
 /** The same for Spanish games (the labels found in the Esmeralda ROM). */
-const PHRASES_ES: [RegExp, string][] = [
-  [/\bAT\.\s*ESP\./g, "Sp. Atk"],
-  [/\bDEF\.\s*ESP\./g, "Sp. Def"],
-  [/\bVELOC\./g, "Speed"],
+const PHRASES_ES: [RegExp, string, string?][] = [
+  // the options screen and the trainer card; longer labels first
+  [/\bVELOC\.\s*TEXTO\b/g, "Text Speed"],
+  [/\bANIM\.\s*COMBATE\b/g, "Battle Scene"],
+  [/\bTIPO\s+COMBATE\b/g, "Battle Style"],
+  [/\bCONTROLES\b/g, "Button Mode"],
+  [/\bIMAGEN\b/g, "Frame"],
+  [/\bLENTA\b/g, "Slow"],
+  [/\bMEDIA\b/g, "Mid"],
+  [/\bRÁPIDA(?![\p{L}])/gu, "Fast"],
+  [/\bCAMBIAR\b/g, "Shift"],
+  [/\bMANTENER\b/g, "Set"],
+  [/\bMONO\b/g, "Mono"],
+  [/\bTIEMPO\s+J\./g, "Play Time"],
+  [/\bMEDALLAS\b/g, "Badges"],
+  [/\bOBJETOS\b/g, "Items"],
+  [/\bMT\s*\/\s*MO\b/g, "TMs/HMs"],
+  [/\bENTRENADOR(?![\p{L}])/gu, "Trainer"],
+  // Stat names: a label on its own is the game's English abbreviation; inside a sentence it is spelt
+  // out in Spanish (third item), so the translator gets the grammar right ("¡Velocidad de X1 bajó!").
+  [/\bAT\.\s*ESP\./g, "Sp. Atk", "ataque especial"],
+  [/\bDEF\.\s*ESP\./g, "Sp. Def", "defensa especial"],
+  [/\bVELOCID\./g, "Speed", "velocidad"],
+  [/\bVELOC\./g, "Speed", "velocidad"],
   [/\bPS\b/g, "HP"],
   [/\bLUCHA\b/g, "Fight"],
   [/\bMOCHILA\b/g, "Bag"],
   [/\bHUIDA\b/g, "Run"],
 ];
 
-const PHRASES: Record<string, [RegExp, string][]> = { de: PHRASES_DE, es: PHRASES_ES };
+const PHRASES: Record<string, [RegExp, string, string?][]> = { de: PHRASES_DE, es: PHRASES_ES };
 
 const SLOT = /\bX(\d+)\b/g;
 
@@ -68,7 +88,16 @@ function protect(text: string, glossary: Glossary, lang: string): { text: string
     return `X${slots.length}`;
   };
 
-  for (const [re, english] of PHRASES[lang] ?? []) text = text.replace(re, () => slot(english));
+  for (const [re, english, spelledOut] of PHRASES[lang] ?? []) {
+    const alone = spelledOut !== undefined && new RegExp(`^(?:${re.source})$`).test(text.trim());
+    text = text.replace(re, (match: string, offset: number, whole: string) => {
+      if (spelledOut === undefined || alone) return slot(english);
+      const start = /(?:^|[¡¿.!?]\s*)$/.test(whole.slice(0, offset));
+      // the abbreviation's full stop may also be the end of the sentence
+      const end = /^\s*$/.test(whole.slice(offset + match.length)) ? "." : "";
+      return (start ? spelledOut[0]!.toUpperCase() + spelledOut.slice(1) : spelledOut) + end;
+    });
+  }
 
   let out = "";
   let last = 0;

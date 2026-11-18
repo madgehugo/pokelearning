@@ -25,7 +25,19 @@ export interface WordContext {
   sentenceStart: boolean;
   /** The token is followed directly by "." (abbreviations like "Prof."). */
   dotFollows: boolean;
+  /** Spanish: the previous word is an article or possessive, so a noun (or adjective) is expected. */
+  afterDeterminer?: boolean;
 }
+
+/** Spanish words after which a noun follows ("el padre", "tu padre"). */
+export const ES_DETERMINERS = new Set([
+  "el", "la", "los", "las", "un", "una", "unos", "unas", "mi", "mis", "tu", "tus", "su", "sus",
+  "nuestro", "nuestra", "nuestros", "nuestras", "este", "esta", "estos", "estas", "ese", "esa", "esos", "esas",
+  "aquel", "aquella", "otro", "otra", "otros", "otras", "cada", "algún", "ningún", "del", "al",
+]);
+
+/** Spanish parts of speech that are function words: their rare noun readings ("no", "contra") shouldn't win. */
+const ES_FUNCTION = new Set(["prep", "conj", "adv", "pron", "det", "article", "contraction", "particle"]);
 
 /** Spelling to look up: Gen 3 capitals become title case ("TRANK" → "Trank"). */
 export function lookupSpelling(word: string): string {
@@ -58,7 +70,16 @@ export function scoreMatch(match: FormMatch, spelling: string, ctx: WordContext,
   } else if (capitalised && !ctx.sentenceStart && !allCaps && lexeme.pos === "name") {
     score += 2;
   }
-  if (allCaps && nounLike) score += 1; // Gen 3 writes names and items in capitals
+  // Gen 3 writes names and items in capitals. Spanish names come from the glossary, so there an
+  // all-caps name from the dictionary ("NUEVA", a village) is only a guess.
+  if (allCaps && nounLike) score += ctx.lang === "de" ? 1 : lexeme.pos === "name" ? -1.5 : 0;
+  if (ctx.lang === "es") {
+    if (ES_FUNCTION.has(lexeme.pos)) score += 0.8;
+    if (ctx.afterDeterminer) {
+      if (nounLike) score += 1;
+      else if (lexeme.pos === "verb") score -= 1.5;
+    }
+  }
 
   // The word is a headword itself ("Leute"), not just an inflection of one ("plural of Leut").
   if (match.form === lexeme.lemma) score += 1.5;

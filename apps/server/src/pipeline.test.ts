@@ -59,7 +59,10 @@ describe("prepareForTranslation", () => {
   it("keeps the Spanish stat labels whole, and only for Spanish", () => {
     assert.equal(prepareForTranslation("AT. ESP.", glossary, "es"), "X1");
     assert.equal(prepareForTranslation("DEF. ESP.", glossary, "es"), "X1");
-    assert.deepEqual(prepareSentences("Recupera PS y VELOC.", glossary, "es")[0]!.slots, ["HP", "Speed"]);
+    assert.deepEqual(prepareSentences("VELOC.", glossary, "es")[0]!.slots, ["Speed"], "a label on its own");
+    const inLine = prepareSentences("Recupera PS y VELOC.", glossary, "es")[0]!;
+    assert.deepEqual([inLine.text, inLine.slots], ["Recupera X1 y velocidad.", ["HP"]], "spelt out inside a sentence");
+    assert.equal(prepareSentences("¡VELOCID. de TORCHIC bajó!", glossary, "es")[0]!.text, "¡Velocidad de Torchic bajó!");
     assert.notEqual(prepareForTranslation("VERT.", glossary, "es"), "X1", "German labels are not applied to Spanish");
     assert.equal(prepareForTranslation("PS", glossary), "PS", "and Spanish labels not to German");
   });
@@ -68,6 +71,18 @@ describe("prepareForTranslation", () => {
     assert.deepEqual(prepareSentences("HUIDA", glossary, "es")[0]!.slots, ["Run"]);
     assert.deepEqual(prepareSentences("MOCHILA", glossary, "es")[0]!.slots, ["Bag"]);
     assert.deepEqual(prepareSentences("FLUCHT", glossary)[0]!.slots, ["Run"]);
+  });
+
+  it("gives the Spanish options and trainer card labels their English names", () => {
+    const slots = (text: string) => prepareSentences(text, glossary, "es").flatMap((s) => s.slots);
+    assert.deepEqual(slots("VELOC. TEXTO"), ["Text Speed"], "not just Speed");
+    assert.deepEqual(slots("TIEMPO J."), ["Play Time"]);
+    assert.deepEqual(slots("VELOCID."), ["Speed"]);
+    assert.deepEqual(slots("MONO"), ["Mono"], "not the monkey");
+    assert.deepEqual(slots("OBJETOS"), ["Items"]);
+    assert.deepEqual(slots("MT / MO"), ["TMs/HMs"]);
+    assert.deepEqual(slots("lo que debe hacer todo ENTRENADOR."), ["Trainer"]);
+    assert.deepEqual(slots("Un mono y su tiempo."), [], "only in capitals");
     assert.equal(prepareForTranslation("Die Flucht gelingt.", glossary), "Die Flucht gelingt.", "only in capitals");
   });
 

@@ -5,6 +5,7 @@
  */
 import type { Article, Language, WordSense } from "@pokelearning/shared";
 import curated from "./glossary/pokemon-de.json" with { type: "json" };
+import curatedEs from "./glossary/pokemon-es.json" with { type: "json" };
 import { isAllCaps, type Token } from "./tokenize.ts";
 
 export interface GlossaryEntry {
@@ -86,10 +87,11 @@ export function createGlossary(entries: GlossaryEntry[]): Glossary {
 /** The hand-written game terms. Imported as a module so the packaged app's bundle includes it. */
 export const curatedEntries = curated as GlossaryEntry[];
 
-/** Imported names (`extra`) plus the hand-written terms, which win. */
+export const curatedEntriesEs = curatedEs as GlossaryEntry[];
+
+/** Imported names (`extra`) plus the hand-written terms of the language, which win. */
 export function loadGlossary(extra: GlossaryEntry[] = [], lang: Language = "de"): Glossary {
-  // the hand-written terms are German; Spanish games get only the imported names
-  return createGlossary(lang === "de" ? [...extra, ...curatedEntries] : extra);
+  return createGlossary([...extra, ...(lang === "de" ? curatedEntries : curatedEntriesEs)]);
 }
 
 const ARTICLES: Record<Language, Record<string, Article>> = {

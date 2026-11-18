@@ -11,7 +11,7 @@ import type { Language, LineAnalysis, TokenAnalysis, WordSense } from "@pokelear
 import type { Dictionary } from "../dictionary/db.ts";
 import { analyzeCompound } from "./compound.ts";
 import { articlesFor, glossarySense, type Glossary, type GlossaryEntry } from "./glossary.ts";
-import { candidatesFor, lookupSpelling, rank, toSense, type Candidate, type WordContext } from "./ranking.ts";
+import { candidatesFor, ES_DETERMINERS, lookupSpelling, rank, toSense, type Candidate, type WordContext } from "./ranking.ts";
 import { isAllCaps, isClauseBoundary, isSentenceEnd, titleCase, tokenize, type Token } from "./tokenize.ts";
 
 export interface AnalyzerDeps {
@@ -38,6 +38,7 @@ export function analyzeLine(text: string, deps: AnalyzerDeps): LineAnalysis {
   const analyses: TokenAnalysis[] = [];
 
   let sentenceStart = true;
+  let afterDeterminer = false;
   let phraseHead = -1;
   let phraseLast = -1;
   tokens.forEach((token, index) => {
@@ -56,11 +57,13 @@ export function analyzeLine(text: string, deps: AnalyzerDeps): LineAnalysis {
       analysis.phraseEnd = tokens[phrase.last]!.end;
       [phraseHead, phraseLast] = [index, phrase.last];
       sentenceStart = false;
+      afterDeterminer = false;
       work.push(null);
       return;
     }
 
     if (token.kind !== "word") {
+      afterDeterminer = false;
       work.push(null);
       if (isSentenceEnd(token)) sentenceStart = true;
       else if (token.kind !== "punct") sentenceStart = false;
@@ -71,8 +74,10 @@ export function analyzeLine(text: string, deps: AnalyzerDeps): LineAnalysis {
       lang,
       sentenceStart,
       dotFollows: next?.kind === "punct" && next.text === "." && next.start === token.end,
+      afterDeterminer,
     };
     sentenceStart = false;
+    afterDeterminer = lang === "es" && ES_DETERMINERS.has(token.text.toLowerCase());
     work.push(analyzeWord(token, index, ctx, deps, analysis));
   });
 

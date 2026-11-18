@@ -27,6 +27,16 @@ const ENTRIES: KaikkiEntry[] = [
   { word: "vamos", pos: "intj", senses: [{ glosses: ["let's go!"] }] },
   { word: "Pokémon", pos: "noun", senses: [{ glosses: ["Pokémon (creature)"], tags: ["masculine"] }] },
   { word: "abedul", pos: "noun", senses: [{ glosses: ["birch"], tags: ["masculine"] }] },
+  { word: "padre", pos: "adj", senses: [{ glosses: ["cool"] }, { glosses: ["acceptable"] }] },
+  { word: "padre", pos: "noun", senses: [{ glosses: ["father"], tags: ["masculine"] }, { glosses: ["parent"] }, { glosses: ["priest"] }] },
+  { word: "no", pos: "noun", senses: [{ glosses: ["no"], tags: ["masculine"] }] },
+  { word: "no", pos: "adv", senses: [{ glosses: ["not"] }] },
+  { word: "mi", pos: "noun", senses: [{ glosses: ["mi (musical note)"], tags: ["masculine"] }] },
+  { word: "vez", pos: "noun", forms: [{ form: "veces", tags: ["plural"] }], senses: [{ glosses: ["time, instance"], tags: ["feminine"] }] },
+  { word: "veces", pos: "prep", senses: [{ glosses: ["by, times (multiplication)"] }] },
+  { word: "nueva", pos: "name", senses: [{ glosses: ["a village in Asturias"] }] },
+  { word: "nuevo", pos: "adj", forms: [{ form: "nueva", tags: ["feminine", "singular"] }], senses: [{ glosses: ["new"] }] },
+  { word: "pueblo", pos: "verb", senses: [{ glosses: ["first-person singular present of poblar"], tags: ["form-of"], form_of: [{ word: "poblar" }] }] },
 ];
 
 describe("Spanish analysis", () => {
@@ -62,6 +72,38 @@ describe("Spanish analysis", () => {
 
   it("takes a name in capitals as the dictionary word", () => {
     assert.equal(word("Me llamo ABEDUL.", "ABEDUL").best?.lemma, "abedul");
+  });
+});
+
+describe("Spanish ranking", () => {
+  const dictionary = fixtureDictionary(ENTRIES);
+  const glossary = loadGlossary([], "es");
+  const analyze = (line: string) => analyzeLine(line, { dictionary, glossary, lang: "es" });
+  const word = (line: string, text: string) => analyze(line).tokens.find((t) => t.text === text)!;
+
+  it("reads a noun, not an adjective or verb, after an article or possessive", () => {
+    assert.equal(word("Ve a tu padre", "padre").best?.pos, "noun");
+    assert.equal(word("El pueblo", "pueblo").best?.pos, "noun");
+    assert.equal(word("Veo el pueblo", "pueblo").best?.articles?.[0], "el");
+  });
+
+  it("prefers a function word to its rare noun reading, in capitals too", () => {
+    assert.equal(word("NO APAGUES", "NO").best?.pos, "adv");
+    assert.equal(word("No", "No").best?.pos, "adv");
+  });
+
+  it("doesn't take a village for an all-caps adjective", () => {
+    assert.notEqual(word("PARTIDA NUEVA", "NUEVA").best?.pos, "name");
+  });
+
+  it("knows the words the dictionary gets wrong: tu, mi, veces, lo, sí", () => {
+    assert.equal(word("tu edad", "tu").best?.lemma, "tu");
+    assert.equal(word("Mi vida", "Mi").best?.pos, "det");
+    const veces = word("A veces", "veces").best;
+    assert.equal(veces?.lemma, "vez");
+    assert.deepEqual(veces?.articles, ["la"]);
+    assert.equal(word("te lo dé", "lo").best?.pos, "pron");
+    assert.equal(word("Sí", "Sí").best?.pos, "particle");
   });
 });
 
