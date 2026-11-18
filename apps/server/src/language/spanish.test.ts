@@ -183,3 +183,12 @@ describe("the game's own spellings of Spanish names", () => {
     assert.equal(glossary.get("ROBUSTEZ")?.mt, "Sturdy");
   });
 });
+
+describe("German ROM spellings", () => {
+  it("knows the names Smaragd spells differently from PokéAPI", () => {
+    const names = { moves: [{ id: 1, generation: 1, de: "Klaps", en: "Pound", typeDe: "Normal", typeEn: "Normal" }] };
+    const glossary = loadGlossary(nameEntries(names, { generation: 3, regions: [3] }, "de"), "de");
+    assert.equal(glossary.get("PFUND")?.mt, "Pound");
+    assert.equal(glossary.get("KLAPS")?.mt, "Pound");
+  });
+});

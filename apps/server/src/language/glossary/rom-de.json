@@ -1,0 +1,58 @@
+{
+ "moves": [
+  {
+   "id": 1,
+   "name": "PFUND"
+  },
+  {
+   "id": 64,
+   "name": "SCHNABEL"
+  },
+  {
+   "id": 109,
+   "name": "KONFUSTRAHL"
+  },
+  {
+   "id": 137,
+   "name": "GIFTBLICK"
+  },
+  {
+   "id": 193,
+   "name": "GESICHTE"
+  },
+  {
+   "id": 226,
+   "name": "STAFFETTE"
+  },
+  {
+   "id": 272,
+   "name": "ROLLENTAUSCH"
+  },
+  {
+   "id": 285,
+   "name": "WERTEWECHSEL"
+  },
+  {
+   "id": 338,
+   "name": "FAUNA-STATUE"
+  }
+ ],
+ "abilities": [
+  {
+   "id": 36,
+   "name": "FÄHRTE"
+  },
+  {
+   "id": 60,
+   "name": "WERTEHALTER"
+  },
+  {
+   "id": 71,
+   "name": "AUSWEGSLOS"
+  },
+  {
+   "id": 76,
+   "name": "KAKOPHONY"
+  }
+ ]
+}

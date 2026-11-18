@@ -6,6 +6,7 @@
  */
 import fs from "node:fs";
 import type { GlossaryEntry } from "./glossary.ts";
+import romDeFile from "./glossary/rom-de.json" with { type: "json" };
 import romEsFile from "./glossary/rom-es.json" with { type: "json" };
 
 export const POKEAPI_CSV = "https://raw.githubusercontent.com/PokeAPI/pokeapi/master/data/v2/csv";
@@ -14,7 +15,8 @@ const ES = "7";
 const EN = "9";
 const LANGUAGE_BY_ID: Record<string, "de" | "es" | "en"> = { [DE]: "de", [ES]: "es", [EN]: "en" };
 
-const romEs = romEsFile as { moves: { id: number; name: string }[]; abilities: { id: number; name: string }[] };
+type RomNames = { moves: { id: number; name: string }[]; abilities: { id: number; name: string }[] };
+const ROM_NAMES: Record<"de" | "es", RomNames> = { de: romDeFile, es: romEsFile };
 
 /** The PokéAPI tables the import downloads. */
 export const NAME_TABLES = [
@@ -241,24 +243,25 @@ export function buildNames(csv: NameTables, versionGroup = 6): Omit<NamesFile, "
 }
 
 /**
- * Gen 3 cut long Spanish move and ability names to fit its 12 letters ("DISP. DEMORA" for
- * "Disparo Demora"), and some differ from PokéAPI's. These are the game's spellings, read from the
- * Esmeralda (Spain) ROM, each tied to its PokéAPI id.
+ * Gen 3 cut long move and ability names to fit 12 letters (Spanish "DISP. DEMORA" for "Disparo
+ * Demora"), and some differ from PokéAPI's (German "PFUND" for Pound). These are the game's spellings,
+ * read from the Esmeralda (Spain) and Smaragd ROMs, each tied to its PokéAPI id.
  */
 function romSpellings(
   names: Partial<Omit<NamesFile, "source" | "importedAt">>,
   scope: GameScope,
+  lang: "de" | "es",
   add: (native: string | undefined, pos: string, glosses: string[], en: string) => void,
 ): void {
   for (const m of names.moves ?? []) {
-    const name = romEs.moves.find((r) => r.id === m.id)?.name;
+    const name = ROM_NAMES[lang].moves.find((r) => r.id === m.id)?.name;
     if (name && m.generation <= scope.generation) {
-      add(name, "move", [m.en, m.typeEn ? `${m.typeEn}-type move (${LABELS.es.type} ${m.typeEs})` : "move"], m.en);
+      add(name, "move", [m.en, m.typeEn ? `${m.typeEn}-type move (${LABELS[lang].type} ${lang === "es" ? m.typeEs : m.typeDe})` : "move"], m.en);
     }
   }
   for (const a of names.abilities ?? []) {
-    const name = romEs.abilities.find((r) => r.id === a.id)?.name;
-    if (name && a.generation <= scope.generation) add(name, "ability", [a.en, `Pokémon ability (${LABELS.es.ability})`], a.en);
+    const name = ROM_NAMES[lang].abilities.find((r) => r.id === a.id)?.name;
+    if (name && a.generation <= scope.generation) add(name, "ability", [a.en, `Pokémon ability (${LABELS[lang].ability})`], a.en);
   }
 }
 
@@ -302,7 +305,7 @@ export function nameEntries(
     if (a.generation > scope.generation) continue;
     add(pick(a), "ability", [a.en, `Pokémon ability (${L.ability})`], a.en);
   }
-  if (lang === "es") romSpellings(names, scope, add);
+  romSpellings(names, scope, lang, add);
   for (const i of names.items ?? []) {
     if (!i.generations.includes(scope.generation)) continue;
     const native = lang === "es" ? i.categoryEs : i.categoryDe;
