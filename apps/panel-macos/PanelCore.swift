@@ -84,7 +84,8 @@ final class PanelController: NSObject, NSWindowDelegate, WKNavigationDelegate, W
     super.init()
     config.userContentController.add(self, name: "panel")
     panel.title = "Pokélearning"
-    panel.level = .floating
+    // One above .floating: mGBA's own tool windows (its scripting console) sit at .floating, and must not cover us
+    panel.level = NSWindow.Level(rawValue: NSWindow.Level.floating.rawValue + 1)
     panel.isFloatingPanel = true
     panel.hidesOnDeactivate = false // stays visible while you play
     panel.becomesKeyOnlyIfNeeded = true

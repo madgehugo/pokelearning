@@ -243,7 +243,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let show = item("Show Panel", #selector(showPanelAction), "p")
     let dockItem = item("Dock Next to mGBA", #selector(dock), "d")
     [show, dockItem].forEach { $0.keyEquivalentModifierMask = [.control, .option] }
-    submenu("Panel", [show, dockItem])
+    submenu("Panel", [show, dockItem, .separator(), item("Hide mGBA Scripting Window…", #selector(hideScriptingWindow))])
     phoneItem.target = self
     submenu("Phone", [phoneItem])
     NSApp.mainMenu = main
@@ -259,6 +259,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   @objc private func openGames() { open("games") }
   @objc private func showPanelAction() { showPanel() }
   @objc private func dock() { panel?.dock() }
+  @objc private func hideScriptingWindow() { scriptingWindow.hideNow() }
   @objc private func showData() { NSWorkspace.shared.activateFileViewerSelecting([paths.database]) }
   @objc private func showLogs() { NSWorkspace.shared.activateFileViewerSelecting([paths.serverLog]) }
 

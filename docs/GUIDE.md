@@ -250,6 +250,7 @@ Start with the two status lines: the panel's (or the website's top bar), and
 | What you see | Why | Fix |
 | --- | --- | --- |
 | *Apple could not verify "Pokélearning"…* | The app isn't notarized by Apple | System Settings → Privacy & Security → **Open Anyway** (section 0). Once only |
+| mGBA's scripting window covers the game and the panel | mGBA opens it whenever a script is loaded. The app can close it, but only with the Accessibility permission, and macOS forgets that permission when the app is updated (it isn't notarized) | **Panel → Hide mGBA Scripting Window…** opens the right Settings pane: remove the old Pokélearning entry under Privacy & Security → Accessibility, add the current one, and switch it on. Or close the window by hand; the script keeps running |
 | *"Pokélearning" is damaged and can't be opened* | Some ways of copying files (some browsers, AirDrop) mark unsigned apps like this | In Terminal: `xattr -dr com.apple.quarantine /Applications/Pokélearning.app`, then open it again |
 | *Port 8766 is already in use* | The companion is already running from a terminal (`npm run play`) | Stop that one (Ctrl+C), then open the app again |
 | Setup says *No internet connection* | A download failed | Connect, then **Try again**. Finished steps aren't downloaded again |
