@@ -74,7 +74,7 @@ export function createGlossary(entries: GlossaryEntry[]): Glossary {
     get: (word) => byKey.get(fold(word)),
     phraseAt(tokens, i, text) {
       const first = tokens[i];
-      if (!first || first.kind !== "word") return undefined;
+      if (first?.kind !== "word") return undefined;
       for (const { pieces, entry } of phrases.get(fold(first.text)) ?? []) {
         let p = i;
         let ok = true;

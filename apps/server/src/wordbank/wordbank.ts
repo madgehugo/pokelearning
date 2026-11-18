@@ -231,7 +231,7 @@ export class WordBank {
   }
 
   /** Count earlier lines that used the word, and take the latest as examples. */
-  private backfill(wordId: number, lemma: string, pos: string, lang: Language, now: number): void {
+  private backfill(wordId: number, lemma: string, pos: string, lang: Language, _now: number): void {
     const like = `%"lemma":${JSON.stringify(lemma).replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
     const rows = this.db
       .prepare(

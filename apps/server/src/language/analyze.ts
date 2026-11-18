@@ -12,7 +12,7 @@ import type { Dictionary } from "../dictionary/db.ts";
 import { analyzeCompound } from "./compound.ts";
 import { articlesFor, glossarySense, type Glossary, type GlossaryEntry } from "./glossary.ts";
 import { candidatesFor, ES_DETERMINERS, lookupSpelling, rank, toSense, type Candidate, type WordContext } from "./ranking.ts";
-import { isAllCaps, isClauseBoundary, isSentenceEnd, titleCase, tokenize, type Token } from "./tokenize.ts";
+import { isAllCaps, isClauseBoundary, isSentenceEnd, tokenize, type Token } from "./tokenize.ts";
 
 export interface AnalyzerDeps {
   /** The text's language; German when omitted. */

@@ -4,7 +4,7 @@
  * (lines arrive untranslated, without a breakdown) and picks them up as soon
  * as each one is ready.
  */
-import type { SetupState, SetupStatus, SetupStep, SetupStepId } from "@pokelearning/shared";
+import type { SetupState, SetupStatus, SetupStep } from "@pokelearning/shared";
 import type { ProviderStatus } from "../translate/provider.ts";
 import type { Progress } from "./download.ts";
 

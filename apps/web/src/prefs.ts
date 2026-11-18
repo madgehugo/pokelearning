@@ -44,7 +44,7 @@ export function setPrefs(patch: Partial<Prefs>) {
   } catch {
     // not saved, but it still applies until the page is closed
   }
-  listeners.forEach((l) => l());
+  for (const l of listeners) l();
 }
 
 export function usePrefs(): Prefs {

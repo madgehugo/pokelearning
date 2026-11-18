@@ -24,8 +24,7 @@ export function createIngestServer(handlers: IngestHandlers): net.Server {
     let buffer = "";
     socket.on("data", (chunk: string) => {
       buffer += chunk;
-      let newline: number;
-      while ((newline = buffer.indexOf("\n")) !== -1) {
+      for (let newline = buffer.indexOf("\n"); newline !== -1; newline = buffer.indexOf("\n")) {
         const raw = buffer.slice(0, newline).trim();
         buffer = buffer.slice(newline + 1);
         if (!raw) continue;

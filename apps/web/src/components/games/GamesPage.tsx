@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import type { GameAvailability, GameKind, GameRecord } from "@pokelearning/shared";
 import { api } from "../../api.ts";
-import { LANGUAGES } from "../../language.ts";
-import { setPrefs, usePrefs } from "../../prefs.ts";
+import { usePrefs } from "../../prefs.ts";
 import { ArticleSprint } from "./ArticleSprint.tsx";
 import { Cloze } from "./Cloze.tsx";
 import { GAME_INFO, seconds } from "./common.tsx";
@@ -53,7 +52,7 @@ function GameList() {
                 <p>{GAME_INFO[kind].blurb}</p>
                 <p className="muted">
                   {ready
-                    ? [best, r && r.plays ? `played ${r.plays} ${r.plays === 1 ? "time" : "times"}` : "not played yet"]
+                    ? [best, r?.plays ? `played ${r.plays} ${r.plays === 1 ? "time" : "times"}` : "not played yet"]
                         .filter(Boolean)
                         .join(", ")
                     : `Needs ${a?.needed} ${GAME_INFO[kind].unit} from your game; ${a?.available ?? 0} so far.`}

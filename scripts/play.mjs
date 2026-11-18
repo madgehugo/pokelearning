@@ -90,7 +90,7 @@ if (await serverUp()) {
     stream.on("data", (chunk) => {
       const lines = (rest + chunk).split("\n");
       rest = lines.pop();
-      for (const l of lines) process.stdout.write(prefix + l + "\n");
+      for (const l of lines) process.stdout.write(`${prefix + l}\n`);
     });
   }
   server.on("exit", (code) => {
@@ -123,7 +123,7 @@ if (!flag("--no-panel")) {
   if (!fs.existsSync(panelBin)) {
     say("building the side panel (first time only)…");
     const r = spawnSync("npm", ["run", "panel:build"], { cwd: root, stdio: "inherit" });
-    if (r.status !== 0) warn("The panel didn't build. You can use the website instead: http://localhost:" + uiPort);
+    if (r.status !== 0) warn(`The panel didn't build. You can use the website instead: http://localhost:${uiPort}`);
   }
   if (fs.existsSync(panelBin)) {
     const panel = spawn(panelBin, ["--url", `http://localhost:${uiPort}/#/panel`], { stdio: "ignore" });

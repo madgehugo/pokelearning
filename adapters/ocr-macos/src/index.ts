@@ -89,7 +89,7 @@ class Connection {
     socket.on("connect", () => {
       this.socket = socket;
       console.log(styleText("green", `connected to ${this.host}:${this.port}`));
-      socket.write(JSON.stringify(this.hello()) + "\n");
+      socket.write(`${JSON.stringify(this.hello())}\n`);
       for (const line of this.queue.splice(0)) socket.write(line);
     });
     socket.on("error", () => {});
@@ -102,7 +102,7 @@ class Connection {
   }
 
   send(msg: AdapterMessage) {
-    const line = JSON.stringify(msg) + "\n";
+    const line = `${JSON.stringify(msg)}\n`;
     if (this.socket) this.socket.write(line);
     else this.queue = [...this.queue, line].slice(-50);
   }

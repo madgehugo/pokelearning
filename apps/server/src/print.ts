@@ -45,10 +45,10 @@ export function printLine(line: ProcessedLine): void {
   const source = line.source ? `/${line.source}` : "";
   const seen = line.seenBefore ? `, seen ${line.seenBefore}× before` : "";
   console.log(styleText("dim", `[${time()}] #${line.id} ${line.game}${source}${seen}`));
-  console.log("  " + styleText("bold", line.text));
+  console.log(`  ${styleText("bold", line.text)}`);
   if (line.translation) {
     const cached = line.translation.cached ? " (cached)" : "";
-    console.log("  " + styleText("green", line.translation.text) + styleText("dim", cached));
+    console.log(`  ${styleText("green", line.translation.text)}${styleText("dim", cached)}`);
   }
   if (line.analysis) {
     const rows = wordRows(line.analysis.tokens);

@@ -254,7 +254,7 @@ async function smokeTest() {
   if (hasModel) await wait("translation model load", async () => (await get("/api/status")).translator, 90);
   const socket = net.connect(18765, "127.0.0.1");
   await new Promise((r) => socket.on("connect", r));
-  socket.end(JSON.stringify({ type: "line", adapter: "smoke", game: "pokemon-emerald-de", lang: "de", line: "Ein wildes ZIGZACHS erscheint!", timestamp: Date.now() }) + "\n");
+  socket.end(`${JSON.stringify({ type: "line", adapter: "smoke", game: "pokemon-emerald-de", lang: "de", line: "Ein wildes ZIGZACHS erscheint!", timestamp: Date.now() })}\n`);
   await wait("line processing", async () => {
     const [line] = await get("/api/lines?limit=1");
     return line && (!hasModel || line.translation) && line.analysis;
@@ -269,7 +269,7 @@ async function smokeTest() {
     const send = net.connect(18765, "127.0.0.1");
     await new Promise((r) => send.on("connect", r));
     const base = { adapter: "smoke", game: "pokemon-emerald-es", lang: "es", timestamp: Date.now() };
-    send.end(JSON.stringify({ type: "hello", ...base, version: "0.0.0" }) + "\n" + JSON.stringify({ type: "line", ...base, line: "¿Qué deberia hacer TORCHIC?" }) + "\n");
+    send.end(`${JSON.stringify({ type: "hello", ...base, version: "0.0.0" })}\n${JSON.stringify({ type: "line", ...base, line: "¿Qué deberia hacer TORCHIC?" })}\n`);
     await wait("Spanish line processing", async () => {
       const [l] = await get("/api/lines?limit=1");
       return l && l.game === "pokemon-emerald-es" && l.analysis && (!hasModelEs || l.translation);

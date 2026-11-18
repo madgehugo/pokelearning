@@ -28,9 +28,12 @@
     "ocr:build": "npm run build -w @pokelearning/ocr-macos",
     "panel:build": "mkdir -p apps/panel-macos/bin && swiftc -O -parse-as-library -o apps/panel-macos/bin/pokelearning-panel apps/panel-macos/PanelCore.swift apps/panel-macos/PanelMain.swift",
     "package": "node scripts/package-mac.mjs",
-    "app:build": "mkdir -p apps/desktop-macos/bin && swiftc -O -parse-as-library -o apps/desktop-macos/bin/Pokelearning apps/panel-macos/PanelCore.swift apps/desktop-macos/ScriptingWindow.swift apps/desktop-macos/Server.swift apps/desktop-macos/HotKeys.swift apps/desktop-macos/App.swift"
+    "app:build": "mkdir -p apps/desktop-macos/bin && swiftc -O -parse-as-library -o apps/desktop-macos/bin/Pokelearning apps/panel-macos/PanelCore.swift apps/desktop-macos/ScriptingWindow.swift apps/desktop-macos/Server.swift apps/desktop-macos/HotKeys.swift apps/desktop-macos/App.swift",
+    "lint": "biome lint .",
+    "lint:fix": "biome lint --write ."
   },
   "devDependencies": {
+    "@biomejs/biome": "2.6.8",
     "@types/node": "^22.10.0",
     "tsx": "^4.19.0",
     "typescript": "^5.7.0"

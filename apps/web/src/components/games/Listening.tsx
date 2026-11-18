@@ -155,10 +155,16 @@ export function Listening() {
           <p className="box__hint">Listen, then pick what it means.</p>
         )}
         <p className="listen-controls">
-          <button type="button" className="save-button" onClick={() => (setReplays((n) => n + 1), play())}>
+          <button type="button" className="save-button" onClick={() => {
+              setReplays((n) => n + 1);
+              play();
+            }}>
             Hear it again <kbd>R</kbd>
           </button>{" "}
-          <button type="button" className="link-button" onClick={() => (setReplays((n) => n + 1), play(0.7))}>
+          <button type="button" className="link-button" onClick={() => {
+              setReplays((n) => n + 1);
+              play(0.7);
+            }}>
             Slower
           </button>
         </p>

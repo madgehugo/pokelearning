@@ -13,11 +13,11 @@ const procs = [
     stream.on("data", (chunk) => {
       const lines = (rest + chunk).split("\n");
       rest = lines.pop();
-      for (const line of lines) process.stdout.write(prefix + line + "\n");
+      for (const line of lines) process.stdout.write(`${prefix + line}\n`);
     });
   }
   child.on("exit", (code) => {
-    console.log(prefix + `exited (${code})`);
+    console.log(`${prefix}exited (${code})`);
     shutdown();
   });
   return child;

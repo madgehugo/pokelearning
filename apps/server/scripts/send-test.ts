@@ -27,7 +27,7 @@ const messages: AdapterMessage[] = [
 ];
 
 const socket = net.connect(port, "127.0.0.1", () => {
-  for (const m of messages) socket.write(JSON.stringify(m) + "\n");
+  for (const m of messages) socket.write(`${JSON.stringify(m)}\n`);
   socket.end();
   console.log(`sent ${messages.length} messages to 127.0.0.1:${port}`);
 });
