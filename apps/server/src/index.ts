@@ -6,7 +6,7 @@
 import os from "node:os";
 import { styleText } from "node:util";
 import { adapterVersionProblem, type ServerStatus } from "@pokelearning/shared";
-import { config } from "./config.ts";
+import { config, dataNote } from "./config.ts";
 import { AppDb } from "./db/app-db.ts";
 import { openDictionary } from "./dictionary/db.ts";
 import { createIngestServer } from "./ingest/tcp.ts";
@@ -207,6 +207,7 @@ function lanUrls(port: number): string[] {
 }
 
 ingest.listen(config.port, config.host, () => {
+  for (const note of dataNote()) console.log(styleText("dim", note));
   console.log(styleText("green", `Pokélearning server listening for adapters on ${config.host}:${config.port}`));
   console.log(styleText("dim", "Load adapters/mgba-lua/main.lua in mGBA (Tools → Scripting…), then talk to someone."));
 });

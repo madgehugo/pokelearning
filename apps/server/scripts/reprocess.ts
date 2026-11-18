@@ -6,7 +6,7 @@
  *   npm run reprocess                    all lines
  *   npm run reprocess -- --no-translate  analysis only
  */
-import { config } from "../src/config.ts";
+import { config, dataNote } from "../src/config.ts";
 import { AppDb } from "../src/db/app-db.ts";
 import { openDictionary } from "../src/dictionary/db.ts";
 import { analyzeLine } from "../src/language/analyze.ts";
@@ -17,6 +17,7 @@ import { Translator } from "../src/translate/translator.ts";
 const BATCH = 200;
 
 async function main() {
+  for (const note of dataNote()) console.log(note);
   const db = new AppDb(config.appDbPath);
   const dictionary = openDictionary(config.dictionaryDbPath);
   const glossaries = loadGameGlossaries();

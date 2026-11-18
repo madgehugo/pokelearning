@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { PROTOCOL_PORT, UI_PORT, type Language } from "@pokelearning/shared";
@@ -75,3 +76,19 @@ export const config = {
   translator: process.env.TRANSLATOR ?? "opus-mt",
   targetLang: "en",
 };
+
+/** Where the packaged macOS app keeps its data (it sets DATA_DIR to this). */
+const packagedDataDir = path.join(os.homedir(), "Library", "Application Support", "Pokélearning");
+
+/**
+ * Which database this process uses, plus a warning when it is not the packaged app's one.
+ * Running from source defaults to ./data, which is easy to mistake for the app's history.
+ */
+export function dataNote(): string[] {
+  const notes = [`Data: ${config.dataDir}`];
+  const usingDefault = process.env.DATA_DIR === undefined;
+  if (usingDefault && dataDir !== packagedDataDir && fs.existsSync(path.join(packagedDataDir, "app.db"))) {
+    notes.push(`The packaged app's data is in ${packagedDataDir}. To use it: DATA_DIR="${packagedDataDir}" npm run …`);
+  }
+  return notes;
+}
