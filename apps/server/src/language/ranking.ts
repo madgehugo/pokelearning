@@ -74,6 +74,8 @@ export function scoreMatch(match: FormMatch, spelling: string, ctx: WordContext,
   // all-caps name from the dictionary ("NUEVA", a village) is only a guess.
   if (allCaps && nounLike) score += ctx.lang === "de" ? 1 : lexeme.pos === "name" ? -1.5 : 0;
   if (ctx.lang === "es") {
+    // chat spellings and misspellings ("hay" as an Internet form of "ahí") lose to the standard reading
+    if (match.formTags && /\b(Internet|misspelling|nonstandard|eye dialect)\b/i.test(match.formTags)) score -= 2;
     if (ES_FUNCTION.has(lexeme.pos)) score += 0.8;
     // A verb opening a sentence with no subject is an order: "¡Ven rápido!" is venir, not "ellos ven".
     if (ctx.sentenceStart && match.formTags && /\bimperative\b/.test(match.formTags)) score += 1;

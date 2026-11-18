@@ -6,5 +6,9 @@
   { "match": ["veces"], "lemma": "vez", "pos": "noun", "gender": "f", "glosses": ["time, occasion"], "plural": "veces" },
   { "match": ["he"], "lemma": "haber", "pos": "verb", "glosses": ["I have (auxiliary: “he dedicado” = I have dedicated)"] },
   { "match": ["sí"], "lemma": "sí", "pos": "particle", "glosses": ["yes"] },
-  { "match": ["lo"], "lemma": "lo", "pos": "pron", "glosses": ["it, him (object pronoun: “te lo dé” = I give it to you)", "the (neuter article: “lo que” = what, the thing that)"] }
+  { "match": ["lo"], "lemma": "lo", "pos": "pron", "glosses": ["it, him (object pronoun: “te lo dé” = I give it to you)", "the (neuter article: “lo que” = what, the thing that)"] },
+  { "match": ["MT"], "lemma": "MT (Máquina Técnica)", "pos": "abbrev", "gender": "f", "glosses": ["TM, technical machine"], "mt": "TM" },
+  { "match": ["MO"], "lemma": "MO (Máquina Oculta)", "pos": "abbrev", "gender": "f", "glosses": ["HM, hidden machine"], "mt": "HM" },
+  { "match": ["EXP."], "lemma": "EXP. (experiencia)", "pos": "abbrev", "gender": "f", "glosses": ["EXP, experience points"], "mt": "EXP." },
+  { "match": ["gracias"], "lemma": "gracias", "pos": "intj", "glosses": ["thanks, thank you"] }
 ]

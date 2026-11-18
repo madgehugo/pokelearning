@@ -6,12 +6,15 @@
  */
 import fs from "node:fs";
 import type { GlossaryEntry } from "./glossary.ts";
+import romEsFile from "./glossary/rom-es.json" with { type: "json" };
 
 export const POKEAPI_CSV = "https://raw.githubusercontent.com/PokeAPI/pokeapi/master/data/v2/csv";
 const DE = "6";
 const ES = "7";
 const EN = "9";
 const LANGUAGE_BY_ID: Record<string, "de" | "es" | "en"> = { [DE]: "de", [ES]: "es", [EN]: "en" };
+
+const romEs = romEsFile as { moves: { id: number; name: string }[]; abilities: { id: number; name: string }[] };
 
 /** The PokéAPI tables the import downloads. */
 export const NAME_TABLES = [
@@ -237,6 +240,28 @@ export function buildNames(csv: NameTables, versionGroup = 6): Omit<NamesFile, "
   };
 }
 
+/**
+ * Gen 3 cut long Spanish move and ability names to fit its 12 letters ("DISP. DEMORA" for
+ * "Disparo Demora"), and some differ from PokéAPI's. These are the game's spellings, read from the
+ * Esmeralda (Spain) ROM, each tied to its PokéAPI id.
+ */
+function romSpellings(
+  names: Partial<Omit<NamesFile, "source" | "importedAt">>,
+  scope: GameScope,
+  add: (native: string | undefined, pos: string, glosses: string[], en: string) => void,
+): void {
+  for (const m of names.moves ?? []) {
+    const name = romEs.moves.find((r) => r.id === m.id)?.name;
+    if (name && m.generation <= scope.generation) {
+      add(name, "move", [m.en, m.typeEn ? `${m.typeEn}-type move (${LABELS.es.type} ${m.typeEs})` : "move"], m.en);
+    }
+  }
+  for (const a of names.abilities ?? []) {
+    const name = romEs.abilities.find((r) => r.id === a.id)?.name;
+    if (name && a.generation <= scope.generation) add(name, "ability", [a.en, `Pokémon ability (${LABELS.es.ability})`], a.en);
+  }
+}
+
 /** The few native words in a name's description. */
 const LABELS = {
   de: { the: "the", type: "Typ", ability: "Fähigkeit" },
@@ -277,6 +302,7 @@ export function nameEntries(
     if (a.generation > scope.generation) continue;
     add(pick(a), "ability", [a.en, `Pokémon ability (${L.ability})`], a.en);
   }
+  if (lang === "es") romSpellings(names, scope, add);
   for (const i of names.items ?? []) {
     if (!i.generations.includes(scope.generation)) continue;
     const native = lang === "es" ? i.categoryEs : i.categoryDe;

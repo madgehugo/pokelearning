@@ -139,11 +139,31 @@ function withItemGender(sense: WordSense, candidates: Candidate[], dict: Diction
   return gender && articles ? { ...sense, gender, articles } : sense;
 }
 
+/** "Muchísimas" → mucho: Wiktionary lists few -ísimo forms, so look the plain word up and say so. */
+function superlativeCandidates(word: string, ctx: WordContext, dict: Dictionary): Candidate[] | null {
+  const stem = word.match(/^(.+?)[íi]sim[oa]s?$/iu)?.[1];
+  if (!stem) return null;
+  const tail = /^\p{Lu}/u.test(word) && word === word.toUpperCase() ? (c: string) => c.toUpperCase() : (c: string) => c;
+  // riquísimo → rico, buenísimo → bueno, grandísimo → grande, facilísimo → fácil
+  for (const base of [stem + tail("o"), stem + tail("e"), stem, stem.replace(/qu$/i, "c") + tail("o"), stem.replace(/gu$/i, "g") + tail("o")]) {
+    const found = candidatesFor(base, { ...ctx, sentenceStart: false }, dict).filter(
+      (c) => (c.match.lexeme.pos === "adj" || c.match.lexeme.pos === "det" || c.match.lexeme.pos === "adv") && c.score > 0,
+    );
+    if (found.length) {
+      return found.map((c) => ({ ...c, match: { ...c.match, form: word, formTags: [c.match.formTags, "superlative"].filter(Boolean).join(" ") } }));
+    }
+  }
+  return null;
+}
+
 function analyzeWord(token: Token, index: number, ctx: WordContext, deps: AnalyzerDeps, analysis: TokenAnalysis): WordWork {
   const spelling = lookupSpelling(token.text);
   if (spelling !== token.text) analysis.normalized = spelling;
 
-  const candidates = deps.dictionary ? candidatesFor(token.text, ctx, deps.dictionary) : [];
+  let candidates = deps.dictionary ? candidatesFor(token.text, ctx, deps.dictionary) : [];
+  if (deps.dictionary && ctx.lang === "es" && !candidates.some((c) => c.score > 0)) {
+    candidates = superlativeCandidates(token.text, ctx, deps.dictionary) ?? candidates;
+  }
   const glossary = deps.glossary.get(spelling) ?? (isAllCaps(token.text) ? itemPlural(spelling, deps) : undefined);
   if (glossary?.capsOnly && !isAllCaps(token.text) && candidates.length > 0) {
     // "Glut" in normal text: embers, not the move GLUT (Ember)

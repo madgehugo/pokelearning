@@ -6,6 +6,7 @@ import { analyzeLine } from "./analyze.ts";
 import { createGlossary, loadGlossary } from "./glossary.ts";
 import { languageOf } from "./load.ts";
 import { buildNames, nameEntries } from "./names.ts";
+import { prepareSentences } from "../translate/prepare.ts";
 
 /** Spanish entries in the shape of the real Kaikki extract (checked against casa, comer, la, del). */
 const ENTRIES: KaikkiEntry[] = [
@@ -38,6 +39,10 @@ const ENTRIES: KaikkiEntry[] = [
   { word: "nuevo", pos: "adj", forms: [{ form: "nueva", tags: ["feminine", "singular"] }], senses: [{ glosses: ["new"] }] },
   { word: "ver", pos: "verb", forms: [{ form: "ven", tags: ["indicative", "plural", "present", "third-person"] }], senses: [{ glosses: ["to see"] }] },
   { word: "venir", pos: "verb", forms: [{ form: "ven", tags: ["imperative", "second-person", "singular"] }], senses: [{ glosses: ["to come"] }] },
+  { word: "mucho", pos: "det", senses: [{ glosses: ["a lot of"] }] },
+  { word: "rico", pos: "adj", senses: [{ glosses: ["rich; tasty"] }] },
+  { word: "haber", pos: "verb", forms: [{ form: "hay", tags: ["impersonal", "indicative", "present", "singular", "third-person"] }], senses: [{ glosses: ["to have"] }] },
+  { word: "ahí", pos: "adv", forms: [{ form: "hay", tags: ["Internet", "alternative", "colloquial"] }], senses: [{ glosses: ["there"] }] },
   { word: "pueblo", pos: "verb", senses: [{ glosses: ["first-person singular present of poblar"], tags: ["form-of"], form_of: [{ word: "poblar" }] }] },
 ];
 
@@ -99,6 +104,16 @@ describe("Spanish ranking", () => {
     assert.equal(word("Ellos ven", "ven").best?.lemma, "ver");
   });
 
+  it("finds the plain word behind an -ísimo form the dictionary lacks", () => {
+    assert.equal(word("Muchísimas veces", "Muchísimas").best?.lemma, "mucho");
+    assert.match(word("Muchísimas veces", "Muchísimas").best?.formTags ?? "", /superlative/);
+    assert.equal(word("Es riquísimo", "riquísimo").best?.lemma, "rico");
+  });
+
+  it("prefers the standard spelling to an Internet form", () => {
+    assert.equal(word("Aquí hay una casa", "hay").best?.lemma, "haber");
+  });
+
   it("doesn't take a village for an all-caps adjective", () => {
     assert.notEqual(word("PARTIDA NUEVA", "NUEVA").best?.pos, "name");
   });
@@ -140,5 +155,31 @@ describe("game language", () => {
     assert.match(glossary.get("Ascuas")?.glosses[1] ?? "", /tipo Fuego/);
     assert.equal(glossary.get("Glut"), undefined, "German names are not Spanish");
     assert.equal(glossary.get("Ang"), undefined, "the German stat abbreviations don't apply");
+  });
+});
+
+describe("the game's own spellings of Spanish names", () => {
+  const names = {
+    moves: [{ id: 81, generation: 1, de: "Fadenschuss", es: "Disparo Demora", en: "String Shot", typeDe: "Käfer", typeEs: "Bicho", typeEn: "Bug" }],
+    abilities: [{ id: 5, generation: 3, de: "Steinhaupt", es: "Robustez", en: "Sturdy" }],
+  };
+  const glossary = loadGlossary(nameEntries(names, { generation: 3, regions: [3] }, "es"), "es");
+  const dictionary = fixtureDictionary(ENTRIES);
+
+  it("matches a name with a full stop in it, as one phrase", () => {
+    const a = analyzeLine("¡WURMPLE salvaje usó DISP. DEMORA!", { dictionary, glossary, lang: "es" });
+    const disp = a.tokens.find((t) => t.text === "DISP")!;
+    assert.equal(disp.best?.lemma, "DISP. DEMORA");
+    assert.equal(disp.best?.pos, "move");
+    assert.equal(a.tokens.find((t) => t.text === "DEMORA")?.partOf, a.tokens.indexOf(disp));
+    assert.equal(a.tokens.at(-1)?.text, "!", "the sentence's own punctuation is left");
+  });
+
+  it("gives the translator the English move name", () => {
+    assert.deepEqual(prepareSentences("¡WURMPLE salvaje usó DISP. DEMORA!", glossary, "es")[0]!.slots.at(-1), "String Shot");
+  });
+
+  it("matches the spelling a plain word, as before", () => {
+    assert.equal(glossary.get("ROBUSTEZ")?.mt, "Sturdy");
   });
 });

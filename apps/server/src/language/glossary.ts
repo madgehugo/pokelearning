@@ -41,25 +41,33 @@ export interface Glossary {
 /** Lookup key: case-insensitive, and ß = ss (capitals write "GROSSBRAND" for Großbrand). */
 const fold = (word: string) => word.toLowerCase().replace(/ß/g, "ss");
 
+/** One word of a phrase; `dot` when a full stop follows it directly ("DISP." in "DISP. DEMORA"). */
+interface Piece {
+  word: string;
+  dot: boolean;
+}
+
 /** Later entries win, so hand-written terms can override imported names. */
 export function createGlossary(entries: GlossaryEntry[]): Glossary {
   const byKey = new Map<string, GlossaryEntry>();
-  const phrases = new Map<string, { words: string[]; entry: GlossaryEntry }[]>();
+  const phrases = new Map<string, { key: string; pieces: Piece[]; entry: GlossaryEntry }[]>();
   for (const e of entries) {
     for (const m of e.match) {
       const words = fold(m).split(/\s+/);
-      if (words.length === 1) {
+      if (words.length === 1 && !words[0]!.endsWith(".")) {
         byKey.set(words[0]!, e);
         continue;
       }
-      // only plain words and numbers ("Route 101"); punctuation inside a name isn't matched
-      if (!words.every((w) => /^[\p{L}\p{M}\p{N}'’-]+$/u.test(w))) continue;
-      const list = phrases.get(words[0]!) ?? [];
-      const at = list.findIndex((p) => p.words.join(" ") === words.join(" "));
+      // only plain words and numbers ("Route 101"), each optionally followed by a full stop ("Disp. Demora")
+      if (!words.every((w) => /^[\p{L}\p{M}\p{N}'’-]+\.?$/u.test(w))) continue;
+      const pieces = words.map((w) => ({ word: w.replace(/\.$/, ""), dot: w.endsWith(".") }));
+      const key = words.join(" ");
+      const list = phrases.get(pieces[0]!.word) ?? [];
+      const at = list.findIndex((p) => p.key === key);
       if (at >= 0) list.splice(at, 1);
-      list.push({ words, entry: e });
-      list.sort((a, b) => b.words.length - a.words.length);
-      phrases.set(words[0]!, list);
+      list.push({ key, pieces, entry: e });
+      list.sort((a, b) => b.pieces.length - a.pieces.length);
+      phrases.set(pieces[0]!.word, list);
     }
   }
   return {
@@ -67,17 +75,25 @@ export function createGlossary(entries: GlossaryEntry[]): Glossary {
     phraseAt(tokens, i, text) {
       const first = tokens[i];
       if (!first || first.kind !== "word") return undefined;
-      for (const { words, entry } of phrases.get(fold(first.text)) ?? []) {
-        const span = tokens.slice(i, i + words.length);
-        if (span.length < words.length) continue;
-        const ok = span.every(
-          (t, j) =>
+      for (const { pieces, entry } of phrases.get(fold(first.text)) ?? []) {
+        let p = i;
+        let ok = true;
+        for (let j = 0; ok && j < pieces.length; j++) {
+          const t = tokens[p];
+          ok =
+            !!t &&
             (t.kind === "word" || t.kind === "number") &&
-            fold(t.text) === words[j] &&
-            (j === 0 || /^\s+$/.test(text.slice(span[j - 1]!.end, t.start))) &&
-            (!entry.capsOnly || t.kind === "number" || isAllCaps(t.text)),
-        );
-        if (ok) return { entry, last: i + words.length - 1 };
+            fold(t.text) === pieces[j]!.word &&
+            (j === 0 || /^\s+$/.test(text.slice(tokens[p - 1]!.end, t.start))) &&
+            (!entry.capsOnly || t.kind === "number" || isAllCaps(t.text));
+          p++;
+          if (ok && pieces[j]!.dot) {
+            const dot = tokens[p];
+            ok = !!dot && dot.kind === "punct" && dot.text === "." && dot.start === tokens[p - 1]!.end;
+            p++;
+          }
+        }
+        if (ok) return { entry, last: p - 1 };
       }
       return undefined;
     },

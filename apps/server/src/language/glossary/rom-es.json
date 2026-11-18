@@ -1,0 +1,218 @@
+{
+ "moves": [
+  {
+   "id": 13,
+   "name": "V. CORTANTE"
+  },
+  {
+   "id": 21,
+   "name": "PORTAZO"
+  },
+  {
+   "id": 35,
+   "name": "REPETICIÓN"
+  },
+  {
+   "id": 37,
+   "name": "GOLPE"
+  },
+  {
+   "id": 39,
+   "name": "LÁTIGO"
+  },
+  {
+   "id": 40,
+   "name": "PICOTAZO VEN"
+  },
+  {
+   "id": 68,
+   "name": "CONTADOR"
+  },
+  {
+   "id": 69,
+   "name": "MOV. SÍSMICO"
+  },
+  {
+   "id": 81,
+   "name": "DISP. DEMORA"
+  },
+  {
+   "id": 98,
+   "name": "AT. RÁPIDO"
+  },
+  {
+   "id": 100,
+   "name": "TELETRANSP"
+  },
+  {
+   "id": 108,
+   "name": "PANTALLAHUMO"
+  },
+  {
+   "id": 113,
+   "name": "PANTALLA LUZ"
+  },
+  {
+   "id": 119,
+   "name": "MOV. ESPEJO"
+  },
+  {
+   "id": 120,
+   "name": "AUTODESTRUC"
+  },
+  {
+   "id": 129,
+   "name": "RAPIDEZ"
+  },
+  {
+   "id": 135,
+   "name": "AMORTIGUADOR"
+  },
+  {
+   "id": 136,
+   "name": "PAT. S. ALTA"
+  },
+  {
+   "id": 140,
+   "name": "PRESA"
+  },
+  {
+   "id": 144,
+   "name": "TRANSFORM"
+  },
+  {
+   "id": 151,
+   "name": "ARMAD. ÁCIDA"
+  },
+  {
+   "id": 158,
+   "name": "HIP.COLMILLO"
+  },
+  {
+   "id": 165,
+   "name": "COMBATE"
+  },
+  {
+   "id": 201,
+   "name": "TORM. ARENA"
+  },
+  {
+   "id": 205,
+   "name": "DESENROLLAR"
+  },
+  {
+   "id": 207,
+   "name": "CONTONEO"
+  },
+  {
+   "id": 215,
+   "name": "CAMPANA CURA"
+  },
+  {
+   "id": 216,
+   "name": "RETROCESO"
+  },
+  {
+   "id": 233,
+   "name": "TIRO VITAL"
+  },
+  {
+   "id": 235,
+   "name": "SÍNTESIS"
+  },
+  {
+   "id": 244,
+   "name": "MÁS PSIQUE"
+  },
+  {
+   "id": 245,
+   "name": "VEL. EXTREMA"
+  },
+  {
+   "id": 263,
+   "name": "IMAGEN"
+  },
+  {
+   "id": 286,
+   "name": "CERCA"
+  },
+  {
+   "id": 294,
+   "name": "RÁFAGA"
+  },
+  {
+   "id": 305,
+   "name": "COLMILLO VEN"
+  },
+  {
+   "id": 324,
+   "name": "DOBLE RAYO"
+  },
+  {
+   "id": 331,
+   "name": "RECURRENTE"
+  },
+  {
+   "id": 334,
+   "name": "DEF. FÉRREA"
+  },
+  {
+   "id": 341,
+   "name": "DISP. LODO"
+  },
+  {
+   "id": 344,
+   "name": "PLACAJE ELÉC"
+  }
+ ],
+ "abilities": [
+  {
+   "id": 4,
+   "name": "ARMAD. BAT."
+  },
+  {
+   "id": 9,
+   "name": "ELEC. ESTÁT."
+  },
+  {
+   "id": 10,
+   "name": "ABSOR. ELEC."
+  },
+  {
+   "id": 11,
+   "name": "ABSOR. AGUA"
+  },
+  {
+   "id": 18,
+   "name": "ABSOR. FUEGO"
+  },
+  {
+   "id": 25,
+   "name": "SUPERGUARDA."
+  },
+  {
+   "id": 27,
+   "name": "EFEC. ESPORA"
+  },
+  {
+   "id": 36,
+   "name": "RASTRO"
+  },
+  {
+   "id": 39,
+   "name": "FOCO INTERNO"
+  },
+  {
+   "id": 63,
+   "name": "ESCAMA ESP."
+  },
+  {
+   "id": 72,
+   "name": "ESPÍR. VITAL"
+  },
+  {
+   "id": 76,
+   "name": "CACOFONÍA"
+  }
+ ]
+}
