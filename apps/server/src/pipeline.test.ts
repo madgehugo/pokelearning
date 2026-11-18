@@ -85,6 +85,10 @@ describe("prepareForTranslation", () => {
 
   it("rewords German the translator gets wrong", () => {
     const text = (t: string) => prepareSentences(t, glossary).map((s) => s.text).join(" ");
+    assert.equal(text("Wenn wir schon mal hier sind…"), "Da wir ohnehin hier sind…");
+    assert.equal(text("Und wenn ich schon einmal da bin, frage ich."), "Und da ich ohnehin da bin, frage ich.");
+    assert.equal(text("Wenn wir schon dabei sind, gehen wir."), "Wo wir gerade dabei sind, gehen wir.");
+    assert.equal(text("Wenn wir hier sind, schlafen wir."), "Wenn wir hier sind, schlafen wir.", "other sentences are left alone");
     assert.equal(text("Es gibt bereits einen Spielstand."), "Es gibt bereits ein gespeichertes Spiel.");
     assert.equal(text("Das ist ein PKMN-SUPERMARKT."), "Das ist ein Pokémon-Supermarkt.");
     assert.equal(text("ZIGZACHS (Wild) wurde besiegt!"), "Das wilde Zigzachs wurde besiegt!");

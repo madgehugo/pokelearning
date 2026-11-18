@@ -108,6 +108,9 @@ const REWRITES_DE: [RegExp, string][] = [
   // "ZIGZACHS (Wild) setzt X ein!" is "the wild Zigzagoon uses X!"; elsewhere the name only gets lowercase "(wild)"
   [/(?<=^|[.!?]\s+)(\p{Lu}[\p{L}-]*) \(Wild\)/gu, "Das wilde $1"],
   [/\(Wild\)/g, "(wild)"],
+  // "Wenn wir schon mal hier sind" is "since we're here anyway", not "if we're here before"
+  [/\b(?:wenn|da|wo) (wir|ich|du|ihr|sie) schon (?:mal|einmal) (hier|da) (sind|bin|bist|seid)\b/giu, "da $1 ohnehin $2 $3"],
+  [/\b(?:wenn|da|wo) wir (?:schon|gerade)(?: mal| einmal)? dabei sind\b/giu, "wo wir gerade dabei sind"],
   // the model reads "Spielstand" as a score
   [/\beinen Spielstand\b/g, "ein gespeichertes Spiel"],
   [/\bden Spielstand\b/g, "das gespeicherte Spiel"],
