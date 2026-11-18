@@ -83,6 +83,15 @@ describe("prepareForTranslation", () => {
     assert.deepEqual(slots("MT / MO"), ["TMs/HMs"]);
     assert.deepEqual(slots("lo que debe hacer todo ENTRENADOR."), ["Trainer"]);
     assert.deepEqual(slots("Un mono y su tiempo."), [], "only in capitals");
+  });
+
+  it("rewords Spanish the translator gets wrong, keeping the first letter's case", () => {
+    const text = (t: string) => prepareSentences(t, glossary, "es").map((s) => s.text).join(" ");
+    assert.equal(text("¡Estupendo!"), "¡Genial!");
+    assert.equal(text("Nuestro retoño es estupenda."), "Nuestro niño es genial.");
+    assert.equal(text("Ya que estamos, vamos."), "Ya que estamos en ello, vamos.");
+    assert.equal(text("Puedo oír cómo chillan."), "Puedo oír cómo gritan.");
+    assert.equal(prepareSentences("Estupendo", glossary)[0]!.text, "Estupendo", "German is left alone");
     assert.equal(prepareForTranslation("Die Flucht gelingt.", glossary), "Die Flucht gelingt.", "only in capitals");
   });
 

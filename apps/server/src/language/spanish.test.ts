@@ -36,6 +36,8 @@ const ENTRIES: KaikkiEntry[] = [
   { word: "veces", pos: "prep", senses: [{ glosses: ["by, times (multiplication)"] }] },
   { word: "nueva", pos: "name", senses: [{ glosses: ["a village in Asturias"] }] },
   { word: "nuevo", pos: "adj", forms: [{ form: "nueva", tags: ["feminine", "singular"] }], senses: [{ glosses: ["new"] }] },
+  { word: "ver", pos: "verb", forms: [{ form: "ven", tags: ["indicative", "plural", "present", "third-person"] }], senses: [{ glosses: ["to see"] }] },
+  { word: "venir", pos: "verb", forms: [{ form: "ven", tags: ["imperative", "second-person", "singular"] }], senses: [{ glosses: ["to come"] }] },
   { word: "pueblo", pos: "verb", senses: [{ glosses: ["first-person singular present of poblar"], tags: ["form-of"], form_of: [{ word: "poblar" }] }] },
 ];
 
@@ -90,6 +92,11 @@ describe("Spanish ranking", () => {
   it("prefers a function word to its rare noun reading, in capitals too", () => {
     assert.equal(word("NO APAGUES", "NO").best?.pos, "adv");
     assert.equal(word("No", "No").best?.pos, "adv");
+  });
+
+  it("reads a verb that opens a sentence as an order", () => {
+    assert.equal(word("¡Ven rápido!", "Ven").best?.lemma, "venir");
+    assert.equal(word("Ellos ven", "ven").best?.lemma, "ver");
   });
 
   it("doesn't take a village for an all-caps adjective", () => {

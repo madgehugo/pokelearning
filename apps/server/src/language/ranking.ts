@@ -75,6 +75,8 @@ export function scoreMatch(match: FormMatch, spelling: string, ctx: WordContext,
   if (allCaps && nounLike) score += ctx.lang === "de" ? 1 : lexeme.pos === "name" ? -1.5 : 0;
   if (ctx.lang === "es") {
     if (ES_FUNCTION.has(lexeme.pos)) score += 0.8;
+    // A verb opening a sentence with no subject is an order: "¡Ven rápido!" is venir, not "ellos ven".
+    if (ctx.sentenceStart && match.formTags && /\bimperative\b/.test(match.formTags)) score += 1;
     if (ctx.afterDeterminer) {
       if (nounLike) score += 1;
       else if (lexeme.pos === "verb") score -= 1.5;

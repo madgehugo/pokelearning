@@ -64,6 +64,27 @@ const PHRASES_ES: [RegExp, string, string?][] = [
   [/\bHUIDA\b/g, "Run"],
 ];
 
+/**
+ * Spanish words and idioms Opus-MT renders badly ("¡Estupendo!" → "Stupend!", "retoño" → "baby"),
+ * reworded in Spanish it handles well. The first letter keeps its case.
+ */
+const REWRITES_ES: [RegExp, string][] = [
+  [/\bestupend([oa])s?\b/giu, "genial"],
+  [/\bya que estamos\b/giu, "ya que estamos en ello"],
+  [/\bretoño(s?)\b/giu, "niño$1"],
+  [/\bchill(a|an|ar|aba|aban)\b/giu, "grit$1"],
+];
+
+function reword(text: string): string {
+  for (const [re, to] of REWRITES_ES) {
+    text = text.replace(re, (m, ...groups) => {
+      const out = to.replace(/\$(\d)/g, (_, n) => (groups[Number(n) - 1] as string | undefined) ?? "");
+      return m[0] === m[0]!.toUpperCase() && m[0] !== m[0]!.toLowerCase() ? out[0]!.toUpperCase() + out.slice(1) : out;
+    });
+  }
+  return text;
+}
+
 const PHRASES: Record<string, [RegExp, string, string?][]> = { de: PHRASES_DE, es: PHRASES_ES };
 
 const SLOT = /\bX(\d+)\b/g;
@@ -88,6 +109,7 @@ function protect(text: string, glossary: Glossary, lang: string): { text: string
     return `X${slots.length}`;
   };
 
+  if (lang === "es") text = reword(text);
   for (const [re, english, spelledOut] of PHRASES[lang] ?? []) {
     const alone = spelledOut !== undefined && new RegExp(`^(?:${re.source})$`).test(text.trim());
     text = text.replace(re, (match: string, offset: number, whole: string) => {
